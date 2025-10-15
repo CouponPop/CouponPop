@@ -20,15 +20,20 @@ public class Member extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true, length = 255)
     private String email;
 
+    @Column(nullable = false, length = 50)
     private String username;
 
+    @Column(nullable = false, length = 255)
     private String password;
 
+    @Column(nullable = false, length = 30)
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private MemberType memberType;
 
     private LocalDateTime deletedAt;
