@@ -13,7 +13,7 @@ plugins {
 
 flyway {
     configFiles = ["$rootDir/conf/flyway.conf"]
-    locations = ['classpath:db/migration']
+    locations = ['filesystem:src/main/resources/db/migration']
     baselineOnMigrate = true
     baselineVersion = 1
     cleanDisabled = false
