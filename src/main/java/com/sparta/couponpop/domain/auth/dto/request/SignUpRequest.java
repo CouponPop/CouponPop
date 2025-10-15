@@ -1,5 +1,7 @@
 package com.sparta.couponpop.domain.auth.dto.request;
 
+import com.sparta.couponpop.domain.member.enums.MemberType;
+
 public record SignUpRequest(
 
         String email,
@@ -7,6 +9,6 @@ public record SignUpRequest(
         String password,
         String confirmPassword,
         String phoneNumber,
-        String memberType
+        MemberType memberType
 ) {
 }
