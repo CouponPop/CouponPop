@@ -2,7 +2,9 @@ package com.sparta.couponpop.domain.auth.dto.request;
 
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 
+@Builder
 public record SignUpRequest(
 
         @NotBlank(message = "이메일을 입력해주세요.")
