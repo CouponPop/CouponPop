@@ -15,6 +15,7 @@ flyway {
     configFiles = ["$rootDir/conf/flyway.conf"]
     locations = ['classpath:db/migration']
     baselineOnMigrate = true
+    baselineVersion = 1
     cleanDisabled = false
 }
 
