@@ -47,6 +47,5 @@ public class Store extends BaseEntity {
 
     private LocalTime weekendCloseTime;
 
-    @Column(updatable = false)
     private LocalDateTime deletedAt;
 }

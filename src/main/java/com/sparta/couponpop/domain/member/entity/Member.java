@@ -30,6 +30,5 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private MemberType memberType;
 
-    @Column(updatable = false)
     private LocalDateTime deletedAt;
 }
