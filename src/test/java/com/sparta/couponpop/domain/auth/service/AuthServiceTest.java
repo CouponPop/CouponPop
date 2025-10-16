@@ -4,11 +4,9 @@ import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
-import com.sparta.couponpop.domain.member.dto.request.CreateMemberRequest;
-import com.sparta.couponpop.domain.member.dto.response.CreateMemberResponse;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
-import com.sparta.couponpop.domain.member.service.MemberServiceApi;
+import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,10 +24,10 @@ import static org.mockito.BDDMockito.given;
 class AuthServiceTest {
 
     @Mock
-    private MemberServiceApi memberService;
+    private PasswordEncoder passwordEncoder;
 
     @Mock
-    private PasswordEncoder passwordEncoder;
+    private MemberRepository memberRepository;
 
     @InjectMocks
     private AuthService authService;
@@ -55,10 +53,8 @@ class AuthServiceTest {
                 "01012345678",
                 MemberType.CUSTOMER
         );
-
-        CreateMemberResponse createMemberResponse = CreateMemberResponse.from(createdMember);
-
-        given(memberService.createMember(any(CreateMemberRequest.class))).willReturn(createMemberResponse);
+        
+        given(memberRepository.saveAndFlush(any(Member.class))).willReturn(createdMember);
 
         // when
         SignUpResponse response = authService.signUp(signUpRequest);

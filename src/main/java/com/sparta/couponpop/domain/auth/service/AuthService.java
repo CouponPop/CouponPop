@@ -4,10 +4,11 @@ import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
-import com.sparta.couponpop.domain.member.dto.request.CreateMemberRequest;
-import com.sparta.couponpop.domain.member.dto.response.CreateMemberResponse;
-import com.sparta.couponpop.domain.member.service.MemberServiceApi;
+import com.sparta.couponpop.domain.member.entity.Member;
+import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
+import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final MemberServiceApi memberService;
+    private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
     public SignUpResponse signUp(SignUpRequest signUpRequest) {
@@ -24,17 +25,25 @@ public class AuthService {
             throw new GlobalException(AuthErrorCode.PASSWORDS_NOT_MATCH);
         }
 
+        if (memberRepository.existsByEmail(signUpRequest.email())) {
+            throw new GlobalException(MemberErrorCode.EMAIL_DUPLICATED);
+        }
+
         String encodedPassword = passwordEncoder.encode(signUpRequest.password());
-        CreateMemberRequest createMemberRequest = CreateMemberRequest.of(
-                signUpRequest.email(),
+
+        Member newMember = Member.signUp(signUpRequest.email(),
                 signUpRequest.username(),
                 encodedPassword,
                 signUpRequest.phoneNumber(),
-                signUpRequest.memberType()
-        );
+                signUpRequest.memberType());
 
-        CreateMemberResponse createMemberResponse = memberService.createMember(createMemberRequest);
+        Member savedMember;
+        try {
+            savedMember = memberRepository.saveAndFlush(newMember); // 제약조건 즉시 검증을 위해 사용
+        } catch (DataIntegrityViolationException e) {
+            throw new GlobalException(MemberErrorCode.EMAIL_DUPLICATED);
+        }
 
-        return SignUpResponse.from(createMemberResponse);
+        return SignUpResponse.from(savedMember);
     }
 }

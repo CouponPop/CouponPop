@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.service.AuthService;
-import com.sparta.couponpop.domain.member.dto.response.CreateMemberResponse;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import org.junit.jupiter.api.DisplayName;
@@ -53,12 +52,11 @@ class AuthControllerTest {
 
 
         SignUpResponse response = SignUpResponse.from(
-                CreateMemberResponse.from(
-                        Member.signUp("test@example.com",
-                                "테스트이름",
-                                "test1234!",
-                                "01012345678",
-                                MemberType.CUSTOMER)));
+                Member.signUp("test@example.com",
+                        "테스트이름",
+                        "test1234!",
+                        "01012345678",
+                        MemberType.CUSTOMER));
 
         given(authService.signUp(any(SignUpRequest.class))).willReturn(response);
 
