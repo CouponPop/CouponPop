@@ -108,15 +108,15 @@ class StoreServiceTest {
     }
 
     @Test
-    @DisplayName("매장 등록 시 null 값 처리")
-    void createStore_WithNullDescription_Success() {
+    @DisplayName("매장 등록 시 빈 문자열 description 처리")
+    void createStore_WithEmptyDescription_Success() {
 
         // given
         Long memberId = 4L;
         CreateStoreRequest request = new CreateStoreRequest(
                 "테스트 매장",
                 "0212345678",
-                null, // description이 null
+                "", // description이 빈 문자열
                 "1234567890",
                 "서울시 테스트구 테스트로 123",
                 37.5665,
@@ -133,7 +133,7 @@ class StoreServiceTest {
                 memberId,
                 "테스트 매장",
                 "0212345678",
-                null,
+                "",
                 "1234567890",
                 "서울시 테스트구 테스트로 123",
                 37.5665,
@@ -153,7 +153,7 @@ class StoreServiceTest {
         StoreResponse result = storeService.createStore(memberId, request);
 
         // then
-        assertThat(result.description()).isNull();
+        assertThat(result.description()).isEmpty();
         assertThat(result.name()).isEqualTo("테스트 매장");
 
         then(storeRepository).should(times(1)).save(any(Store.class));

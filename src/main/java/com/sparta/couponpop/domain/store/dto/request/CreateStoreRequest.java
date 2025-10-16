@@ -17,6 +17,7 @@ public record CreateStoreRequest(
         @Pattern(regexp = "^\\d{11}$", message = "전화번호는 11자리 숫자여야 합니다")
         String phone,
 
+        @NotBlank(message = "매장 설명은 필수입니다")
         @Size(max = 500, message = "매장 설명은 500자를 초과할 수 없습니다")
         String description,
 
