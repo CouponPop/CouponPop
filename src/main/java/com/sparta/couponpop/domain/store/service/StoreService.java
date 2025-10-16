@@ -51,7 +51,7 @@ public class StoreService {
     public StoreResponse updateStore(Long storeId, Long memberId, CreateStoreRequest request) {
 
         Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다."));
+                .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
 
         // TODO: 인증 구현 후 매장 소유자 검증 로직 추가
         // if (!store.getMemberId().equals(memberId)) {
