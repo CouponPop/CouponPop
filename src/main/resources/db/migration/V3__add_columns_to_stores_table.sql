@@ -1,0 +1,18 @@
+ALTER TABLE stores
+    ADD COLUMN member_id           BIGINT                NOT NULL COMMENT '매장 소유자 ID',
+    ADD COLUMN store_category      ENUM('CAFE', 'FOOD')  NOT NULL COMMENT '매장 카테고리',
+    ADD COLUMN name                VARCHAR(255)          NOT NULL COMMENT '매장명',
+    ADD COLUMN phone               VARCHAR(30)           NOT NULL COMMENT '매장 전화번호',
+    ADD COLUMN description         TEXT                  NOT NULL COMMENT '매장 설명',
+    ADD COLUMN business_number     VARCHAR(30)           NOT NULL COMMENT '사업자 번호',
+    ADD COLUMN address             VARCHAR(255)          NOT NULL COMMENT '매장 주소',
+    ADD COLUMN latitude            DOUBLE                NOT NULL COMMENT '위도',
+    ADD COLUMN longitude           DOUBLE                NOT NULL COMMENT '경도',
+    ADD COLUMN image_url           VARCHAR(500)          NOT NULL COMMENT '매장 이미지 URL',
+    ADD COLUMN weekday_open_time   TIME                  NOT NULL COMMENT '평일 오픈 시간',
+    ADD COLUMN weekday_close_time  TIME                  NOT NULL COMMENT '평일 마감 시간',
+    ADD COLUMN weekend_open_time   TIME                  NOT NULL COMMENT '주말 오픈 시간',
+    ADD COLUMN weekend_close_time  TIME                  NOT NULL COMMENT '주말 마감 시간',
+    ADD COLUMN created_at          DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일',
+    ADD COLUMN updated_at          DATETIME              NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일',
+    ADD COLUMN deleted_at          DATETIME              NULL COMMENT '삭제일';
