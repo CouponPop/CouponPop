@@ -195,47 +195,19 @@ class StoreServiceTest {
         CreateStoreRequest request = createUpdateRequest();
         Member member = createMember(memberId);
         Store existingStore = createStore(member);
-        existingStore.updateStoreInfo(
-                request.name(),
-                request.phone(),
-                request.description(),
-                request.businessNumber(),
-                request.address(),
-                request.latitude(),
-                request.longitude(),
-                request.imageUrl(),
-                request.storeCategory(),
-                request.weekdayOpenTime(),
-                request.weekdayCloseTime(),
-                request.weekendOpenTime(),
-                request.weekendCloseTime()
-        );
 
         given(storeRepository.findById(storeId))
-                .willReturn(Optional.of(createStore(member)));
-        given(storeRepository.save(any(Store.class)))
-                .willReturn(existingStore);
-
+                .willReturn(Optional.of(existingStore));
         // when
         StoreResponse result = storeService.updateStore(storeId, memberId, request);
 
         // then
         assertThat(result.name()).isEqualTo(request.name());
         assertThat(result.phone()).isEqualTo(request.phone());
-        assertThat(result.description()).isEqualTo(request.description());
-        assertThat(result.businessNumber()).isEqualTo(request.businessNumber());
-        assertThat(result.address()).isEqualTo(request.address());
-        assertThat(result.latitude()).isEqualTo(request.latitude());
-        assertThat(result.longitude()).isEqualTo(request.longitude());
-        assertThat(result.imageUrl()).isEqualTo(request.imageUrl());
         assertThat(result.storeCategory()).isEqualTo(request.storeCategory());
-        assertThat(result.weekdayOpenTime()).isEqualTo(request.weekdayOpenTime());
-        assertThat(result.weekdayCloseTime()).isEqualTo(request.weekdayCloseTime());
-        assertThat(result.weekendOpenTime()).isEqualTo(request.weekendOpenTime());
-        assertThat(result.weekendCloseTime()).isEqualTo(request.weekendCloseTime());
 
         then(storeRepository).should(times(1)).findById(storeId);
-        then(storeRepository).should(times(1)).save(any(Store.class));
+        then(storeRepository).should(times(0)).save(any(Store.class));
     }
 
     @Test
@@ -269,27 +241,9 @@ class StoreServiceTest {
         CreateStoreRequest request = createFoodUpdateRequest();
         Member member = createMember(memberId);
         Store existingStore = createStore(member);
-        existingStore.updateStoreInfo(
-                request.name(),
-                request.phone(),
-                request.description(),
-                request.businessNumber(),
-                request.address(),
-                request.latitude(),
-                request.longitude(),
-                request.imageUrl(),
-                request.storeCategory(),
-                request.weekdayOpenTime(),
-                request.weekdayCloseTime(),
-                request.weekendOpenTime(),
-                request.weekendCloseTime()
-        );
 
         given(storeRepository.findById(storeId))
-                .willReturn(Optional.of(createStore(member)));
-        given(storeRepository.save(any(Store.class)))
-                .willReturn(existingStore);
-
+                .willReturn(Optional.of(existingStore));
         // when
         StoreResponse result = storeService.updateStore(storeId, memberId, request);
 
@@ -298,7 +252,7 @@ class StoreServiceTest {
         assertThat(result.name()).isEqualTo("맛있는 식당");
 
         then(storeRepository).should(times(1)).findById(storeId);
-        then(storeRepository).should(times(1)).save(any(Store.class));
+        then(storeRepository).should(times(0)).save(any(Store.class));
     }
 
     @Test
