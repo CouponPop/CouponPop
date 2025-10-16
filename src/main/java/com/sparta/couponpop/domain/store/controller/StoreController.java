@@ -28,8 +28,7 @@ public class StoreController {
     }
 
     @PutMapping("/{storeId}")
-    public ResponseEntity<ApiResponse<StoreResponse>> updateStore(@PathVariable Long storeId,
-                                                                @RequestBody @Valid CreateStoreRequest request) {
+    public ResponseEntity<ApiResponse<StoreResponse>> updateStore(@PathVariable Long storeId, @RequestBody @Valid CreateStoreRequest request) {
 
         // TODO: 인증 구현 후 @LoginUserResolver로 memberId 가져오기
         Long memberId = 1L; // 임시 memberId
