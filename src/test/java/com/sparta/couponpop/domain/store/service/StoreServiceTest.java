@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.store.service;
 
+import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
@@ -19,6 +20,7 @@ import java.time.LocalTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -183,6 +185,100 @@ class StoreServiceTest {
         then(storeRepository).should(times(1)).save(any(Store.class));
     }
 
+    @Test
+    @DisplayName("매장 수정 성공")
+    void updateStore_Success() {
+
+        // given
+        Long storeId = 1L;
+        Long memberId = 1L;
+        CreateStoreRequest request = createUpdateRequest();
+        Member member = createMember(memberId);
+        Store existingStore = createStore(member);
+
+        given(storeRepository.findById(storeId))
+                .willReturn(Optional.of(existingStore));
+        // when
+        StoreResponse result = storeService.updateStore(storeId, memberId, request);
+
+        // then
+        assertThat(result.name()).isEqualTo(request.name());
+        assertThat(result.phone()).isEqualTo(request.phone());
+        assertThat(result.storeCategory()).isEqualTo(request.storeCategory());
+
+        then(storeRepository).should(times(1)).findById(storeId);
+        then(storeRepository).should(times(0)).save(any(Store.class));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 매장 수정 시 예외 발생")
+    void updateStore_WithNonExistentStore_ThrowsException() {
+
+        // given
+        Long storeId = 999L;
+        Long memberId = 1L;
+        CreateStoreRequest request = createUpdateRequest();
+
+        given(storeRepository.findById(storeId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> storeService.updateStore(storeId, memberId, request))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장을 찾을 수 없습니다.");
+
+        then(storeRepository).should(times(1)).findById(storeId);
+        then(storeRepository).should(times(0)).save(any(Store.class));
+    }
+
+    @Test
+    @DisplayName("다른 카테고리로 매장 수정 성공")
+    void updateStore_WithDifferentCategory_Success() {
+
+        // given
+        Long storeId = 1L;
+        Long memberId = 1L;
+        CreateStoreRequest request = createFoodUpdateRequest();
+        Member member = createMember(memberId);
+        Store existingStore = createStore(member);
+
+        given(storeRepository.findById(storeId))
+                .willReturn(Optional.of(existingStore));
+        // when
+        StoreResponse result = storeService.updateStore(storeId, memberId, request);
+
+        // then
+        assertThat(result.storeCategory()).isEqualTo(StoreCategory.FOOD);
+        assertThat(result.name()).isEqualTo("맛있는 식당");
+
+        then(storeRepository).should(times(1)).findById(storeId);
+        then(storeRepository).should(times(0)).save(any(Store.class));
+    }
+
+    @Test
+    @DisplayName("다른 회원의 매장 수정 시 권한 없음 예외 발생")
+    void updateStore_WithDifferentMember_ThrowsPermissionException() {
+
+        // given
+        Long storeId = 1L;
+        Long memberId = 1L;
+        Long otherMemberId = 2L;
+        CreateStoreRequest request = createUpdateRequest();
+        Member otherMember = createMember(otherMemberId);
+        Store store = createStore(otherMember);
+
+        given(storeRepository.findById(storeId))
+                .willReturn(Optional.of(store));
+
+        // when & then
+        assertThatThrownBy(() -> storeService.updateStore(storeId, memberId, request))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장 수정 권한이 없습니다.");
+
+        then(storeRepository).should(times(1)).findById(storeId);
+        then(storeRepository).should(times(0)).save(any(Store.class));
+    }
+
     private CreateStoreRequest createStoreRequest() {
         return new CreateStoreRequest(
                 "스타벅스 홍대점",
@@ -260,6 +356,42 @@ class StoreServiceTest {
     private Store createFoodStore(Member member) {
         return Store.createStore(
                 member,
+                "맛있는 식당",
+                "0312345678",
+                "정말 맛있는 음식을 제공하는 식당입니다.",
+                "9876543210",
+                "서울시 강남구 테헤란로 456",
+                37.5665,
+                126.9780,
+                "https://example.com/food-store-image.jpg",
+                StoreCategory.FOOD,
+                LocalTime.of(11, 0),
+                LocalTime.of(22, 0),
+                LocalTime.of(12, 0),
+                LocalTime.of(23, 0)
+        );
+    }
+
+    private CreateStoreRequest createUpdateRequest() {
+        return new CreateStoreRequest(
+                "스타벅스 홍대점 수정",
+                "0212345679",
+                "홍대 중심가에 위치한 스타벅스입니다. (수정됨)",
+                "1234567891",
+                "서울시 마포구 홍익로 124",
+                37.5666,
+                126.9781,
+                "https://example.com/store-image-updated.jpg",
+                StoreCategory.CAFE,
+                LocalTime.of(8, 0),
+                LocalTime.of(23, 0),
+                LocalTime.of(9, 0),
+                LocalTime.of(23, 30)
+        );
+    }
+
+    private CreateStoreRequest createFoodUpdateRequest() {
+        return new CreateStoreRequest(
                 "맛있는 식당",
                 "0312345678",
                 "정말 맛있는 음식을 제공하는 식당입니다.",

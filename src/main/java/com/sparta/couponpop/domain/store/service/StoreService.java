@@ -46,4 +46,34 @@ public class StoreService {
 
         return StoreResponse.from(savedStore);
     }
+
+    @Transactional
+    public StoreResponse updateStore(Long storeId, Long memberId, CreateStoreRequest request) {
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
+
+        // 매장 소유자 검증
+        if (!store.getMember().getId().equals(memberId)) {
+            throw new GlobalException(StoreErrorCode.STORE_UPDATE_PERMISSION_DENIED);
+        }
+
+        store.updateStoreInfo(
+                request.name(),
+                request.phone(),
+                request.description(),
+                request.businessNumber(),
+                request.address(),
+                request.latitude(),
+                request.longitude(),
+                request.imageUrl(),
+                request.storeCategory(),
+                request.weekdayOpenTime(),
+                request.weekdayCloseTime(),
+                request.weekendOpenTime(),
+                request.weekendCloseTime()
+        );
+
+        return StoreResponse.from(store);
+    }
 }
