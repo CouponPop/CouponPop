@@ -1,7 +1,10 @@
 package com.sparta.couponpop.domain.auth.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
+import com.sparta.couponpop.common.security.JwtProvider;
+import com.sparta.couponpop.domain.auth.dto.request.LoginRequest;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
+import com.sparta.couponpop.domain.auth.dto.response.LoginResponse;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
 import com.sparta.couponpop.domain.member.entity.Member;
@@ -15,10 +18,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -28,6 +36,9 @@ class AuthServiceTest {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private JwtProvider jwtProvider;
 
     @InjectMocks
     private AuthService authService;
@@ -53,7 +64,7 @@ class AuthServiceTest {
                 "01012345678",
                 MemberType.CUSTOMER
         );
-        
+
         given(memberRepository.saveAndFlush(any(Member.class))).willReturn(createdMember);
 
         // when
@@ -85,5 +96,80 @@ class AuthServiceTest {
         });
 
         assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.PASSWORDS_NOT_MATCH);
+    }
+
+    @Test
+    @DisplayName("로그인 정보를 받아 토큰 반환에 성공한다.")
+    void loginSuccess() {
+
+        // given
+        LoginRequest loginRequest = new LoginRequest("test@example.com", "test1234!");
+
+        Member findMember = Member.signUp(
+                "test@example.com",
+                "테스트이름",
+                "encodedPassword",
+                "01012345678",
+                MemberType.CUSTOMER
+        );
+
+        String expectedToken = "mockedJwtToken";
+
+        // Mock 객체의 행동을 정의합니다.
+        given(memberRepository.findByEmail(loginRequest.email())).willReturn(Optional.of(findMember));
+        given(passwordEncoder.matches(loginRequest.password(), findMember.getPassword())).willReturn(true);
+        given(jwtProvider.createAccessToken(findMember.getId(), findMember.getUsername(), findMember.getMemberType())).willReturn(expectedToken);
+
+        // when
+        LoginResponse response = authService.login(loginRequest);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.accessToken()).isEqualTo(expectedToken);
+    }
+
+    @Test
+    @DisplayName("로그인 요청의 이메일을 가진 멤버가 존재하지 않으면 예외가 발생한다.")
+    void loginFailureUserNotFound() {
+
+        // given
+        LoginRequest loginRequest = new LoginRequest("test@example.com", "test1234!");
+
+        given(memberRepository.findByEmail(anyString())).willReturn(Optional.empty());
+
+        // when & then
+        GlobalException exception = assertThrows(GlobalException.class, () -> {
+            authService.login(loginRequest);
+        });
+
+        assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.INVALID_CREDENTIALS);
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
+        verify(jwtProvider, never()).createAccessToken(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("로그인 요청의 비밀번호와 저장된 비밀번호가 일치하지 않으면 예외가 발생한다.")
+    void login_Failure_PasswordMismatch() {
+
+        // given
+        LoginRequest loginRequest = new LoginRequest("test@example.com", "test1234@");
+        Member findMember = Member.signUp(
+                "test@example.com",
+                "테스트이름",
+                "encodedPassword",
+                "01012345678",
+                MemberType.CUSTOMER
+        );
+
+        given(memberRepository.findByEmail(loginRequest.email())).willReturn(Optional.of(findMember));
+        given(passwordEncoder.matches(loginRequest.password(), findMember.getPassword())).willReturn(false);
+
+        // when & then
+        GlobalException exception = assertThrows(GlobalException.class, () -> {
+            authService.login(loginRequest);
+        });
+
+        assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.INVALID_CREDENTIALS);
+        verify(jwtProvider, never()).createAccessToken(any(), any(), any());
     }
 }
