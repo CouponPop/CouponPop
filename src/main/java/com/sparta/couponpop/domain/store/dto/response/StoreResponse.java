@@ -9,6 +9,7 @@ import java.time.LocalTime;
 public record StoreResponse(
         Long id,
         Long memberId,
+        String memberUsername,
         String name,
         String phone,
         String description,
@@ -29,7 +30,8 @@ public record StoreResponse(
     public static StoreResponse from(Store store) {
         return new StoreResponse(
                 store.getId(),
-                store.getMemberId(),
+                store.getMember().getId(),
+                store.getMember().getUsername(),
                 store.getName(),
                 store.getPhone(),
                 store.getDescription(),
