@@ -1,5 +1,8 @@
 package com.sparta.couponpop.domain.store.service;
 
+import com.sparta.couponpop.domain.member.entity.Member;
+import com.sparta.couponpop.domain.member.enums.MemberType;
+import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
 import com.sparta.couponpop.domain.store.entity.Store;
@@ -13,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +31,9 @@ class StoreServiceTest {
     @Mock
     private StoreRepository storeRepository;
 
+    @Mock
+    private MemberRepository memberRepository;
+
     @InjectMocks
     private StoreService storeService;
 
@@ -37,8 +44,11 @@ class StoreServiceTest {
         // given
         Long memberId = 1L;
         CreateStoreRequest request = createStoreRequest();
-        Store savedStore = createStore(memberId);
+        Member member = createMember(memberId);
+        Store savedStore = createStore(member);
 
+        given(memberRepository.findById(memberId))
+                .willReturn(Optional.of(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
@@ -48,6 +58,7 @@ class StoreServiceTest {
         // then
         assertThat(result.id()).isEqualTo(savedStore.getId());
         assertThat(result.memberId()).isEqualTo(memberId);
+        assertThat(result.memberUsername()).isEqualTo(member.getUsername());
         assertThat(result.name()).isEqualTo(request.name());
         assertThat(result.phone()).isEqualTo(request.phone());
         assertThat(result.description()).isEqualTo(request.description());
@@ -62,6 +73,7 @@ class StoreServiceTest {
         assertThat(result.weekendOpenTime()).isEqualTo(request.weekendOpenTime());
         assertThat(result.weekendCloseTime()).isEqualTo(request.weekendCloseTime());
 
+        then(memberRepository).should(times(1)).findById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
     }
 
@@ -72,8 +84,11 @@ class StoreServiceTest {
         // given
         Long memberId = 2L;
         CreateStoreRequest request = createStoreRequest();
-        Store expectedStore = createStore(memberId);
+        Member member = createMember(memberId);
+        Store expectedStore = createStore(member);
 
+        given(memberRepository.findById(memberId))
+                .willReturn(Optional.of(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(expectedStore);
 
@@ -81,6 +96,7 @@ class StoreServiceTest {
         storeService.createStore(memberId, request);
 
         // then
+        then(memberRepository).should(times(1)).findById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
     }
 
@@ -91,8 +107,11 @@ class StoreServiceTest {
         // given
         Long memberId = 3L;
         CreateStoreRequest request = createFoodStoreRequest();
-        Store savedStore = createFoodStore(memberId);
+        Member member = createMember(memberId);
+        Store savedStore = createFoodStore(member);
 
+        given(memberRepository.findById(memberId))
+                .willReturn(Optional.of(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
@@ -104,6 +123,7 @@ class StoreServiceTest {
         assertThat(result.name()).isEqualTo("맛있는 식당");
         assertThat(result.memberId()).isEqualTo(memberId);
 
+        then(memberRepository).should(times(1)).findById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
     }
 
@@ -129,8 +149,9 @@ class StoreServiceTest {
                 LocalTime.of(22, 0)
         );
 
+        Member member = createMember(memberId);
         Store savedStore = Store.createStore(
-                memberId,
+                member,
                 "테스트 매장",
                 "0212345678",
                 "",
@@ -146,6 +167,8 @@ class StoreServiceTest {
                 LocalTime.of(22, 0)
         );
 
+        given(memberRepository.findById(memberId))
+                .willReturn(Optional.of(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
@@ -156,6 +179,7 @@ class StoreServiceTest {
         assertThat(result.description()).isEmpty();
         assertThat(result.name()).isEqualTo("테스트 매장");
 
+        then(memberRepository).should(times(1)).findById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
     }
 
@@ -195,9 +219,28 @@ class StoreServiceTest {
         );
     }
 
-    private Store createStore(Long memberId) {
+    private Member createMember(Long memberId) {
+        Member member = Member.signUp(
+                "test@example.com",
+                "testuser",
+                "encodedPassword",
+                "01012345678",
+                MemberType.OWNER
+        );
+        // 테스트를 위해 ID를 설정하기 위해 리플렉션 사용
+        try {
+            var idField = Member.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(member, memberId);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set member ID", e);
+        }
+        return member;
+    }
+
+    private Store createStore(Member member) {
         return Store.createStore(
-                memberId,
+                member,
                 "스타벅스 홍대점",
                 "0212345678",
                 "홍대 중심가에 위치한 스타벅스입니다.",
@@ -214,9 +257,9 @@ class StoreServiceTest {
         );
     }
 
-    private Store createFoodStore(Long memberId) {
+    private Store createFoodStore(Member member) {
         return Store.createStore(
-                memberId,
+                member,
                 "맛있는 식당",
                 "0312345678",
                 "정말 맛있는 음식을 제공하는 식당입니다.",
