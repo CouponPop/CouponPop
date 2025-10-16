@@ -70,10 +70,20 @@ public class Store extends BaseEntity {
     private LocalDateTime deletedAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Store(Member member, String name, String phone, String description, String businessNumber,
-                 String address, double latitude, double longitude, String imageUrl,
-                 StoreCategory storeCategory, LocalTime weekdayOpenTime, LocalTime weekdayCloseTime,
-                 LocalTime weekendOpenTime, LocalTime weekendCloseTime) {
+    private Store(Member member, 
+                String name, 
+                String phone, 
+                String description, 
+                String businessNumber,
+                String address, 
+                double latitude, 
+                double longitude, 
+                String imageUrl,
+                StoreCategory storeCategory, 
+                LocalTime weekdayOpenTime, 
+                LocalTime weekdayCloseTime,
+                LocalTime weekendOpenTime, 
+                LocalTime weekendCloseTime) {
         this.member = member;
         this.name = name;
         this.phone = phone;
@@ -123,10 +133,18 @@ public class Store extends BaseEntity {
                 .build();
     }
 
-    public void updateStoreInfo(String name, String phone, String description, String businessNumber,
-                              String address, double latitude, double longitude, String imageUrl,
-                              StoreCategory storeCategory, LocalTime weekdayOpenTime, LocalTime weekdayCloseTime,
-                              LocalTime weekendOpenTime, LocalTime weekendCloseTime) {
+    public void updateStoreInfo(String name, 
+                                String phone, 
+                                String description, 
+                                String businessNumber,
+                                String address, 
+                                double latitude, 
+                                double longitude, 
+                                String imageUrl,
+                                StoreCategory storeCategory, 
+                                LocalTime weekdayOpenTime, LocalTime weekdayCloseTime,
+                                LocalTime weekendOpenTime, 
+                                LocalTime weekendCloseTime) {
         this.name = name;
         this.phone = phone;
         this.description = description;
