@@ -19,7 +19,10 @@ public class StoreController {
     @PostMapping
     public ResponseEntity<ApiResponse<StoreResponse>> createStore(@RequestBody @Valid CreateStoreRequest request) {
 
-        StoreResponse storeResponse = storeService.createStore(request);
+        // TODO: 인증 구현 후 @LoginUserResolver로 memberId 가져오기
+        Long memberId = 1L; // 임시 memberId
+
+        StoreResponse storeResponse = storeService.createStore(memberId, request);
 
         return ApiResponse.success(storeResponse);
     }

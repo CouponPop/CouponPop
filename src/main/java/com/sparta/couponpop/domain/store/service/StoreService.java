@@ -15,9 +15,10 @@ public class StoreService {
     private final StoreRepository storeRepository;
 
     @Transactional
-    public StoreResponse createStore(CreateStoreRequest request) {
+    public StoreResponse createStore(Long memberId, CreateStoreRequest request) {
 
         Store store = Store.createStore(
+                memberId,
                 request.name(),
                 request.phone(),
                 request.description(),
