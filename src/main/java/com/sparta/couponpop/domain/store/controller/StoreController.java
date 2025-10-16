@@ -24,6 +24,6 @@ public class StoreController {
 
         StoreResponse storeResponse = storeService.createStore(memberId, request);
 
-        return ApiResponse.success(storeResponse);
+        return ApiResponse.created(storeResponse);
     }
 }
