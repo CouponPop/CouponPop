@@ -74,8 +74,6 @@ public class StoreService {
                 request.weekendCloseTime()
         );
 
-        Store updatedStore = storeRepository.save(store);
-
-        return StoreResponse.from(updatedStore);
+        return StoreResponse.from(store);
     }
 }
