@@ -1,6 +1,7 @@
 package com.sparta.couponpop.domain.store.entity;
 
 import com.sparta.couponpop.common.entity.BaseEntity;
+import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -21,32 +22,33 @@ public class Store extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "member_id", nullable = false)
-    private Long memberId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
 
     @Column(name = "store_category", nullable = false)
     @Enumerated(EnumType.STRING)
     private StoreCategory storeCategory;
 
-    @Column(name = "name", nullable = false, length = 255)
+    @Column(nullable = false, length = 255)
     private String name;
 
-    @Column(name = "phone", nullable = false, length = 30)
+    @Column(nullable = false, length = 30)
     private String phone;
 
-    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "business_number", nullable = false, length = 30)
     private String businessNumber;
 
-    @Column(name = "address", nullable = false, length = 255)
+    @Column(nullable = false, length = 255)
     private String address;
 
-    @Column(name = "latitude", nullable = false)
+    @Column(nullable = false)
     private double latitude;
 
-    @Column(name = "longitude", nullable = false)
+    @Column(nullable = false)
     private double longitude;
 
     @Column(name = "image_url", nullable = false, length = 500)
@@ -68,11 +70,11 @@ public class Store extends BaseEntity {
     private LocalDateTime deletedAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Store(Long memberId, String name, String phone, String description, String businessNumber,
+    private Store(Member member, String name, String phone, String description, String businessNumber,
                  String address, double latitude, double longitude, String imageUrl,
                  StoreCategory storeCategory, LocalTime weekdayOpenTime, LocalTime weekdayCloseTime,
                  LocalTime weekendOpenTime, LocalTime weekendCloseTime) {
-        this.memberId = memberId;
+        this.member = member;
         this.name = name;
         this.phone = phone;
         this.description = description;
@@ -88,7 +90,7 @@ public class Store extends BaseEntity {
         this.weekendCloseTime = weekendCloseTime;
     }
 
-    public static Store createStore(Long memberId,
+    public static Store createStore(Member member,
                                   String name,
                                   String phone,
                                   String description,
@@ -104,7 +106,7 @@ public class Store extends BaseEntity {
                                   LocalTime weekendCloseTime) {
 
         return Store.builder()
-                .memberId(memberId)
+                .member(member)
                 .name(name)
                 .phone(phone)
                 .description(description)
