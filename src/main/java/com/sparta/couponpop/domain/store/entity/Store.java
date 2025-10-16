@@ -88,10 +88,21 @@ public class Store extends BaseEntity {
         this.weekendCloseTime = weekendCloseTime;
     }
 
-    public static Store createStore(Long memberId, String name, String phone, String description, String businessNumber,
-                                  String address, double latitude, double longitude, String imageUrl,
-                                  StoreCategory storeCategory, LocalTime weekdayOpenTime, LocalTime weekdayCloseTime,
-                                  LocalTime weekendOpenTime, LocalTime weekendCloseTime) {
+    public static Store createStore(Long memberId,
+                                  String name,
+                                  String phone,
+                                  String description,
+                                  String businessNumber,
+                                  String address,
+                                  double latitude,
+                                  double longitude,
+                                  String imageUrl,
+                                  StoreCategory storeCategory,
+                                  LocalTime weekdayOpenTime,
+                                  LocalTime weekdayCloseTime,
+                                  LocalTime weekendOpenTime,
+                                  LocalTime weekendCloseTime) {
+
         return Store.builder()
                 .memberId(memberId)
                 .name(name)
