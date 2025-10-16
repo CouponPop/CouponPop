@@ -1,7 +1,7 @@
-package com.sparta.couponpop.domain.coupon.entity;
+package com.sparta.couponpop.domain.couponevent.entity;
 
 import com.sparta.couponpop.common.entity.BaseEntity;
-import com.sparta.couponpop.domain.coupon.enums.CouponEventStatus;
+import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
