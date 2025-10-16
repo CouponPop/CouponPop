@@ -53,10 +53,10 @@ public class StoreService {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
 
-        // TODO: 인증 구현 후 매장 소유자 검증 로직 추가
-        // if (!store.getMemberId().equals(memberId)) {
-        //     throw new IllegalArgumentException("매장 수정 권한이 없습니다.");
-        // }
+        // 매장 소유자 검증
+        if (!store.getMember().getId().equals(memberId)) {
+            throw new GlobalException(StoreErrorCode.STORE_UPDATE_PERMISSION_DENIED);
+        }
 
         store.updateStoreInfo(
                 request.name(),
