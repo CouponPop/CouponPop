@@ -18,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -33,7 +32,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String AUTHORIZATION_HEADER = "Authorization";
-    
+
     private final JwtProvider jwtProvider;
     private final HandlerExceptionResolver handlerExceptionResolver;
 
@@ -58,8 +57,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             log.debug("[JwtFilter] 인증 실패: 만료된 토큰 - {}", e.getMessage());
             handlerExceptionResolver.resolveException(request, response, null,
                     new GlobalException(AuthErrorCode.EXPIRED_TOKEN));
-        } catch (UsernameNotFoundException e) { // 토큰은 유효하지만 DB에 사용자가 없는 경우 -> 필터체인에서 url에 따라 허용 판단
-            log.debug("[JwtFilter] 인증 보류: 회원가입과 로그인은 수행가능 보류 토큰 - {}", e.getMessage());
         } catch (MalformedJwtException | SignatureException e) { // 토큰의 형식이 올바르지 않은 경우, 토큰의 시그니처가 올바르지 않은 경우
             log.debug("[JwtFilter] 인증 실패: 유효하지 않은 토큰 - {}", e.getMessage());
             handlerExceptionResolver.resolveException(request, response, null,
