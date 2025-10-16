@@ -38,4 +38,36 @@ public class StoreService {
 
         return StoreResponse.from(savedStore);
     }
+
+    @Transactional
+    public StoreResponse updateStore(Long storeId, Long memberId, CreateStoreRequest request) {
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("매장을 찾을 수 없습니다."));
+
+        // TODO: 인증 구현 후 매장 소유자 검증 로직 추가
+        // if (!store.getMemberId().equals(memberId)) {
+        //     throw new IllegalArgumentException("매장 수정 권한이 없습니다.");
+        // }
+
+        store.updateStoreInfo(
+                request.name(),
+                request.phone(),
+                request.description(),
+                request.businessNumber(),
+                request.address(),
+                request.latitude(),
+                request.longitude(),
+                request.imageUrl(),
+                request.storeCategory(),
+                request.weekdayOpenTime(),
+                request.weekdayCloseTime(),
+                request.weekendOpenTime(),
+                request.weekendCloseTime()
+        );
+
+        Store updatedStore = storeRepository.save(store);
+
+        return StoreResponse.from(updatedStore);
+    }
 }
