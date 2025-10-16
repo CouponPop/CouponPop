@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.store.service;
 
+import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
@@ -251,7 +252,7 @@ class StoreServiceTest {
 
         // when & then
         assertThatThrownBy(() -> storeService.updateStore(storeId, memberId, request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(GlobalException.class)
                 .hasMessage("매장을 찾을 수 없습니다.");
 
         then(storeRepository).should(times(1)).findById(storeId);
