@@ -2,7 +2,7 @@ package com.sparta.couponpop.domain.auth.controller;
 
 import com.sparta.couponpop.common.response.ApiResponse;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
-import com.sparta.couponpop.domain.auth.dto.request.SignUpResponse;
+import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

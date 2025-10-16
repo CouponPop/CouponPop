@@ -2,7 +2,7 @@ package com.sparta.couponpop.domain.auth.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
-import com.sparta.couponpop.domain.auth.dto.request.SignUpResponse;
+import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.service.MemberServiceApi;
