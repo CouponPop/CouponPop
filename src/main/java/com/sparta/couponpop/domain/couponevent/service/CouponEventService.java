@@ -46,15 +46,16 @@ public class CouponEventService {
     }
 
     private void validateEventDuration(LocalDateTime start, LocalDateTime end) {
+        // "이벤트 종료 시간은 시작 시간보다 이후여야 합니다."
+        if (end.isBefore(start)) {
+            throw new GlobalException(CouponEventErrorCode.EVENT_END_BEFORE_START);
+        }
+        
         // "쿠폰 이벤트는 최대 48시간까지 생성 가능합니다."
         long hours = Duration.between(start, end).toHours();
         if (hours > MAX_EVENT_HOURS) {
             throw new GlobalException(CouponEventErrorCode.EVENT_DURATION_EXCEEDED);
         }
 
-        // "이벤트 종료 시간은 시작 시간보다 이후여야 합니다."
-        if (end.isBefore(start)) {
-            throw new GlobalException(CouponEventErrorCode.EVENT_END_BEFORE_START);
-        }
     }
 }
