@@ -109,4 +109,23 @@ public class Store extends BaseEntity {
                 .weekendCloseTime(weekendCloseTime)
                 .build();
     }
+
+    public void updateStoreInfo(String name, String phone, String description, String businessNumber,
+                              String address, double latitude, double longitude, String imageUrl,
+                              StoreCategory storeCategory, LocalTime weekdayOpenTime, LocalTime weekdayCloseTime,
+                              LocalTime weekendOpenTime, LocalTime weekendCloseTime) {
+        this.name = name;
+        this.phone = phone;
+        this.description = description;
+        this.businessNumber = businessNumber;
+        this.address = address;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.imageUrl = imageUrl;
+        this.storeCategory = storeCategory;
+        this.weekdayOpenTime = weekdayOpenTime;
+        this.weekdayCloseTime = weekdayCloseTime;
+        this.weekendOpenTime = weekendOpenTime;
+        this.weekendCloseTime = weekendCloseTime;
+    }
 }
