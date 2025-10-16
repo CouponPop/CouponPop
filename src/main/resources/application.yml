@@ -23,3 +23,7 @@ spring:
     baseline-version: 1
     validate-on-migrate: true
     clean-disabled: true
+
+jwt:
+  secret:
+    key: ${JWT_SECRET_KEY}
