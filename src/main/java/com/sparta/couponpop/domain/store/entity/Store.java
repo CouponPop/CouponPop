@@ -142,7 +142,8 @@ public class Store extends BaseEntity {
                                 double longitude, 
                                 String imageUrl,
                                 StoreCategory storeCategory, 
-                                LocalTime weekdayOpenTime, LocalTime weekdayCloseTime,
+                                LocalTime weekdayOpenTime, 
+                                LocalTime weekdayCloseTime,
                                 LocalTime weekendOpenTime, 
                                 LocalTime weekendCloseTime) {
         this.name = name;
