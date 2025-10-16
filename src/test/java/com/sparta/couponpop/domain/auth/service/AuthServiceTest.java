@@ -4,6 +4,8 @@ import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
+import com.sparta.couponpop.domain.member.dto.request.CreateMemberRequest;
+import com.sparta.couponpop.domain.member.dto.response.CreateMemberResponse;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.service.MemberServiceApi;
@@ -37,32 +39,34 @@ class AuthServiceTest {
     void signUpSuccess() {
 
         // given
-        SignUpRequest request = SignUpRequest.builder()
+        SignUpRequest signUpRequest = SignUpRequest.builder()
                 .email("test@example.com")
                 .username("테스트이름")
                 .password("test1234!")
                 .confirmPassword("test1234!")
-                .phoneNumber("010-1234-5678")
+                .phoneNumber("01012345678")
                 .memberType(MemberType.CUSTOMER)
                 .build();
 
 
         Member createdMember = Member.signUp("test@example.com",
                 "테스트이름",
-                "test1234!",
-                "010-1234-5678",
+                "encodedPassword",
+                "01012345678",
                 MemberType.CUSTOMER
         );
 
-        given(memberService.createMember(any(Member.class))).willReturn(createdMember);
+        CreateMemberResponse createMemberResponse = CreateMemberResponse.from(createdMember);
+
+        given(memberService.createMember(any(CreateMemberRequest.class))).willReturn(createMemberResponse);
 
         // when
-        SignUpResponse response = authService.signUp(request);
+        SignUpResponse response = authService.signUp(signUpRequest);
 
         // then
         assertThat(response).isNotNull();
-        assertThat(response.email()).isEqualTo(request.email());
-        assertThat(response.username()).isEqualTo(request.username());
+        assertThat(response.email()).isEqualTo(signUpRequest.email());
+        assertThat(response.username()).isEqualTo(signUpRequest.username());
     }
 
     @Test
@@ -75,7 +79,7 @@ class AuthServiceTest {
                 .username("테스트이름")
                 .password("test1234!")
                 .confirmPassword("test1234@")
-                .phoneNumber("010-1234-5678")
+                .phoneNumber("01012345678")
                 .memberType(MemberType.CUSTOMER)
                 .build();
 

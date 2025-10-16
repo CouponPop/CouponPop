@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.service.AuthService;
+import com.sparta.couponpop.domain.member.dto.response.CreateMemberResponse;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import org.junit.jupiter.api.DisplayName;
@@ -46,17 +47,18 @@ class AuthControllerTest {
                 .username("테스트이름")
                 .password("test1234!")
                 .confirmPassword("test1234!")
-                .phoneNumber("010-1234-5678")
+                .phoneNumber("01012345678")
                 .memberType(MemberType.CUSTOMER)
                 .build();
 
 
         SignUpResponse response = SignUpResponse.from(
-                Member.signUp("test@example.com",
-                        "테스트이름",
-                        "test1234!",
-                        "010-1234-5678",
-                        MemberType.CUSTOMER));
+                CreateMemberResponse.from(
+                        Member.signUp("test@example.com",
+                                "테스트이름",
+                                "test1234!",
+                                "01012345678",
+                                MemberType.CUSTOMER)));
 
         given(authService.signUp(any(SignUpRequest.class))).willReturn(response);
 
@@ -83,7 +85,7 @@ class AuthControllerTest {
                 .username("테스트이름")
                 .password("test1234!")
                 .confirmPassword("test1234!")
-                .phoneNumber("010-1234-5678")
+                .phoneNumber("01012345678")
                 .memberType(MemberType.CUSTOMER)
                 .build();
 
@@ -98,7 +100,7 @@ class AuthControllerTest {
         // then
         resultActions
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.message").value("이메일을 입력해주세요.\n"))
+                .andExpect(jsonPath("$.error.message").value("이메일을 입력해주세요."))
                 .andDo(print());
     }
 
@@ -127,7 +129,7 @@ class AuthControllerTest {
         // then
         resultActions
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.message").value("비밀번호는 8~15자리의 영문, 숫자, 특수문자 조합이어야 합니다.\n"))
+                .andExpect(jsonPath("$.error.message").value("비밀번호는 8~15자리의 영문, 숫자, 특수문자 조합이어야 합니다."))
                 .andDo(print());
     }
 
@@ -156,7 +158,7 @@ class AuthControllerTest {
         // then
         resultActions
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.message").value("사용자 이름은 2자 이상 50자 이하로 입력해주세요.\n"))
+                .andExpect(jsonPath("$.error.message").value("사용자 이름은 2자 이상 50자 이하로 입력해주세요."))
                 .andDo(print());
     }
 }

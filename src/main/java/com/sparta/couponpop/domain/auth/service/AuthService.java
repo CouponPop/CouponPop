@@ -4,7 +4,8 @@ import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
-import com.sparta.couponpop.domain.member.entity.Member;
+import com.sparta.couponpop.domain.member.dto.request.CreateMemberRequest;
+import com.sparta.couponpop.domain.member.dto.response.CreateMemberResponse;
 import com.sparta.couponpop.domain.member.service.MemberServiceApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,13 +24,17 @@ public class AuthService {
             throw new GlobalException(AuthErrorCode.PASSWORDS_NOT_MATCH);
         }
 
-        Member createdMember = memberService.createMember(
-                Member.signUp(signUpRequest.email(),
-                        signUpRequest.username(),
-                        passwordEncoder.encode(signUpRequest.password()),
-                        signUpRequest.phoneNumber(),
-                        signUpRequest.memberType()));
+        String encodedPassword = passwordEncoder.encode(signUpRequest.password());
+        CreateMemberRequest createMemberRequest = CreateMemberRequest.of(
+                signUpRequest.email(),
+                signUpRequest.username(),
+                encodedPassword,
+                signUpRequest.phoneNumber(),
+                signUpRequest.memberType()
+        );
 
-        return SignUpResponse.from(createdMember);
+        CreateMemberResponse createMemberResponse = memberService.createMember(createMemberRequest);
+
+        return SignUpResponse.from(createMemberResponse);
     }
 }

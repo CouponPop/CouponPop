@@ -1,6 +1,9 @@
 package com.sparta.couponpop.domain.member.service;
 
+import com.sparta.couponpop.common.exception.CommonErrorCode;
 import com.sparta.couponpop.common.exception.GlobalException;
+import com.sparta.couponpop.domain.member.dto.request.CreateMemberRequest;
+import com.sparta.couponpop.domain.member.dto.response.CreateMemberResponse;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
@@ -18,22 +21,28 @@ public class MemberService implements MemberServiceApi {
     private final MemberRepository memberRepository;
 
     @Transactional
-    public Member createMember(Member newMember) {
+    public CreateMemberResponse createMember(CreateMemberRequest createMemberRequest) {
 
-        if (memberRepository.existsByEmail(newMember.getEmail())) {
+        if (memberRepository.existsByEmail(createMemberRequest.email())) {
             throw new GlobalException(MemberErrorCode.EMAIL_DUPLICATED);
         }
+
+        Member newMember = Member.signUp(createMemberRequest.email(),
+                createMemberRequest.username(),
+                createMemberRequest.encodedPassword(),
+                createMemberRequest.phoneNumber(),
+                createMemberRequest.memberType());
 
         try {
             Member savedMember = memberRepository.save(newMember);
             memberRepository.flush(); // 제약조건 즉시 검증을 위해 사용
-            return savedMember;
+            return CreateMemberResponse.from(savedMember);
         } catch (DataIntegrityViolationException e) {
             if (e.getMostSpecificCause().getMessage().contains(DUPLICATION_ERROR_TARGET)) {
                 throw new GlobalException(MemberErrorCode.EMAIL_DUPLICATED);
             }
 
-            throw e;
+            throw new GlobalException(CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 }

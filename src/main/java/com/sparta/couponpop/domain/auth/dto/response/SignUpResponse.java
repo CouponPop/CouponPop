@@ -1,6 +1,6 @@
 package com.sparta.couponpop.domain.auth.dto.response;
 
-import com.sparta.couponpop.domain.member.entity.Member;
+import com.sparta.couponpop.domain.member.dto.response.CreateMemberResponse;
 
 public record SignUpResponse(
 
@@ -10,13 +10,13 @@ public record SignUpResponse(
         String phoneNumber,
         String memberType
 ) {
-    public static SignUpResponse from(Member createdMember) {
+    public static SignUpResponse from(CreateMemberResponse createMemberResponse) {
         return new SignUpResponse(
-                createdMember.getId(),
-                createdMember.getEmail(),
-                createdMember.getUsername(),
-                createdMember.getPhoneNumber(),
-                createdMember.getMemberType().name()
+                createMemberResponse.memberId(),
+                createMemberResponse.email(),
+                createMemberResponse.username(),
+                createMemberResponse.phoneNumber(),
+                createMemberResponse.memberType()
         );
     }
 }
