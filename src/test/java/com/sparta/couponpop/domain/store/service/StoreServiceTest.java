@@ -279,6 +279,90 @@ class StoreServiceTest {
         then(storeRepository).should(times(0)).save(any(Store.class));
     }
 
+    @Test
+    @DisplayName("매장 삭제 성공")
+    void deleteStore_Success() {
+
+        // given
+        Long storeId = 1L;
+        Long memberId = 1L;
+        Member member = createMember(memberId);
+        Store existingStore = createStore(member);
+
+        given(storeRepository.findByIdIncludingDeleted(storeId))
+                .willReturn(Optional.of(existingStore));
+
+        // when
+        storeService.deleteStore(storeId, memberId);
+
+        // then
+        assertThat(existingStore.getDeletedAt()).isNotNull();
+        then(storeRepository).should(times(1)).findByIdIncludingDeleted(storeId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 매장 삭제 시 예외 발생")
+    void deleteStore_WithNonExistentStore_ThrowsException() {
+
+        // given
+        Long storeId = 999L;
+        Long memberId = 1L;
+
+        given(storeRepository.findByIdIncludingDeleted(storeId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> storeService.deleteStore(storeId, memberId))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장을 찾을 수 없습니다.");
+
+        then(storeRepository).should(times(1)).findByIdIncludingDeleted(storeId);
+    }
+
+    @Test
+    @DisplayName("다른 회원의 매장 삭제 시 권한 없음 예외 발생")
+    void deleteStore_WithDifferentMember_ThrowsPermissionException() {
+
+        // given
+        Long storeId = 1L;
+        Long memberId = 1L;
+        Long otherMemberId = 2L;
+        Member otherMember = createMember(otherMemberId);
+        Store store = createStore(otherMember);
+
+        given(storeRepository.findByIdIncludingDeleted(storeId))
+                .willReturn(Optional.of(store));
+
+        // when & then
+        assertThatThrownBy(() -> storeService.deleteStore(storeId, memberId))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장 삭제 권한이 없습니다.");
+
+        then(storeRepository).should(times(1)).findByIdIncludingDeleted(storeId);
+    }
+
+    @Test
+    @DisplayName("이미 삭제된 매장 삭제 시 예외 발생")
+    void deleteStore_WithAlreadyDeletedStore_ThrowsException() {
+
+        // given
+        Long storeId = 1L;
+        Long memberId = 1L;
+        Member member = createMember(memberId);
+        Store deletedStore = createStore(member);
+        deletedStore.deleteStore(); // 이미 삭제된 상태
+
+        given(storeRepository.findByIdIncludingDeleted(storeId))
+                .willReturn(Optional.of(deletedStore));
+
+        // when & then
+        assertThatThrownBy(() -> storeService.deleteStore(storeId, memberId))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장을 찾을 수 없습니다.");
+
+        then(storeRepository).should(times(1)).findByIdIncludingDeleted(storeId);
+    }
+
     private CreateStoreRequest createStoreRequest() {
         return new CreateStoreRequest(
                 "스타벅스 홍대점",
