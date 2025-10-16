@@ -28,12 +28,6 @@ public record CreateCouponEventRequest(
         int totalCount
 ) {
     public CouponEvent toEntity(Store store) {
-        return CouponEvent.builder()
-                .name(name)
-                .eventStartAt(eventStartAt)
-                .eventEndAt(eventEndAt)
-                .totalCount(totalCount)
-                .store(store)
-                .build();
+        return CouponEvent.create(name, eventStartAt, eventEndAt, totalCount, store);
     }
 }

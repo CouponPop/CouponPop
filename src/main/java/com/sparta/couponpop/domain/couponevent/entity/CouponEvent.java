@@ -49,4 +49,14 @@ public class CouponEvent extends BaseEntity {
         this.couponEventStatus = CouponEventStatus.SCHEDULED;
         this.store = store;
     }
+
+    public static CouponEvent create(String name, LocalDateTime eventStartAt, LocalDateTime eventEndAt, int totalCount, Store store) {
+        return CouponEvent.builder()
+                .name(name)
+                .eventStartAt(eventStartAt)
+                .eventEndAt(eventEndAt)
+                .totalCount(totalCount)
+                .store(store)
+                .build();
+    }
 }
