@@ -29,7 +29,7 @@ public class JwtProvider {
         this.secretKey = Keys.hmacShaKeyFor(bytes); // 미리 암호화
     }
 
-    public String createToken(Long userId, String username, MemberType memberType) {
+    public String createAccessToken(Long userId, String username, MemberType memberType) {
 
         Date now = new Date();
         return Jwts.builder()
