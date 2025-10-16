@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum CommonErrorCode implements ErrorCode {
 
-    SAMPLE_ERROR_CODE(HttpStatus.BAD_REQUEST, "테스트 에러 코드");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다. 관리자에게 문의해주세요.");
 
     private final HttpStatus httpStatus;
     private final String message;
