@@ -192,7 +192,8 @@ class StoreServiceTest {
         Long storeId = 1L;
         Long memberId = 1L;
         CreateStoreRequest request = createUpdateRequest();
-        Store existingStore = createStore(memberId);
+        Member member = createMember(memberId);
+        Store existingStore = createStore(member);
         existingStore.updateStoreInfo(
                 request.name(),
                 request.phone(),
@@ -210,7 +211,7 @@ class StoreServiceTest {
         );
 
         given(storeRepository.findById(storeId))
-                .willReturn(Optional.of(createStore(memberId)));
+                .willReturn(Optional.of(createStore(member)));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(existingStore);
 
@@ -265,7 +266,8 @@ class StoreServiceTest {
         Long storeId = 1L;
         Long memberId = 1L;
         CreateStoreRequest request = createFoodUpdateRequest();
-        Store existingStore = createStore(memberId);
+        Member member = createMember(memberId);
+        Store existingStore = createStore(member);
         existingStore.updateStoreInfo(
                 request.name(),
                 request.phone(),
@@ -283,7 +285,7 @@ class StoreServiceTest {
         );
 
         given(storeRepository.findById(storeId))
-                .willReturn(Optional.of(createStore(memberId)));
+                .willReturn(Optional.of(createStore(member)));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(existingStore);
 
