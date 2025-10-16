@@ -10,7 +10,6 @@ import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -55,7 +54,7 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
-    public LoginResponse login(@Valid LoginRequest loginRequest) {
+    public LoginResponse login(LoginRequest loginRequest) {
 
         Member loginMember = memberRepository.findByEmail(loginRequest.email())
                 .orElseThrow(() -> new GlobalException(AuthErrorCode.INVALID_CREDENTIALS));
