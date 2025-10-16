@@ -301,6 +301,30 @@ class StoreServiceTest {
         then(storeRepository).should(times(1)).save(any(Store.class));
     }
 
+    @Test
+    @DisplayName("다른 회원의 매장 수정 시 권한 없음 예외 발생")
+    void updateStore_WithDifferentMember_ThrowsPermissionException() {
+
+        // given
+        Long storeId = 1L;
+        Long memberId = 1L;
+        Long otherMemberId = 2L;
+        CreateStoreRequest request = createUpdateRequest();
+        Member otherMember = createMember(otherMemberId);
+        Store store = createStore(otherMember);
+
+        given(storeRepository.findById(storeId))
+                .willReturn(Optional.of(store));
+
+        // when & then
+        assertThatThrownBy(() -> storeService.updateStore(storeId, memberId, request))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장 수정 권한이 없습니다.");
+
+        then(storeRepository).should(times(1)).findById(storeId);
+        then(storeRepository).should(times(0)).save(any(Store.class));
+    }
+
     private CreateStoreRequest createStoreRequest() {
         return new CreateStoreRequest(
                 "스타벅스 홍대점",
