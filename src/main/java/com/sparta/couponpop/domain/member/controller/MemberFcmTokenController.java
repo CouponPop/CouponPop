@@ -21,8 +21,7 @@ public class MemberFcmTokenController {
     private final MemberFcmTokenService memberFcmTokenService;
 
     @PostMapping("/members/fcm-token")
-    public ResponseEntity<ApiResponse<Void>> upsertMemberFcmToken(@RequestBody @Valid MemberFcmTokenRequest request,
-                                                                  @CurrentMember AuthMember authMember) {
+    public ResponseEntity<ApiResponse<Void>> upsertMemberFcmToken(@RequestBody @Valid MemberFcmTokenRequest request, @CurrentMember AuthMember authMember) {
         memberFcmTokenService.upsertTokenForMember(request, authMember.id());
         return ApiResponse.success(null);
     }
