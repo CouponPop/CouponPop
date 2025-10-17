@@ -108,7 +108,7 @@ jobs:
           if aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names $IDLE_ASG_NAME | grep -q $IDLE_ASG_NAME; then
             echo "Stale ASG ($IDLE_ASG_NAME) found. Deleting it before proceeding."
             aws autoscaling delete-auto-scaling-group --auto-scaling-group-name $IDLE_ASG_NAME --force-delete
-            aws autoscaling wait group-not-exists --group-names $IDLE_ASG_NAME
+            aws autoscaling wait group-not-exists -auto-scaling-group-names $IDLE_ASG_NAME
           fi
           
           USER_DATA_SCRIPT=$(cat <<'EOF'
