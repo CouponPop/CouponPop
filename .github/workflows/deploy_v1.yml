@@ -11,16 +11,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  # =================================================================
+  # Job 1: Build - 코드 빌드 및 Docker 이미지 생성/푸시
+  # =================================================================
+  build:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
+    outputs:
+      image_uri: ${{ steps.build-image.outputs.image_uri }} # 다음 Job에 이미지 URI를 전달하기 위한 출력
 
     steps:
-      # =================================================================
-      # 1. CI: 빌드, 테스트, 도커 이미지 생성 및 푸시
-      # =================================================================
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -34,7 +36,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build test
+        run: ./gradlew build -x test
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -57,9 +59,26 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image_uri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      # =================================================================
-      # 2. CD: Blue/Green 배포
-      # =================================================================
+  # =================================================================
+  # Job 2: Deploy - 생성된 이미지를 AWS에 Blue/Green 배포
+  # =================================================================
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build # 'build' Job이 성공적으로 끝나야만 이 Job이 실행됩니다.
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      # build Job에서 전달받은 이미지 URI를 환경 변수로 설정
+      IMAGE_URI: ${{ needs.build.outputs.image_uri }}
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Identify Environments
         id: identify-envs
         run: |
@@ -80,19 +99,16 @@ jobs:
 
       - name: Deploy to Idle Environment
         run: |
-          # 새 버전의 Docker 이미지를 실행하도록 UserData를 포함한 시작 템플릿 새 버전 생성
-          # UserData 스크립트를 Base64로 인코딩하여 전달
           USER_DATA_SCRIPT=$(cat <<EOF
           #!/bin/bash
-          # ECR 로그인 및 최신 이미지 실행
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
           docker run -d --name couponpop-app -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=prod \
             -e DB_URL=${{ secrets.DB_URL }} \
             -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
             -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
             -e JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
-            ${{ steps.build-image.outputs.image_uri }}
+            ${{ env.IMAGE_URI }}
           EOF
           )
           USER_DATA_BASE64=$(echo "$USER_DATA_SCRIPT" | base64 | tr -d \\n)

@@ -9,7 +9,6 @@ import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -343,7 +342,6 @@ class StoreServiceTest {
     }
 
     @Test
-    @Disabled
     @DisplayName("이미 삭제된 매장 삭제 시 예외 발생")
     void deleteStore_WithAlreadyDeletedStore_ThrowsException() {
 
