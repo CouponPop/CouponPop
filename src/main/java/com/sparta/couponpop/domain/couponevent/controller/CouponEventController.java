@@ -31,9 +31,9 @@ public class CouponEventController {
     }
 
     @GetMapping("/owner/coupons/events/{eventId}")
-    public ResponseEntity<ApiResponse<CouponEventDetailResponse>> getCouponEvent(@PathVariable Long eventId, @AuthenticationPrincipal Long loginUerId) {
+    public ResponseEntity<ApiResponse<CouponEventDetailResponse>> getCouponEvent(@PathVariable Long eventId, @AuthenticationPrincipal Long loginUserId) {
         LocalDateTime now = LocalDateTime.now();
-        CouponEventDetailResponse response = couponEventService.getCouponEvent(eventId, loginUerId, now);
+        CouponEventDetailResponse response = couponEventService.getCouponEvent(eventId, loginUserId, now);
         return ApiResponse.success(response);
     }
 }
