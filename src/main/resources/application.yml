@@ -30,6 +30,7 @@ jwt:
     white-list:
       - /api/v1/auth/signup
       - /api/v1/auth/login
+      - /actuator/health
 
 fcm:
   firebase-config-path: "firebase/serviceAccountKey.json"
