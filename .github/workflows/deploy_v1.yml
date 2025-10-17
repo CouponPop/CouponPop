@@ -123,7 +123,7 @@ jobs:
           ./aws/install
           
           # --- ECR 로그인 및 최신 이미지 실행 ---
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
           docker run -d --name couponpop-app -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=prod \
             -e DB_URL=${{ secrets.DB_URL }} \
@@ -148,7 +148,7 @@ jobs:
             --auto-scaling-group-name $IDLE_ASG_NAME \
             --launch-template LaunchTemplateId=${{ secrets.LAUNCH_TEMPLATE_ID }},Version=$NEW_LT_VERSION \
             --target-group-arns ${{ steps.identify-envs.outputs.idle_tg_arn }} \
-            --min-size 2 --max-size 2 --desired-capacity 2 \
+            --min-size 1 --max-size 2 --desired-capacity 1 \
             --vpc-zone-identifier "${{ secrets.VPC_SUBNET_IDS }}"
 
           # Idle 환경의 Health Check가 성공할 때까지 대기
