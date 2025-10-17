@@ -1,7 +1,10 @@
 package com.sparta.couponpop.domain.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sparta.couponpop.common.security.JwtProvider;
+import com.sparta.couponpop.domain.auth.dto.request.LoginRequest;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
+import com.sparta.couponpop.domain.auth.dto.response.LoginResponse;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.service.AuthService;
 import com.sparta.couponpop.domain.member.entity.Member;
@@ -35,6 +38,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
 
     @Test
     @DisplayName("회원 가입을 한다.")
@@ -157,6 +163,53 @@ class AuthControllerTest {
         resultActions
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.message").value("사용자 이름은 2자 이상 50자 이하로 입력해주세요."))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("로그인을 한다.")
+    void loginSuccess() throws Exception {
+
+        // given
+        LoginRequest request = new LoginRequest("test@example.com", "test1234!");
+
+        String accessToken = "mockedJwtToken";
+        LoginResponse response = new LoginResponse(accessToken);
+
+        given(authService.login(any(LoginRequest.class))).willReturn(response);
+
+        // when
+        ResultActions resultActions = mockMvc.perform(
+                post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+        );
+
+        // then
+        resultActions
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").value(accessToken))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("로그인을 할 때 이메일은 필수값이다.")
+    void loginWithInvalidEmail() throws Exception {
+
+        // given
+        LoginRequest invalidRequestDto = new LoginRequest("", "test1234!");
+
+        // when
+        ResultActions resultActions = mockMvc.perform(
+                post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequestDto))
+        );
+
+        // then (결과는 이래야 한다)
+        resultActions
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.message").value("이메일을 입력해주세요."))
                 .andDo(print());
     }
 }

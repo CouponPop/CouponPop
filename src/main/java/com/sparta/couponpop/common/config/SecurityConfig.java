@@ -1,5 +1,11 @@
 package com.sparta.couponpop.common.config;
 
+import com.sparta.couponpop.common.properties.JwtProperties;
+import com.sparta.couponpop.common.security.JwtAuthFilter;
+import com.sparta.couponpop.common.security.exception.CustomAccessDeniedHandler;
+import com.sparta.couponpop.common.security.exception.CustomAuthenticationEntryPoint;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -10,10 +16,18 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
+@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
+
+    private final JwtAuthFilter jwtAuthFilter;
+    private final JwtProperties jwtProperties;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -36,8 +50,16 @@ public class SecurityConfig {
                 .anonymous(AbstractHttpConfigurer::disable)
                 .requestCache(RequestCacheConfigurer::disable)
 
-                // 로그인, 로그아웃 기능 구현 이전까지는 모든 요청 허용
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler)
+                )
+
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(jwtProperties.getSecret().getWhiteList().toArray(new String[0])).permitAll()
+                        .anyRequest().authenticated())
+
+                .addFilterBefore(jwtAuthFilter, SecurityContextHolderAwareRequestFilter.class)
                 .build();
     }
 }
