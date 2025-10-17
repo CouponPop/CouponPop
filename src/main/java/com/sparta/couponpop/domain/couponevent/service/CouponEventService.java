@@ -1,7 +1,10 @@
 package com.sparta.couponpop.domain.couponevent.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
+import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
+import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
+import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
@@ -21,6 +24,7 @@ import java.time.LocalDateTime;
 public class CouponEventService {
 
     private final CouponEventRepository couponEventRepository;
+    private final CouponRepository couponRepository;
     private final StoreRepository storeRepository;
 
     private static final long MAX_EVENT_HOURS = 48L; // 이벤트 최대 기간(시간)
@@ -45,12 +49,21 @@ public class CouponEventService {
         return CreateCouponEventResponse.from(couponEvent);
     }
 
+    public CouponEventDetailResponse getCouponEvent(Long eventId, Long loginUserId, LocalDateTime now) {
+        CouponEvent couponEvent = couponEventRepository.findByIdWithStoreAndMember(eventId)
+                .orElseThrow(() -> new GlobalException(CouponEventErrorCode.EVENT_NOT_FOUND));
+        // CouponEvent 소유 여부 검증
+        couponEvent.validateOwner(loginUserId);
+        int usedCouponCount = couponRepository.countByEventIdAndStatus(eventId, CouponStatus.USED);
+        return CouponEventDetailResponse.of(couponEvent, usedCouponCount, now);
+    }
+
     private void validateEventDuration(LocalDateTime start, LocalDateTime end) {
         // "이벤트 종료 시간은 시작 시간보다 이후여야 합니다."
         if (end.isBefore(start)) {
             throw new GlobalException(CouponEventErrorCode.EVENT_END_BEFORE_START);
         }
-        
+
         // "쿠폰 이벤트는 최대 48시간까지 생성 가능합니다."
         long hours = Duration.between(start, end).toHours();
         if (hours > MAX_EVENT_HOURS) {

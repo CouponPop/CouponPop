@@ -1,7 +1,9 @@
 package com.sparta.couponpop.domain.couponevent.entity;
 
 import com.sparta.couponpop.common.entity.BaseEntity;
+import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
+import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.store.entity.Store;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -65,5 +67,31 @@ public class CouponEvent extends BaseEntity {
                 .totalCount(totalCount)
                 .store(store)
                 .build();
+    }
+
+    /**
+     * 현재 시간 기준의 동적 상태 계산
+     * 단, CANCELED 상태는 그대로 유지
+     *
+     * @param now
+     */
+    public CouponEventStatus getCurrentStatus(LocalDateTime now) {
+        if (CouponEventStatus.CANCELED.equals(this.couponEventStatus)) {
+            return CouponEventStatus.CANCELED;
+        }
+
+        if (now.isBefore(eventStartAt)) {
+            return CouponEventStatus.SCHEDULED;
+        }
+        if (now.isAfter(eventEndAt)) {
+            return CouponEventStatus.COMPLETED;
+        }
+        return CouponEventStatus.IN_PROGRESS;
+    }
+
+    public void validateOwner(Long userId) {
+        if (!store.getMember().getId().equals(userId)) {
+            throw new GlobalException(CouponEventErrorCode.EVENT_OWNER_MISMATCH);
+        }
     }
 }
