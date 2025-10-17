@@ -137,7 +137,7 @@ jobs:
           export JWT_SECRET_KEY=$(echo $SECRET_JSON | jq -r .JWT_SECRET_KEY)
           
           # --- ECR 로그인 및 최신 이미지 실행 ---
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
           docker run -d --name couponpop-app -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=prod \
             -e DB_URL=$DB_URL \
