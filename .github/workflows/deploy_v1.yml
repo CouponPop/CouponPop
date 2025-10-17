@@ -149,21 +149,21 @@ jobs:
           timedatectl set-timezone Asia/Seoul
           
           # --- Secrets Manager에서 비밀 정보 가져오기 ---
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id couponpop/secrets --region ${{ secrets.AWS_REGION }} --query SecretString --output text)
+          SECRET_JSON=\$(/usr/local/bin/aws secretsmanager get-secret-value --secret-id couponpop/secrets --region ${{ secrets.AWS_REGION }} --query SecretString --output text)
           DB_URL=$(echo $SECRET_JSON | jq -r .DB_URL)
           DB_USERNAME=$(echo $SECRET_JSON | jq -r .DB_USERNAME)
           DB_PASSWORD=$(echo $SECRET_JSON | jq -r .DB_PASSWORD)
           JWT_SECRET_KEY=$(echo $SECRET_JSON | jq -r .JWT_SECRET_KEY)
           
           # --- ECR 로그인 및 최신 이미지 실행 ---
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+          /usr/local/bin/aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
           docker run -d --name couponpop-app -p 8080:8080 \
-          -e SPRING_PROFILES_ACTIVE=prod \
-          -e DB_URL=$DB_URL \
-          -e DB_USERNAME=$DB_USERNAME \
-          -e DB_PASSWORD=$DB_PASSWORD \
-          -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
-          ${{ env.IMAGE_URI }}
+            -e SPRING_PROFILES_ACTIVE=prod \
+            -e DB_URL=\$DB_URL \
+            -e DB_USERNAME=\$DB_USERNAME \
+            -e DB_PASSWORD=\$DB_PASSWORD \
+            -e JWT_SECRET_KEY=\$JWT_SECRET_KEY \
+            ${{ env.IMAGE_URI }}
           EOF
           )
           USER_DATA_BASE64=$(echo "$USER_DATA_SCRIPT" | base64 | tr -d \\n)
