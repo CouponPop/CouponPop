@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.coupon.enums;
+package com.sparta.couponpop.domain.couponevent.enums;
 
 public enum CouponEventStatus {
 
