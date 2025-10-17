@@ -91,6 +91,14 @@ jobs:
         id: identify-envs
         run: |
           LIVE_TG_ARN=$(aws elbv2 describe-listeners --listener-arns ${{ secrets.ALB_LISTENER_ARN }} --query 'Listeners[0].DefaultActions[0].TargetGroupArn' --output text)
+          
+          # --- 디버깅 코드 시작 ---
+          echo "==================== DEBUGGING ===================="
+          echo "Live TG ARN from AWS:   '${LIVE_TG_ARN}'"
+          echo "Blue TG ARN from Secrets: '${{ secrets.BLUE_TG_ARN }}'"
+          echo "================================================"
+          # --- 디버깅 코드 끝 ---
+          
           if [ "$LIVE_TG_ARN" == "${{ secrets.BLUE_TG_ARN }}" ]; then
             IDLE_ENV_NAME="green"
             IDLE_TG_ARN="${{ secrets.GREEN_TG_ARN }}"
@@ -110,62 +118,50 @@ jobs:
         run: |
           IDLE_ASG_NAME="couponpop-${{ steps.identify-envs.outputs.idle_env_name }}-asg"
           
-          #배포 전에 이전의 잔해가 남아있는지 확인하고 삭제
+          # 배포 전에 이전의 잔해가 남아있는지 확인하고 삭제
           if aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names $IDLE_ASG_NAME | grep -q $IDLE_ASG_NAME; then
-            echo "Stale ASG ($IDLE_ASG_NAME) found. Deleting it before proceeding."
-            aws autoscaling delete-auto-scaling-group --auto-scaling-group-name $IDLE_ASG_NAME --force-delete
-            aws autoscaling wait group-not-exists -auto-scaling-group-names $IDLE_ASG_NAME
+          echo "Stale ASG ($IDLE_ASG_NAME) found. Deleting it before proceeding."
+          aws autoscaling delete-auto-scaling-group --auto-scaling-group-name $IDLE_ASG_NAME --force-delete
+          aws autoscaling wait group-not-exists --auto-scaling-group-names $IDLE_ASG_NAME
           fi
           
-          USER_DATA_SCRIPT=$(cat <<'EOF'
+          USER_DATA_SCRIPT=$(cat <<EOF
           #!/bin/bash
-          # --- Docker 설치 및 환경 설정 ---
+          # --- Docker, AWS CLI, jq 설치 및 환경 설정 ---
           apt-get update -y
-          apt-get install -y ca-certificates curl gnupg
+          apt-get install -y ca-certificates curl gnupg unzip jq
           install -m 0755 -d /etc/apt/keyrings
           curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
           chmod a+r /etc/apt/keyrings/docker.asc
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
           apt-get update -y
-          apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin
           systemctl start docker
           systemctl enable docker
           usermod -aG docker ubuntu
           timedatectl set-timezone Asia/Seoul
-
-          # --- AWS CLI v2 설치 ---
-          # AWS CLI v2 설치 (Ubuntu 기본 AMI에 포함되어 있지 않을 수 있음)
-          apt-get install -y unzip
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
           unzip awscliv2.zip
           ./aws/install
           
           # --- Secrets Manager에서 비밀 정보 가져오기 ---
-          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id couponpop/secrets --region ap-northeast-2 --query SecretString --output text)
-          
-          # JSON 파싱을 위해 jq 설치
-          apt-get install -y jq
-          
-          # 각 비밀 정보를 변수로 추출
-          export DB_URL=$(echo $SECRET_JSON | jq -r .DB_URL)
-          export DB_USERNAME=$(echo $SECRET_JSON | jq -r .DB_USERNAME)
-          export DB_PASSWORD=$(echo $SECRET_JSON | jq -r .DB_PASSWORD)
-          export JWT_SECRET_KEY=$(echo $SECRET_JSON | jq -r .JWT_SECRET_KEY)
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id couponpop/secrets --region ${{ secrets.AWS_REGION }} --query SecretString --output text)
+          DB_URL=$(echo $SECRET_JSON | jq -r .DB_URL)
+          DB_USERNAME=$(echo $SECRET_JSON | jq -r .DB_USERNAME)
+          DB_PASSWORD=$(echo $SECRET_JSON | jq -r .DB_PASSWORD)
+          JWT_SECRET_KEY=$(echo $SECRET_JSON | jq -r .JWT_SECRET_KEY)
           
           # --- ECR 로그인 및 최신 이미지 실행 ---
-          aws ecr get-login-password --region ${aws_region} | docker login --username AWS --password-stdin ${ecr_registry}
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
           docker run -d --name couponpop-app -p 8080:8080 \
-            -e SPRING_PROFILES_ACTIVE=prod \
-            -e DB_URL=$DB_URL \
-            -e DB_USERNAME=$DB_USERNAME \
-            -e DB_PASSWORD=$DB_PASSWORD \
-            -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
-            ${image_uri}
+          -e SPRING_PROFILES_ACTIVE=prod \
+          -e DB_URL=$DB_URL \
+          -e DB_USERNAME=$DB_USERNAME \
+          -e DB_PASSWORD=$DB_PASSWORD \
+          -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
+          ${{ env.IMAGE_URI }}
           EOF
           )
-          USER_DATA_SCRIPT=${USER_DATA_SCRIPT//\$\{aws_region\}/${{ secrets.AWS_REGION }}}
-          USER_DATA_SCRIPT=${USER_DATA_SCRIPT//\$\{ecr_registry\}/${{ env.ECR_REGISTRY }}}
-          USER_DATA_SCRIPT=${USER_DATA_SCRIPT//\$\{image_uri\}/${{ env.IMAGE_URI }}}
           USER_DATA_BASE64=$(echo "$USER_DATA_SCRIPT" | base64 | tr -d \\n)
 
           NEW_LT_VERSION=$(aws ec2 create-launch-template-version \
