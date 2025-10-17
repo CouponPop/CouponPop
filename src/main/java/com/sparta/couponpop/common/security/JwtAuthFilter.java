@@ -40,17 +40,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain) throws ServletException, IOException {
-        try {
-            String authorizationHeader = request.getHeader(AUTHORIZATION_HEADER);
-            String bearerToken = getToken(authorizationHeader);
 
-            // 토큰 검증
-            if (authorizationHeader == null) {
+        try {
+            String bearerToken = resolveToken(request);
+
+            // 토큰 존재 여부 확인
+            if (!StringUtils.hasText(bearerToken)) {
                 log.debug("[JwtFilter] 토큰이 존재하지 않는 요청");
                 chain.doFilter(request, response);
                 return;
             }
 
+            // 토큰 검증
             Claims claims = jwtProvider.validateToken(bearerToken);
             setAuthentication(claims);
         } catch (ExpiredJwtException e) {
@@ -70,8 +71,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
-
-    // JWT Claims에서 사용자 정보를 추출하여 Spring Security의 인증 정보 설정
     private void setAuthentication(Claims claims) {
 
         Long userId = Long.valueOf(claims.getSubject());
@@ -83,9 +82,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
     }
 
-    private String getToken(String authHeaderValue) {
-        if (StringUtils.hasText(authHeaderValue) && authHeaderValue.startsWith(BEARER_PREFIX)) {
-            return authHeaderValue.substring(BEARER_PREFIX.length());
+    private String resolveToken(HttpServletRequest request) {
+
+        String header = request.getHeader(AUTHORIZATION_HEADER);
+        if (StringUtils.hasText(header) && header.startsWith(BEARER_PREFIX)) {
+            return header.substring(BEARER_PREFIX.length());
         }
 
         return null;
