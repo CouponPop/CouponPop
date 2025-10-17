@@ -22,22 +22,28 @@ public class CouponEvent extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(nullable = false)
     private LocalDateTime eventStartAt;
 
+    @Column(nullable = false)
     private LocalDateTime eventEndAt;
 
+    @Column(nullable = false)
     private int totalCount;
 
+    @Column(nullable = false)
     private int issuedCount;
 
     @Enumerated(EnumType.STRING)
     @ColumnDefault("'SCHEDULED'")
+    @Column(nullable = false)
     private CouponEventStatus couponEventStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "store_id")
+    @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
     @Builder
