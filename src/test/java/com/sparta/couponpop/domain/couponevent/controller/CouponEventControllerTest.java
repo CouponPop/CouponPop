@@ -118,7 +118,7 @@ class CouponEventControllerTest {
                 .usedCount(0)
                 .unusedCount(0)
                 .createdAt(LocalDateTime.of(2025, 10, 14, 15, 0))
-                .createdAt(LocalDateTime.of(2025, 10, 14, 15, 0))
+                .updatedAt(LocalDateTime.of(2025, 10, 14, 15, 0))
                 .build();
 
 
