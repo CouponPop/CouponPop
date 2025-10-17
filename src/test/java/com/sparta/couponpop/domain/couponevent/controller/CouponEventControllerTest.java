@@ -1,11 +1,15 @@
 package com.sparta.couponpop.domain.couponevent.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sparta.couponpop.common.security.JwtAuthenticationToken;
+import com.sparta.couponpop.common.security.JwtProvider;
+import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.service.CouponEventService;
+import com.sparta.couponpop.domain.member.enums.MemberType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,14 +47,18 @@ class CouponEventControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
+    private JwtProvider jwtProvider;
+
+    @MockitoBean
     private CouponEventService couponEventService;
 
 
     @BeforeEach
     void setUp() {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
-        Authentication auth = new UsernamePasswordAuthenticationToken(123L, null, List.of());
-        context.setAuthentication(auth);
+        AuthMember authMember = AuthMember.from(123L, "testUser", MemberType.CUSTOMER);
+        Authentication authenticationToken = new JwtAuthenticationToken(authMember);
+        context.setAuthentication(authenticationToken);
         SecurityContextHolder.setContext(context);
     }
 
