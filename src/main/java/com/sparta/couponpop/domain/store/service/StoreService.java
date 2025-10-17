@@ -4,6 +4,7 @@ import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
+import com.sparta.couponpop.domain.store.dto.response.StoreDetailResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.exception.StoreErrorCode;
@@ -106,5 +107,18 @@ public class StoreService {
         }
 
         store.deleteStore();
+    }
+
+    @Transactional(readOnly = true)
+    public StoreDetailResponse getStoreDetail(Long storeId, Long memberId) {
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
+
+        if (!store.getMember().getId().equals(memberId)) {
+            throw new GlobalException(StoreErrorCode.STORE_ACCESS_PERMISSION_DENIED);
+        }
+
+        return StoreDetailResponse.from(store);
     }
 }
