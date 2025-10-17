@@ -7,6 +7,8 @@ import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
+import com.sparta.couponpop.domain.couponevent.dto.response.EventPeriod;
+import com.sparta.couponpop.domain.couponevent.dto.response.EventStatisticSummary;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.service.CouponEventService;
 import com.sparta.couponpop.domain.member.enums.MemberType;
@@ -116,15 +118,14 @@ class CouponEventControllerTest {
 
         CouponEventDetailResponse response = CouponEventDetailResponse.builder()
                 .id(eventId)
-                .name("아이스 아메리카노 1+1")
-                .eventStartAt(eventStartAt)
-                .eventEndAt(eventEndAt)
+                .eventName("아이스 아메리카노 1+1")
+                .eventPeriod(
+                        new EventPeriod(eventStartAt, eventEndAt)
+                )
                 .eventStatus(CouponEventStatus.SCHEDULED)
-                .totalCount(30)
-                .unclaimedCount(30)
-                .issuedCount(0)
-                .usedCount(0)
-                .unusedCount(0)
+                .summary(
+                        new EventStatisticSummary(30, 30, 0, 0, 0)
+                )
                 .createdAt(LocalDateTime.of(2025, 10, 14, 15, 0))
                 .updatedAt(LocalDateTime.of(2025, 10, 14, 15, 0))
                 .build();
@@ -140,7 +141,7 @@ class CouponEventControllerTest {
                 )
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.name").value("아이스 아메리카노 1+1"))
+                .andExpect(jsonPath("$.data.eventName").value("아이스 아메리카노 1+1"))
                 .andExpect(jsonPath("$.data.eventStatus").value(CouponEventStatus.SCHEDULED.name()))
         ;
     }
