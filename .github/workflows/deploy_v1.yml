@@ -94,6 +94,7 @@ jobs:
             IDLE_TG_ARN="${{ secrets.BLUE_TG_ARN }}"
             LIVE_ENV_NAME="green"
           fi
+          echo "Current Live Environment: $LIVE_ENV_NAME"
           echo "Deploying to Idle Environment: $IDLE_ENV_NAME"
           echo "idle_env_name=$IDLE_ENV_NAME" >> $GITHUB_OUTPUT
           echo "idle_tg_arn=$IDLE_TG_ARN" >> $GITHUB_OUTPUT
@@ -101,6 +102,15 @@ jobs:
 
       - name: Deploy to Idle Environment
         run: |
+          IDLE_ASG_NAME="couponpop-${{ steps.identify-envs.outputs.idle_env_name }}-asg"
+          
+          #배포 전에 이전의 잔해가 남아있는지 확인하고 삭제
+          if aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names $IDLE_ASG_NAME | grep -q $IDLE_ASG_NAME; then
+            echo "Stale ASG ($IDLE_ASG_NAME) found. Deleting it before proceeding."
+            aws autoscaling delete-auto-scaling-group --auto-scaling-group-name $IDLE_ASG_NAME --force-delete
+            aws autoscaling wait group-not-exists --group-names $IDLE_ASG_NAME
+          fi
+          
           USER_DATA_SCRIPT=$(cat <<'EOF'
           #!/bin/bash
           # --- Docker 설치 및 환경 설정 ---
