@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -16,6 +17,7 @@ import java.time.LocalTime;
 @Table(name = "stores")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLRestriction("deleted_at IS NULL")
 public class Store extends BaseEntity {
 
     @Id
@@ -159,5 +161,9 @@ public class Store extends BaseEntity {
         this.weekdayCloseTime = weekdayCloseTime;
         this.weekendOpenTime = weekendOpenTime;
         this.weekendCloseTime = weekendCloseTime;
+    }
+
+    public void deleteStore() {
+        this.deletedAt = LocalDateTime.now();
     }
 }

@@ -88,4 +88,23 @@ public class StoreService {
                 .map(StoreResponse::from)
                 .toList();
     }
+
+    @Transactional
+    public void deleteStore(Long storeId, Long memberId) {
+
+        Store store = storeRepository.findByIdIncludingDeleted(storeId)
+                .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
+
+        // 이미 삭제된 매장인지 확인
+        if (store.getDeletedAt() != null) {
+            throw new GlobalException(StoreErrorCode.STORE_ALREADY_DELETED);
+        }
+
+        // 매장 소유자 검증
+        if (!store.getMember().getId().equals(memberId)) {
+            throw new GlobalException(StoreErrorCode.STORE_DELETE_PERMISSION_DENIED);
+        }
+
+        store.deleteStore();
+    }
 }

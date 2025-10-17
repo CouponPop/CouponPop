@@ -43,4 +43,12 @@ public class StoreController {
 
         return ApiResponse.success(storeResponse);
     }
+
+    @DeleteMapping("/{storeId}")
+    public ResponseEntity<ApiResponse<Void>> deleteStore(@CurrentMember AuthMember authMember, @PathVariable Long storeId) {
+
+        storeService.deleteStore(storeId, authMember.id());
+
+        return ApiResponse.noContent();
+    }
 }
