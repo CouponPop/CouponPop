@@ -65,6 +65,7 @@ public class MemberFcmTokenService {
                             request.fcmToken(),
                             request.deviceType(),
                             request.deviceIdentifier(),
+                            true,
                             LocalDateTime.now()
                     )
             );

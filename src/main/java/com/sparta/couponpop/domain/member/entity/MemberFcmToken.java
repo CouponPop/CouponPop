@@ -29,7 +29,7 @@ public class MemberFcmToken extends BaseEntity {
 
     private String deviceIdentifier;
 
-    private int notificationEnabled;
+    private boolean notificationEnabled;
 
     private LocalDateTime lastUsedAt;
 
@@ -38,7 +38,7 @@ public class MemberFcmToken extends BaseEntity {
                            String fcmToken,
                            String deviceType,
                            String deviceIdentifier,
-                           int notificationEnabled,
+                           boolean notificationEnabled,
                            LocalDateTime lastUsedAt) {
         this.member = member;
         this.fcmToken = fcmToken;
@@ -52,12 +52,14 @@ public class MemberFcmToken extends BaseEntity {
                                     String fcmToken,
                                     String deviceType,
                                     String deviceIdentifier,
+                                    boolean notificationEnabled,
                                     LocalDateTime lastUsedAt) {
         return MemberFcmToken.builder()
                 .member(member)
                 .fcmToken(fcmToken)
                 .deviceType(deviceType)
                 .deviceIdentifier(deviceIdentifier)
+                .notificationEnabled(notificationEnabled)
                 .lastUsedAt(lastUsedAt)
                 .build();
     }
