@@ -24,10 +24,11 @@ public class MemberFcmTokenService {
     private final MemberRepository memberRepository;
 
     @Transactional
-    public void upsertTokenForMember(MemberFcmTokenRequest request,
-                                     Long memberId) {
+    public void upsertTokenForMember(MemberFcmTokenRequest request, Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        final LocalDateTime now = LocalDateTime.now();
 
         // 중복 토큰 조회
         Optional<MemberFcmToken> duplicatedToken = memberFcmTokenRepository.findByFcmToken(request.fcmToken());
@@ -36,7 +37,7 @@ public class MemberFcmTokenService {
             duplicatedToken.get().updateMemberAndDeviceIdentifier(
                     member,
                     request.deviceIdentifier(),
-                    LocalDateTime.now()
+                    now
             );
 
             log.debug("[FCM TOKEN] 중복 토큰 갱신: memberId={}, deviceIdentifier={}",
@@ -51,7 +52,7 @@ public class MemberFcmTokenService {
             // 존재한다면 기존 토큰 갱신
             activeToken.get().updateFcmToken(
                     request.fcmToken(),
-                    LocalDateTime.now()
+                    now
             );
 
             log.debug("[FCM TOKEN] 기존 토큰 갱신: memberId={}, deviceIdentifier={}, fcmToken={}",
@@ -66,7 +67,7 @@ public class MemberFcmTokenService {
                             request.deviceType(),
                             request.deviceIdentifier(),
                             true,
-                            LocalDateTime.now()
+                            now
                     )
             );
 
