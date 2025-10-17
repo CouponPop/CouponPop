@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum CouponEventErrorCode implements ErrorCode {
 
+    EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 쿠폰 이벤트입니다."),
+    EVENT_OWNER_MISMATCH(HttpStatus.FORBIDDEN, "본인 소유의 쿠폰 이벤트가 아닙니다."),
     EVENT_DURATION_EXCEEDED(HttpStatus.BAD_REQUEST, "쿠폰 이벤트는 최대 48시간까지 생성 가능합니다."),
     EVENT_END_BEFORE_START(HttpStatus.BAD_REQUEST, "이벤트 종료 시간은 시작 시간보다 이후여야 합니다.");
 

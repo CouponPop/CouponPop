@@ -1,7 +1,10 @@
 package com.sparta.couponpop.domain.couponevent.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
+import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
+import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
+import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
@@ -37,6 +40,9 @@ class CouponEventServiceTest {
 
     @Mock
     private StoreRepository storeRepository;
+
+    @Mock
+    private CouponRepository couponRepository;
 
     @InjectMocks
     private CouponEventService couponEventService;
@@ -139,5 +145,78 @@ class CouponEventServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("쿠폰 이벤트 상세 조회")
+    class GetCouponEvent {
+
+        @Test
+        @DisplayName("쿠폰 이벤트 조회 - 성공")
+        void getCouponEvent_success() {
+            // given
+            Long eventId = 1L;
+            Long loginUserId = 1L;
+            LocalDateTime now = LocalDateTime.of(2025, 10, 17, 14, 0);
+            LocalDateTime eventStartAt = now.minusDays(1);
+            LocalDateTime eventEndAt = now.plusDays(1);
+
+            Member member = TestUtils.createEntity(Member.class, Map.of("id", loginUserId));
+            Store store = TestUtils.createEntity(Store.class, Map.of(
+                    "id", 1L,
+                    "member", member
+            ));
+            CouponEvent couponEvent = TestUtils.createEntity(CouponEvent.class, Map.of(
+                    "id", eventId,
+                    "name", "아이스 아메리카노 1+1",
+                    "eventStartAt", eventStartAt,
+                    "eventEndAt", eventEndAt,
+                    "totalCount", 30,
+                    "issuedCount", 10,
+                    "couponEventStatus", CouponEventStatus.IN_PROGRESS,
+                    "store", store
+            ));
+            int usedCouponCount = 5;
+
+            given(couponEventRepository.findByIdWithStoreAndMember(anyLong())).willReturn(Optional.of(couponEvent));
+            given(couponRepository.countByEventIdAndStatus(anyLong(), any(CouponStatus.class))).willReturn(usedCouponCount);
+
+            // when
+            CouponEventDetailResponse response = couponEventService.getCouponEvent(eventId, loginUserId, now);
+
+            // then
+            assertThat(response)
+                    .extracting("totalCount", "unclaimedCount", "issuedCount", "usedCount", "unusedCount")
+                    .containsExactly(30, 20, 10, 5, 5);
+
+            assertThat(response)
+                    .extracting("name", "eventStatus", "eventStartAt", "eventEndAt")
+                    .containsExactly("아이스 아메리카노 1+1", CouponEventStatus.IN_PROGRESS, eventStartAt, eventEndAt);
+        }
+
+        @Test
+        @DisplayName("소유자 불일치 시 예외 발생 - 실패")
+        void getCouponEvent_thenOwnerMismatch_throwsException() {
+            // given
+            Long eventId = 1L;
+            Long loginUserId = 1L;
+            LocalDateTime now = LocalDateTime.of(2025, 10, 17, 14, 0);
+
+            Member member = TestUtils.createEntity(Member.class, Map.of("id", 2L));
+            Store store = TestUtils.createEntity(Store.class, Map.of(
+                    "id", 1L,
+                    "member", member
+            ));
+            CouponEvent couponEvent = TestUtils.createEntity(CouponEvent.class, Map.of(
+                    "id", eventId,
+                    "store", store
+            ));
+
+            given(couponEventRepository.findByIdWithStoreAndMember(anyLong())).willReturn(Optional.of(couponEvent));
+
+            // when & then
+            assertThatThrownBy(() -> couponEventService.getCouponEvent(eventId, loginUserId, now))
+                    .isInstanceOf(GlobalException.class)
+                    .hasMessage(CouponEventErrorCode.EVENT_OWNER_MISMATCH.getMessage());
+        }
+    }
 
 }
