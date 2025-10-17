@@ -2,11 +2,9 @@ package com.sparta.couponpop.domain.store.dto.response;
 
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
-import lombok.Builder;
 
 import java.time.LocalTime;
 
-@Builder
 public record StoreDetailResponse(
         String imageUrl,
         String name,
@@ -19,17 +17,17 @@ public record StoreDetailResponse(
         LocalTime weekendCloseTime
 ) {
     public static StoreDetailResponse from(Store store) {
-        return StoreDetailResponse.builder()
-                .imageUrl(store.getImageUrl())
-                .name(store.getName())
-                .description(store.getDescription())
-                .storeCategory(store.getStoreCategory())
-                .address(store.getAddress())
-                .weekdayOpenTime(store.getWeekdayOpenTime())
-                .weekdayCloseTime(store.getWeekdayCloseTime())
-                .weekendOpenTime(store.getWeekendOpenTime())
-                .weekendCloseTime(store.getWeekendCloseTime())
-                .build();
+        return new StoreDetailResponse(
+                store.getImageUrl(),
+                store.getName(),
+                store.getDescription(),
+                store.getStoreCategory(),
+                store.getAddress(),
+                store.getWeekdayOpenTime(),
+                store.getWeekdayCloseTime(),
+                store.getWeekendOpenTime(),
+                store.getWeekendCloseTime()
+        );
     }
 }
 
