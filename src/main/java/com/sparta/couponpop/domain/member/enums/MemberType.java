@@ -2,5 +2,10 @@ package com.sparta.couponpop.domain.member.enums;
 
 public enum MemberType {
 
-    OWNER, CUSTOMER
+    OWNER,
+    CUSTOMER;
+
+    public String roleName() {
+        return "ROLE_" + this.name();
+    }
 }

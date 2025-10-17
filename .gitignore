@@ -39,3 +39,6 @@ out/
 
 ### conf ###
 conf/*.conf
+
+### firebase ###
+**/firebase/serviceAccountKey.json

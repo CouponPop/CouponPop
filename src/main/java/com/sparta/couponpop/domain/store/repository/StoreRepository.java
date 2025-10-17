@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
+import java.util.List;
+
 public interface StoreRepository extends JpaRepository<Store, Long> {
 
     /**
@@ -16,5 +18,7 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
      */
     @Query(value = "SELECT * FROM stores WHERE id = :storeId", nativeQuery = true)
     Optional<Store> findByIdIncludingDeleted(@Param("storeId") Long storeId);
+
+    List<Store> findByMemberIdOrderByCreatedAtDesc(Long memberId);
 }
 
