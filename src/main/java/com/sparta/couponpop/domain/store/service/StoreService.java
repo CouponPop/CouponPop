@@ -112,7 +112,7 @@ public class StoreService {
     @Transactional(readOnly = true)
     public StoreDetailResponse getStoreDetail(Long storeId, Long memberId) {
 
-        Store store = storeRepository.findById(storeId)
+        Store store = storeRepository.findByIdWithMember(storeId)
                 .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
 
         if (!store.getMember().getId().equals(memberId)) {
