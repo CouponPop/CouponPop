@@ -45,12 +45,9 @@ public class StoreController {
     }
 
     @DeleteMapping("/{storeId}")
-    public ResponseEntity<ApiResponse<Void>> deleteStore(@PathVariable Long storeId) {
+    public ResponseEntity<ApiResponse<Void>> deleteStore(@CurrentMember AuthMember authMember, @PathVariable Long storeId) {
 
-        // TODO: 인증 구현 후 @LoginUserResolver로 memberId 가져오기
-        Long memberId = 1L; // 임시 memberId
-
-        storeService.deleteStore(storeId, memberId);
+        storeService.deleteStore(storeId, authMember.id());
 
         return ApiResponse.noContent();
     }
