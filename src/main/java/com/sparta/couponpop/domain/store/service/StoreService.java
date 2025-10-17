@@ -97,7 +97,7 @@ public class StoreService {
 
         // 이미 삭제된 매장인지 확인
         if (store.getDeletedAt() != null) {
-            throw new GlobalException(StoreErrorCode.STORE_NOT_FOUND);
+            throw new GlobalException(StoreErrorCode.STORE_ALREADY_DELETED);
         }
 
         // 매장 소유자 검증
