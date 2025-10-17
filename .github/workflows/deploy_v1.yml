@@ -101,73 +101,73 @@ jobs:
 
       - name: Deploy to Idle Environment
         run: |
-               USER_DATA_SCRIPT=$(cat <<EOF
-               #!/bin/bash
-               # --- Docker 설치 및 환경 설정 ---
-               apt-get update -y
-               apt-get install -y ca-certificates curl gnupg
-               install -m 0755 -d /etc/apt/keyrings
-               curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-               chmod a+r /etc/apt/keyrings/docker.asc
-               echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-               apt-get update -y
-               apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-               systemctl start docker
-               systemctl enable docker
-               usermod -aG docker ubuntu
-               timedatectl set-timezone Asia/Seoul
-               
-               # --- AWS CLI v2 설치 ---
-               # AWS CLI v2 설치 (Ubuntu 기본 AMI에 포함되어 있지 않을 수 있음)
-               apt-get install -y unzip
-               curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-               unzip awscliv2.zip
-               ./aws/install
-               
-               # --- Secrets Manager에서 비밀 정보 가져오기 ---
-               SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id couponpop/secrets --query SecretString --output text)
-               
-               # JSON 파싱을 위해 jq 설치
-               apt-get install -y jq
-               
-               # 각 비밀 정보를 변수로 추출
-               export DB_URL=$(echo $SECRET_JSON | jq -r .DB_URL)
-               export DB_USERNAME=$(echo $SECRET_JSON | jq -r .DB_USERNAME)
-               export DB_PASSWORD=$(echo $SECRET_JSON | jq -r .DB_PASSWORD)
-               export JWT_SECRET_KEY=$(echo $SECRET_JSON | jq -r .JWT_SECRET_KEY)
-               
-               # --- ECR 로그인 및 최신 이미지 실행 ---
-               aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
-               docker run -d --name couponpop-app -p 8080:8080 \
-          #               -e SPRING_PROFILES_ACTIVE=prod \
-               -e DB_URL=$DB_URL \
-               -e DB_USERNAME=$DB_USERNAME \
-               -e DB_PASSWORD=$DB_PASSWORD \
-               -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
-               ${{ env.IMAGE_URI }}
-               EOF
-               )
-               USER_DATA_BASE64=$(echo "$USER_DATA_SCRIPT" | base64 | tr -d \\n)
-               
-               NEW_LT_VERSION=$(aws ec2 create-launch-template-version \
-               --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} \
-               --source-version '$Default' \
-               --version-description "Deploy-${{ github.sha }}" \
-               --launch-template-data "{\"UserData\":\"$USER_DATA_BASE64\"}" \
-               --query 'LaunchTemplateVersion.VersionNumber' --output text)
+          USER_DATA_SCRIPT=$(cat <<EOF
+          #!/bin/bash
+          # --- Docker 설치 및 환경 설정 ---
+          apt-get update -y
+          apt-get install -y ca-certificates curl gnupg
+          install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          chmod a+r /etc/apt/keyrings/docker.asc
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+          apt-get update -y
+          apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          systemctl start docker
+          systemctl enable docker
+          usermod -aG docker ubuntu
+          timedatectl set-timezone Asia/Seoul
+
+          # --- AWS CLI v2 설치 ---
+          # AWS CLI v2 설치 (Ubuntu 기본 AMI에 포함되어 있지 않을 수 있음)
+          apt-get install -y unzip
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          ./aws/install
+          
+          # --- Secrets Manager에서 비밀 정보 가져오기 ---
+          SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id couponpop/secrets --query SecretString --output text)
+          
+          # JSON 파싱을 위해 jq 설치
+          apt-get install -y jq
+          
+          # 각 비밀 정보를 변수로 추출
+          export DB_URL=$(echo $SECRET_JSON | jq -r .DB_URL)
+          export DB_USERNAME=$(echo $SECRET_JSON | jq -r .DB_USERNAME)
+          export DB_PASSWORD=$(echo $SECRET_JSON | jq -r .DB_PASSWORD)
+          export JWT_SECRET_KEY=$(echo $SECRET_JSON | jq -r .JWT_SECRET_KEY)
+          
+          # --- ECR 로그인 및 최신 이미지 실행 ---
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+          docker run -d --name couponpop-app -p 8080:8080 \
+            -e SPRING_PROFILES_ACTIVE=prod \
+            -e DB_URL=$DB_URL \
+            -e DB_USERNAME=$DB_USERNAME \
+            -e DB_PASSWORD=$DB_PASSWORD \
+            -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
+            ${{ env.IMAGE_URI }}
+          EOF
+          )
+          USER_DATA_BASE64=$(echo "$USER_DATA_SCRIPT" | base64 | tr -d \\n)
+
+          NEW_LT_VERSION=$(aws ec2 create-launch-template-version \
+            --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} \
+            --source-version '$Default' \
+            --version-description "Deploy-${{ github.sha }}" \
+            --launch-template-data "{\"UserData\":\"$USER_DATA_BASE64\"}" \
+            --query 'LaunchTemplateVersion.VersionNumber' --output text)
 
           # 새 시작 템플릿 버전을 사용하는 새로운 Auto Scaling Group 생성
-               IDLE_ASG_NAME="couponpop-${{ steps.identify-envs.outputs.idle_env_name }}-asg"
-               aws autoscaling create-auto-scaling-group \
-               --auto-scaling-group-name $IDLE_ASG_NAME \
-               --launch-template LaunchTemplateId=${{ secrets.LAUNCH_TEMPLATE_ID }},Version=$NEW_LT_VERSION \
-               --target-group-arns ${{ steps.identify-envs.outputs.idle_tg_arn }} \
-               --min-size 1 --max-size 2 --desired-capacity 1 \
-               --vpc-zone-identifier "${{ secrets.VPC_SUBNET_IDS }}"
+          IDLE_ASG_NAME="couponpop-${{ steps.identify-envs.outputs.idle_env_name }}-asg"
+          aws autoscaling create-auto-scaling-group \
+            --auto-scaling-group-name $IDLE_ASG_NAME \
+            --launch-template LaunchTemplateId=${{ secrets.LAUNCH_TEMPLATE_ID }},Version=$NEW_LT_VERSION \
+            --target-group-arns ${{ steps.identify-envs.outputs.idle_tg_arn }} \
+            --min-size 1 --max-size 2 --desired-capacity 1 \
+            --vpc-zone-identifier "${{ secrets.VPC_SUBNET_IDS }}"
 
           # Idle 환경의 Health Check가 성공할 때까지 대기
-               echo "Waiting for Idle environment to be healthy..."
-               aws elbv2 wait target-in-service --target-group-arn ${{ steps.identify-envs.outputs.idle_tg_arn }}
+          echo "Waiting for Idle environment to be healthy..."
+          aws elbv2 wait target-in-service --target-group-arn ${{ steps.identify-envs.outputs.idle_tg_arn }}
 
       - name: Traffic Swap
         run: |
