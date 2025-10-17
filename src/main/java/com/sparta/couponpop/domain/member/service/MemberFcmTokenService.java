@@ -47,32 +47,27 @@ public class MemberFcmTokenService {
         }
 
         // 중복 토큰이 없다면 기존 토큰 조회 후 UPSERT
-        Optional<MemberFcmToken> activeToken = memberFcmTokenRepository.findByMemberAndDeviceIdentifier(member, request.deviceIdentifier());
-        if (activeToken.isPresent()) {
-            // 존재한다면 기존 토큰 갱신
-            activeToken.get().updateFcmToken(
-                    request.fcmToken(),
-                    now
-            );
-
-            log.debug("[FCM TOKEN] 기존 토큰 갱신: memberId={}, deviceIdentifier={}, fcmToken={}",
-                    member.getId(), request.deviceIdentifier(), request.fcmToken());
-
-        } else {
-            // 존재하지 않는다면 신규 토큰 저장
-            memberFcmTokenRepository.save(
-                    MemberFcmToken.of(
-                            member,
-                            request.fcmToken(),
-                            request.deviceType(),
-                            request.deviceIdentifier(),
-                            true,
-                            now
-                    )
-            );
-
-            log.debug("[FCM TOKEN] 신규 토큰 저장: memberId={}, deviceIdentifier={}, fcmToken={}",
-                    member.getId(), request.deviceIdentifier(), request.fcmToken());
-        }
+        memberFcmTokenRepository.findByMemberAndDeviceIdentifier(member, request.deviceIdentifier())
+                .ifPresentOrElse(
+                        activeToken -> {
+                            activeToken.updateFcmToken(request.fcmToken(), now);
+                            log.debug("[FCM TOKEN] 기존 토큰 갱신: memberId={}, deviceIdentifier={}, fcmToken={}",
+                                    member.getId(), request.deviceIdentifier(), request.fcmToken());
+                        },
+                        () -> {
+                            memberFcmTokenRepository.save(
+                                    MemberFcmToken.of(
+                                            member,
+                                            request.fcmToken(),
+                                            request.deviceType(),
+                                            request.deviceIdentifier(),
+                                            true,
+                                            now
+                                    )
+                            );
+                            log.debug("[FCM TOKEN] 신규 토큰 저장: memberId={}, deviceIdentifier={}, fcmToken={}",
+                                    member.getId(), request.deviceIdentifier(), request.fcmToken());
+                        }
+                );
     }
 }
