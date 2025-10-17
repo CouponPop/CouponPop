@@ -1,6 +1,8 @@
 package com.sparta.couponpop.domain.couponevent.controller;
 
 import com.sparta.couponpop.common.response.ApiResponse;
+import com.sparta.couponpop.common.security.annotation.CurrentMember;
+import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
@@ -23,17 +25,17 @@ public class CouponEventController {
     @PostMapping("/owner/coupons/events")
     public ResponseEntity<ApiResponse<CreateCouponEventResponse>> createCouponEvent(
             @RequestBody @Valid CreateCouponEventRequest request,
-            @AuthenticationPrincipal Long userId // TODO : 인증 세션 구현되면 변경
+            @CurrentMember AuthMember authMember // TODO : 인증 세션 구현되면 변경
     ) {
         // TODO : 사장 권한 확인??
-        CreateCouponEventResponse response = couponEventService.createCouponEvent(request, userId);
+        CreateCouponEventResponse response = couponEventService.createCouponEvent(request, authMember.id());
         return ApiResponse.created(response);
     }
 
     @GetMapping("/owner/coupons/events/{eventId}")
-    public ResponseEntity<ApiResponse<CouponEventDetailResponse>> getCouponEvent(@PathVariable Long eventId, @AuthenticationPrincipal Long loginUserId) {
+    public ResponseEntity<ApiResponse<CouponEventDetailResponse>> getCouponEvent(@PathVariable Long eventId, @CurrentMember AuthMember authMember) {
         LocalDateTime now = LocalDateTime.now();
-        CouponEventDetailResponse response = couponEventService.getCouponEvent(eventId, loginUserId, now);
+        CouponEventDetailResponse response = couponEventService.getCouponEvent(eventId, authMember.id(), now);
         return ApiResponse.success(response);
     }
 }
