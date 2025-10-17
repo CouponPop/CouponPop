@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class StoreService {
@@ -75,5 +77,15 @@ public class StoreService {
         );
 
         return StoreResponse.from(store);
+    }
+
+    @Transactional(readOnly = true)
+    public List<StoreResponse> getStoresByOwner(Long memberId) {
+
+        List<Store> stores = storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId);
+
+        return stores.stream()
+                .map(StoreResponse::from)
+                .toList();
     }
 }
