@@ -115,6 +115,7 @@ jobs:
 
           NEW_LT_VERSION=$(aws ec2 create-launch-template-version \
             --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} \
+            --source-version '$Default' \
             --version-description "Deploy-${{ github.sha }}" \
             --launch-template-data "{\"UserData\":\"$USER_DATA_BASE64\"}" \
             --query 'LaunchTemplateVersion.VersionNumber' --output text)
