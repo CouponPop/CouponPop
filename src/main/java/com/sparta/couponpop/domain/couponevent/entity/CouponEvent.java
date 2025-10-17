@@ -35,6 +35,7 @@ public class CouponEvent extends BaseEntity {
     private int totalCount;
 
     @Column(nullable = false)
+    @ColumnDefault("0")
     private int issuedCount;
 
     @Enumerated(EnumType.STRING)
