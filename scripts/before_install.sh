@@ -4,11 +4,12 @@ set -e # 오류 발생 시 중단
 # --- 1. 변수 설정 ---
 AWS_REGION="ap-northeast-2"
 SSM_PARAM_NAME="/couponpop/latest-image-uri"
-IMAGE_URI_FILE="/home/ubuntu/app/image_uri.txt" # 이미지 URI를 저장할 파일
+APP_DIR="/home/ubuntu/app"
+IMAGE_URI_FILE="$APP_DIR/image_uri.txt" # 이미지 URI를 저장할 파일
 
 echo "--- before_install.sh 시작 ---"
 
-# --- 1-1. 대상 디렉터리 생성 (해결책) ---
+# --- 1-1. 대상 디렉터리 생성 ---
 echo "배포 디렉터리를 생성합니다: $APP_DIR"
 mkdir -p $APP_DIR
 
@@ -28,12 +29,12 @@ aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --
 echo "ECR 로그인 성공."
 
 # --- 5. 새 이미지 PULL ---
-echo "새 이미지를 pull 합니다..."
+echo "새 이미지를 pull 합니다.: $IMAGE_URI"
 docker pull $IMAGE_URI
 echo "이미지 pull 완료."
 
 # --- 6. 사용하지 않는 도커 이미지 정리 ---
 docker image prune -f
-echo "오래된 이미지 정리 완료."
+echo "사용하지 않는 이미지 정리 완료."
 
 echo "--- before_install.sh 종료 ---"
