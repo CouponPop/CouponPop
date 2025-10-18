@@ -19,12 +19,12 @@ import java.io.InputStream;
 public class FirebaseConfig {
 
     @Value("${fcm.firebase-config-path}")
-    private String FCM_CONFIG_PATH;
+    private String fcmConfigPath;
 
     @PostConstruct
     public void init() {
         try {
-            InputStream serviceAccount = new ClassPathResource(FCM_CONFIG_PATH).getInputStream();
+            InputStream serviceAccount = new ClassPathResource(fcmConfigPath).getInputStream();
             GoogleCredentials googleCredentials = GoogleCredentials
                     .fromStream(serviceAccount);
             FirebaseOptions options = FirebaseOptions.builder()
