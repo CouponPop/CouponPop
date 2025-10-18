@@ -8,6 +8,10 @@ IMAGE_URI_FILE="/home/ubuntu/app/image_uri.txt" # 이미지 URI를 저장할 파
 
 echo "--- before_install.sh 시작 ---"
 
+# --- 1-1. 대상 디렉터리 생성 (해결책) ---
+echo "배포 디렉터리를 생성합니다: $APP_DIR"
+mkdir -p $APP_DIR
+
 # --- 2. SSM Parameter Store에서 배포할 이미지 URI 가져오기 ---
 echo "SSM Parameter Store에서 이미지 URI를 가져옵니다: $SSM_PARAM_NAME"
 IMAGE_URI=$(aws ssm get-parameter --name $SSM_PARAM_NAME --region $AWS_REGION --query Parameter.Value --output text)

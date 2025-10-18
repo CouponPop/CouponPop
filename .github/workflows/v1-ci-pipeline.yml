@@ -75,7 +75,6 @@ jobs:
           IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
-          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
 
       - name: Update SSM Parameter Store with new image URI
         #if: inputs.branch_name == 'main'
