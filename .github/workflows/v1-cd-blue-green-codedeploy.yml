@@ -1,0 +1,142 @@
+name: CouponPop Blue-Green Deploy with CodeDeploy
+
+on:
+  workflow_call:
+    inputs:
+      image_uri:
+        description: 'Docker image URI to deploy'
+        required: true
+        type: string
+    secrets:
+      AWS_REGION:
+        required: true
+      AWS_IAM_ROLE_ARN:
+        required: true
+      CODEDEPLOY_APP_NAME:
+        required: true
+      CODEDEPLOY_DEPLOYMENT_GROUP_NAME:
+        required: true
+      LAUNCH_TEMPLATE_ID:
+        required: true
+      DB_URL:
+        required: true
+      DB_USERNAME:
+        required: true
+      DB_PASSWORD:
+        required: true
+      JWT_SECRET_KEY:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4 # appspec.yml 파일을 읽기 위해 필요
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install/Update AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install --update
+          aws --version
+
+      - name: Prepare UserData Script
+        id: prepare-userdata
+        run: |
+          # 1. UserData 스크립트 정의 시작
+          USER_DATA_SCRIPT=$(cat <<EOF
+          #!/bin/bash
+          # --- 1. System Update ---
+          apt-get update -y
+
+          # --- 2. Install Essential Tools ---
+          apt-get install -y ca-certificates curl gnupg unzip jq
+
+          # --- 3. Install Docker ---
+          install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          chmod a+r /etc/apt/keyrings/docker.asc
+          echo "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \$(. /etc/os-release && echo "\$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+          apt-get update -y
+          apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+          systemctl start docker
+          systemctl enable docker
+          usermod -aG docker ubuntu
+
+          # --- 4. Install AWS CLI v2 ---
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          ./aws/install
+          # Reset command path cache
+          hash -r
+
+          # --- 5. Set Timezone ---
+          timedatectl set-timezone Asia/Seoul
+
+          # --- 6. Secrets Manager에서 비밀 정보 가져오기 ---
+          # EC2의 IAM 역할(CouponPop-EC2-Role) 권한으로 실행됨
+          SECRET_JSON=\$(/usr/local/bin/aws secretsmanager get-secret-value --secret-id couponpop/secrets --region ${{ secrets.AWS_REGION }} --query SecretString --output text)
+          export DB_URL=\$(echo \$SECRET_JSON | jq -r .DB_URL)
+          export DB_USERNAME=\$(echo \$SECRET_JSON | jq -r .DB_USERNAME)
+          export DB_PASSWORD=\$(echo \$SECRET_JSON | jq -r .DB_PASSWORD)
+          export JWT_SECRET_KEY=\$(echo \$SECRET_JSON | jq -r .JWT_SECRET_KEY)
+
+          # --- 7. ECR 로그인 및 최신 이미지 실행 ---
+          # GitHub Actions Runner가 ECR_REGISTRY와 IMAGE_URI 값을 채워줌
+          /usr/local/bin/aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+          docker run -d --name couponpop-app -p 8080:8080 \
+            -e SPRING_PROFILES_ACTIVE=prod \
+            -e DB_URL=\$DB_URL \
+            -e DB_USERNAME=\$DB_USERNAME \
+            -e DB_PASSWORD=\$DB_PASSWORD \
+            -e JWT_SECRET_KEY=\$JWT_SECRET_KEY \
+            ${{ env.IMAGE_URI }}
+          EOF
+          ) # UserData 스크립트 정의 끝
+
+          USER_DATA_BASE64=$(echo "$USER_DATA_SCRIPT" | base64 | tr -d \\n)
+          echo "userdata_base64=$USER_DATA_BASE64" >> $GITHUB_OUTPUT
+
+      - name: Create New Launch Template Version
+        id: create-lt-version
+        run: |
+          NEW_LT_VERSION=$(aws ec2 create-launch-template-version \
+            --launch-template-id ${{ secrets.LAUNCH_TEMPLATE_ID }} \
+            --source-version '$Default' \
+            --version-description "Deploy-${{ github.sha }}" \
+            --launch-template-data "{\"UserData\":\"${{ steps.prepare-userdata.outputs.userdata_base64 }}\"}" \
+            --query 'LaunchTemplateVersion.VersionNumber' --output text)
+          echo "Created new Launch Template version: $NEW_LT_VERSION"
+          # 3. 다음 스텝에서 사용할 수 있도록 출력 변수로 설정 (선택 사항)
+          echo "new_lt_version=$NEW_LT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Start CodeDeploy Deployment and Capture ID
+        id: start-deploy
+        run: |
+          DEPLOYMENT_INFO=$(aws deploy create-deployment \
+            --application-name ${{ secrets.CODEDEPLOY_APP_NAME }} \
+            --deployment-group-name ${{ secrets.CODEDEPLOY_DEPLOYMENT_GROUP_NAME }} \
+            --revision '{"revisionType": "AppSpecContent", "appSpecContent": {"content": "$(cat appspec.yml)"}}' \
+            --deployment-config-name CodeDeployDefault.AllAtOnce \
+            --description "Deploying version ${{ github.sha }}")
+          
+          DEPLOYMENT_ID=$(echo $DEPLOYMENT_INFO | jq -r .deploymentId)
+          echo "Started CodeDeploy Deployment ID: $DEPLOYMENT_ID"
+          
+          echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+
+      - name: Wait for CodeDeploy Deployment Success
+        run: |
+          echo "Waiting for deployment ${{ steps.start-deploy.outputs.deployment_id }} to succeed..."
+          aws deploy wait deployment-successful --deployment-id ${{ steps.start-deploy.outputs.deployment_id }}

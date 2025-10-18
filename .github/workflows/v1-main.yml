@@ -1,0 +1,27 @@
+name: CouponPop Main CI/CD
+
+on:
+  push:
+    branches:
+      - chore/cicd-v1
+#      - dev
+#      - main
+
+jobs:
+  # =================================================================
+  # Job 1: Call Reusable CI Pipeline (dev, main 공통 실행)
+  # =================================================================
+  call-ci:
+    uses: ./.github/workflows/v1-ci-pipeline.yml
+    secrets: inherit
+
+  # =================================================================
+  # Job 2: Call Reusable CD Pipeline (main 브랜치 전용 실행)
+  # =================================================================
+  call-cd:
+    #if: github.ref == 'refs/heads/main' # main 브랜치일 경우에만 실행
+    needs: call-ci # call-ci Job이 성공해야 실행
+    uses: ./.github/workflows/v1-cd-blue-green-codedeploy.yml
+    with:
+      image_uri: ${{ needs.call-ci.outputs.image_uri }}
+    secrets: inherit
