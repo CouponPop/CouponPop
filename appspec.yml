@@ -1,13 +1,32 @@
 version: 0.0
 os: linux
 
+files:
+  - source: /
+    destination: /home/ubuntu/app
+
+permissions:
+  - object: /home/ubuntu/app/scripts
+    pattern: "*.sh"
+    mode: 755    # 쉘 스크립트 실행 권한 부여
+    owner: ubuntu # 스크립트 소유자
+    group: ubuntu
+
 hooks:
+  # 1. (가장 먼저) 이전 버전 컨테이너 중지 및 제거
   ApplicationStop:
     - location: scripts/stop_application.sh
-      timeout: 300
+      timeout: 60
       runas: root
 
+  # 2. 새 이미지 다운로드 및 ECR 로그인
+  BeforeInstall:
+    - location: scripts/before_install.sh
+      timeout: 300 # 이미지 pull을 위해 5분
+      runas: root
+
+  # 3. 새 컨테이너 실행
   ApplicationStart:
     - location: scripts/start_application.sh
-      timeout: 300
+      timeout: 60
       runas: root
