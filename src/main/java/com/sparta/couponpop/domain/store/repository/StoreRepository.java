@@ -19,6 +19,18 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
     @Query(value = "SELECT * FROM stores WHERE id = :storeId", nativeQuery = true)
     Optional<Store> findByIdIncludingDeleted(@Param("storeId") Long storeId);
 
+    /**
+     * 매장과 회원 정보를 함께 조회합니다.
+     * N+1 문제를 방지하기 위해 fetch join을 사용합니다.
+     */
+    @Query("""
+            SELECT s
+            FROM Store s
+            JOIN FETCH s.member m
+            WHERE s.id = :storeId
+            """)
+    Optional<Store> findByIdWithMember(@Param("storeId") Long storeId);
+
     List<Store> findByMemberIdOrderByCreatedAtDesc(Long memberId);
 }
 
