@@ -3,8 +3,8 @@ package com.sparta.couponpop.domain.notification.dto.payload;
 import java.time.LocalDateTime;
 
 public record CouponIssuedNotificationPayload(
-        String couponCode,
         String couponName,
+        String couponCode,
         LocalDateTime expireAt
 ) {
 
