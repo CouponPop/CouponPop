@@ -35,7 +35,5 @@ jobs:
       id-token: write
       contents: read
     with:
-
       image_uri: ${{ needs.call-ci.outputs.image_uri }}
-      s3_bundle_key: ${{ needs.call-ci.outputs.s3_bundle_key }}
     secrets: inherit
