@@ -36,4 +36,7 @@ public class AuthController {
         LoginResponse loginResponse = authService.login(loginRequest);
         return ApiResponse.success(loginResponse);
     }
+
+    // TODO: 로그아웃 시 FCM 토큰 삭제 기능 추가 예정
+    // TODO: https://github.com/orgs/CouponPop/projects/1/views/2?pane=issue&itemId=134369719&issue=CouponPop%7CCouponPop%7C61
 }

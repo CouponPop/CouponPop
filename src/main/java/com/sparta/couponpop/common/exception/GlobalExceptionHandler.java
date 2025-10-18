@@ -1,5 +1,6 @@
 package com.sparta.couponpop.common.exception;
 
+import com.google.firebase.FirebaseException;
 import com.sparta.couponpop.common.response.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,12 @@ public class GlobalExceptionHandler {
                 .collect(joining("\n"));
 
         return handleExceptionInternal(HttpStatus.BAD_REQUEST, errorsMessages, request);
+    }
+
+    @ExceptionHandler(FirebaseException.class)
+    public ResponseEntity<ApiErrorResponse> handleFirebaseException(FirebaseException ex, HttpServletRequest request) {
+        log.error("Firebase 오류 발생 ", ex);
+        return handleExceptionInternal(HttpStatus.INTERNAL_SERVER_ERROR, "Firebase 서비스 오류가 발생했습니다.", request);
     }
 
     private ResponseEntity<ApiErrorResponse> handleExceptionInternal(ErrorCode errorCode, HttpServletRequest request) {

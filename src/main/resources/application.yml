@@ -15,6 +15,7 @@ spring:
       hibernate:
         show_sql: true
         format_sql: false
+        highlight_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
   flyway:
     enabled: true
@@ -34,6 +35,3 @@ jwt:
 
 fcm:
   firebase-config-path: "firebase/serviceAccountKey.json"
-  api-url: "https://fcm.googleapis.com/v1/projects/couponpop/messages:send"
-  scope: "https://www.googleapis.com/auth/cloud-platform"
-  ttl: "0s"
