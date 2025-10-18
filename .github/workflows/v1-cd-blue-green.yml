@@ -1,0 +1,61 @@
+name: CouponPop Blue-Green Deploy with CodeDeploy
+
+on:
+  workflow_call:
+    inputs:
+      image_uri:
+        description: 'Docker image URI to deploy'
+        required: true
+        type: string
+    secrets:
+      AWS_REGION:
+        required: true
+      AWS_IAM_ROLE_ARN:
+        required: true
+      CODEDEPLOY_APP_NAME:
+        required: true
+      CODEDEPLOY_DEPLOYMENT_GROUP_NAME:
+        required: true
+      SSM_PARAMETER_NAME:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Update SSM Parameter Store with new image URI
+        run: |
+          aws ssm put-parameter \
+            --name "${{ secrets.SSM_PARAMETER_NAME }}" \
+            --value "${{ inputs.image_uri }}" \
+            --type "String" \
+            --overwrite
+
+      - name: Start CodeDeploy Deployment (Using GitHub)
+        id: start-deploy
+        run: |
+          DEPLOYMENT_ID=$(aws deploy create-deployment \
+            --application-name "${{ secrets.CODEDEPLOY_APP_NAME }}" \
+            --deployment-group-name "${{ secrets.CODEDEPLOY_DEPLOYMENT_GROUP_NAME }}" \
+            --deployment-config-name CodeDeployDefault.OneAtATime \
+            --description "Deploying ${{ github.sha }} via GitHub Actions" \
+            --revision '{"revisionType": "GitHub", "gitHubLocation": {"repository": "${{ github.repository }}", "commitId": "${{ github.sha }}"}}' \
+            --query 'deploymentId' --output text)
+          
+          echo "Started CodeDeploy Deployment ID: $DEPLOYMENT_ID"
+          echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+
+      - name: Wait for CodeDeploy Deployment Success
+        run: |
+          echo "Waiting for deployment ${{ steps.start-deploy.outputs.deployment_id }} to succeed..."
+          aws deploy wait deployment-successful --deployment-id ${{ steps.start-deploy.outputs.deployment_id }}
