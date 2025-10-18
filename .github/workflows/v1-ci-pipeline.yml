@@ -83,6 +83,6 @@ jobs:
         run: |
           aws ssm put-parameter \
             --name "${{ secrets.SSM_PARAMETER_NAME }}" \
-            --value "${{ inputs.image_uri }}" \
+            --value "${{ steps.build-image.outputs.image_uri }}" \
             --type "String" \
             --overwrite
