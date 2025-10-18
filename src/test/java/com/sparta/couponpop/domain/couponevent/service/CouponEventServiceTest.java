@@ -183,12 +183,12 @@ class CouponEventServiceTest {
             CouponEventDetailResponse response = couponEventService.getCouponEvent(eventId, loginUserId, now);
 
             // then
-            assertThat(response)
-                    .extracting("totalCount", "unclaimedCount", "issuedCount", "usedCount", "unusedCount")
+            assertThat(response.summary())
+                    .extracting("total", "unclaimed", "issued", "used", "unused")
                     .containsExactly(30, 20, 10, 5, 5);
 
             assertThat(response)
-                    .extracting("name", "eventStatus", "eventStartAt", "eventEndAt")
+                    .extracting("eventName", "eventStatus", "eventPeriod.start", "eventPeriod.end")
                     .containsExactly("아이스 아메리카노 1+1", CouponEventStatus.IN_PROGRESS, eventStartAt, eventEndAt);
         }
 
