@@ -33,14 +33,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Update SSM Parameter Store with new image URI
-        run: |
-          aws ssm put-parameter \
-            --name "${{ secrets.SSM_PARAMETER_NAME }}" \
-            --value "${{ inputs.image_uri }}" \
-            --type "String" \
-            --overwrite
-
       - name: Start CodeDeploy Deployment (Using GitHub)
         id: start-deploy
         run: |

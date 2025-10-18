@@ -76,3 +76,13 @@ jobs:
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
           echo "image_uri_output=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+      - name: Update SSM Parameter Store with new image URI
+        #if: inputs.branch_name == 'main'
+        if: inputs.branch_name == 'chore/cicd-v1'
+        run: |
+          aws ssm put-parameter \
+            --name "${{ secrets.SSM_PARAMETER_NAME }}" \
+            --value "${{ inputs.image_uri }}" \
+            --type "String" \
+            --overwrite
