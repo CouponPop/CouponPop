@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,7 +26,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -116,20 +114,15 @@ class CouponEventControllerTest {
         LocalDateTime eventEndAt = now.plusDays(1);
         Long eventId = 1L;
 
-        CouponEventDetailResponse response = CouponEventDetailResponse.builder()
-                .id(eventId)
-                .eventName("아이스 아메리카노 1+1")
-                .eventPeriod(
-                        new EventPeriod(eventStartAt, eventEndAt)
-                )
-                .eventStatus(CouponEventStatus.SCHEDULED)
-                .summary(
-                        new EventStatisticSummary(30, 30, 0, 0, 0)
-                )
-                .createdAt(LocalDateTime.of(2025, 10, 14, 15, 0))
-                .updatedAt(LocalDateTime.of(2025, 10, 14, 15, 0))
-                .build();
-
+        CouponEventDetailResponse response = new CouponEventDetailResponse(
+                eventId,
+                "아이스 아메리카노 1+1",
+                EventPeriod.of(eventStartAt, eventEndAt),
+                CouponEventStatus.SCHEDULED,
+                new EventStatisticSummary(30, 30, 0, 0, 0),
+                LocalDateTime.of(2025, 10, 14, 15, 0),
+                LocalDateTime.of(2025, 10, 14, 15, 0)
+        );
 
         given(couponEventService.getCouponEvent(anyLong(), anyLong(), any(LocalDateTime.class)))
                 .willReturn(response);
