@@ -23,8 +23,7 @@ public class FirebaseConfig {
 
     @PostConstruct
     public void init() {
-        try {
-            InputStream serviceAccount = new ClassPathResource(fcmConfigPath).getInputStream();
+        try (InputStream serviceAccount = new ClassPathResource(fcmConfigPath).getInputStream()) {
             GoogleCredentials googleCredentials = GoogleCredentials
                     .fromStream(serviceAccount);
             FirebaseOptions options = FirebaseOptions.builder()
