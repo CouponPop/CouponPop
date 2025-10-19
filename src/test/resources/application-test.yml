@@ -24,3 +24,7 @@ spring:
 
   flyway:
     enabled: false
+
+jwt:
+  secret:
+    key: test=secret-key-for-jwt-token=test=secret-key-for-jwt-token=test=secret-key-for-jwt-token
