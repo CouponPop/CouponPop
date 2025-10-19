@@ -7,6 +7,7 @@ import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
+import com.sparta.couponpop.domain.store.dto.response.StoreWithDistanceDto;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
@@ -384,10 +385,28 @@ class StoreServiceTest {
         Store store1 = createNearStore(member1); // 가까운 매장
         Store store2 = createFarStore(member2); // 먼 매장
 
-        // Mock 데이터: [Store, distance] 형태의 Object 배열
-        Object[] result1 = {store1, 0.5}; // 0.5km
-        Object[] result2 = {store2, 3.2}; // 3.2km
-        List<Object[]> mockResults = Arrays.asList(result1, result2);
+        // Mock 데이터: StoreWithDistanceDto 타입 안전한 DTO
+        StoreWithDistanceDto result1 = new StoreWithDistanceDto(
+                store1.getId(),
+                store1.getName(),
+                store1.getAddress(),
+                store1.getStoreCategory(),
+                store1.getLatitude(),
+                store1.getLongitude(),
+                store1.getImageUrl(),
+                0.5 // 0.5km
+        );
+        StoreWithDistanceDto result2 = new StoreWithDistanceDto(
+                store2.getId(),
+                store2.getName(),
+                store2.getAddress(),
+                store2.getStoreCategory(),
+                store2.getLatitude(),
+                store2.getLongitude(),
+                store2.getImageUrl(),
+                3.2 // 3.2km
+        );
+        List<StoreWithDistanceDto> mockResults = Arrays.asList(result1, result2);
 
         given(storeRepository.findByLocation(latitude, longitude, radius))
                 .willReturn(mockResults);
@@ -451,9 +470,27 @@ class StoreServiceTest {
         Store cafeStore = createCafeStore(member1);
         Store foodStore = createFoodStore(member2);
 
-        Object[] result1 = {cafeStore, 1.2};
-        Object[] result2 = {foodStore, 2.8};
-        List<Object[]> mockResults = Arrays.asList(result1, result2);
+        StoreWithDistanceDto result1 = new StoreWithDistanceDto(
+                cafeStore.getId(),
+                cafeStore.getName(),
+                cafeStore.getAddress(),
+                cafeStore.getStoreCategory(),
+                cafeStore.getLatitude(),
+                cafeStore.getLongitude(),
+                cafeStore.getImageUrl(),
+                1.2
+        );
+        StoreWithDistanceDto result2 = new StoreWithDistanceDto(
+                foodStore.getId(),
+                foodStore.getName(),
+                foodStore.getAddress(),
+                foodStore.getStoreCategory(),
+                foodStore.getLatitude(),
+                foodStore.getLongitude(),
+                foodStore.getImageUrl(),
+                2.8
+        );
+        List<StoreWithDistanceDto> mockResults = Arrays.asList(result1, result2);
 
         given(storeRepository.findByLocation(latitude, longitude, radius))
                 .willReturn(mockResults);
@@ -495,10 +532,37 @@ class StoreServiceTest {
         Store middleStore = createStore(member3);
 
         // 거리순으로 정렬된 결과 (가까운 순)
-        Object[] result1 = {nearStore, 0.8};  // 가장 가까움
-        Object[] result2 = {middleStore, 2.1}; // 중간
-        Object[] result3 = {farStore, 4.5};    // 가장 멀음
-        List<Object[]> mockResults = Arrays.asList(result1, result2, result3);
+        StoreWithDistanceDto result1 = new StoreWithDistanceDto(
+                nearStore.getId(),
+                nearStore.getName(),
+                nearStore.getAddress(),
+                nearStore.getStoreCategory(),
+                nearStore.getLatitude(),
+                nearStore.getLongitude(),
+                nearStore.getImageUrl(),
+                0.8 // 가장 가까움
+        );
+        StoreWithDistanceDto result2 = new StoreWithDistanceDto(
+                middleStore.getId(),
+                middleStore.getName(),
+                middleStore.getAddress(),
+                middleStore.getStoreCategory(),
+                middleStore.getLatitude(),
+                middleStore.getLongitude(),
+                middleStore.getImageUrl(),
+                2.1 // 중간
+        );
+        StoreWithDistanceDto result3 = new StoreWithDistanceDto(
+                farStore.getId(),
+                farStore.getName(),
+                farStore.getAddress(),
+                farStore.getStoreCategory(),
+                farStore.getLatitude(),
+                farStore.getLongitude(),
+                farStore.getImageUrl(),
+                4.5 // 가장 멀음
+        );
+        List<StoreWithDistanceDto> mockResults = Arrays.asList(result1, result2, result3);
 
         given(storeRepository.findByLocation(latitude, longitude, radius))
                 .willReturn(mockResults);
