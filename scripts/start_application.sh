@@ -35,7 +35,7 @@ echo "실행할 이미지: $IMAGE_URI"
 # --- 4. 새 컨테이너 실행 ---
 echo "새 컨테이너($CONTAINER_NAME)를 시작합니다..."
 docker run -d --name $CONTAINER_NAME -p 8080:8080 \
-  --entrypoint /bin/bash \
+  --entrypoint /bin/sh \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e DB_URL=$DB_URL \
   -e DB_USERNAME=$DB_USERNAME \
