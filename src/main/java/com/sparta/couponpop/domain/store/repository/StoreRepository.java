@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
-
 import java.util.List;
 
 public interface StoreRepository extends JpaRepository<Store, Long> {
@@ -31,6 +30,31 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
             """)
     Optional<Store> findByIdWithMember(@Param("storeId") Long storeId);
 
+    /**
+     * 위치 기반으로 매장을 조회합니다.
+     * 거리순으로 정렬하여 반환합니다.
+     */
+    @Query("""
+            SELECT s, (
+                6371 * acos(
+                    cos(radians(:lat)) * cos(radians(s.latitude)) * 
+                    cos(radians(s.longitude) - radians(:lng)) + 
+                    sin(radians(:lat)) * sin(radians(s.latitude))
+                )
+            ) as distance
+            FROM Store s
+            WHERE (
+                6371 * acos(
+                    cos(radians(:lat)) * cos(radians(s.latitude)) * 
+                    cos(radians(s.longitude) - radians(:lng)) + 
+                    sin(radians(:lat)) * sin(radians(s.latitude))
+                )
+            ) <= :radius
+            ORDER BY distance ASC
+            """)
+    List<Object[]> findByLocation(@Param("lat") double latitude, 
+                                @Param("lng") double longitude, 
+                                @Param("radius") double radiusKm);
+
     List<Store> findByMemberIdOrderByCreatedAtDesc(Long memberId);
 }
-
