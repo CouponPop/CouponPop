@@ -71,7 +71,7 @@ class MemberFcmTokenControllerTest {
                                 .content(objectMapper.writeValueAsString(request))
                 )
                 .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 
 

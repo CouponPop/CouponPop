@@ -1,15 +1,12 @@
 package com.sparta.couponpop.domain.notification.service;
 
-import com.google.firebase.messaging.BatchResponse;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.FirebaseMessagingException;
-import com.google.firebase.messaging.MulticastMessage;
+import com.google.firebase.messaging.*;
 import com.sparta.couponpop.domain.notification.factory.FcmMessageFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -22,15 +19,22 @@ public class FcmSendService {
 
     private final FcmMessageFactory fcmMessageFactory;
 
-    public void sendNotification(String token,
-                                 String title,
-                                 String body) throws FirebaseMessagingException {
-        sendNotification(Collections.singletonList(token), title, body);
+    // TODO: 발송된 토큰의 lastUsedAt 업데이트 로직 추가 예정
+    public void sendNotification(String token, String title, String body) throws FirebaseMessagingException {
+        if (!StringUtils.hasText(token)) {
+            log.info("FCM 전송 토큰이 유효하지 않아 전송을 건너뜁니다.");
+            return;
+        }
+
+        Message message = fcmMessageFactory.createMessage(token, title, body);
+        FirebaseMessaging.getInstance().send(message);
+
+        // TODO: 성공 토큰 lastUsedAt 업데이트
+        // TODO: 실패 토큰 삭제 처리
     }
 
-    public void sendNotification(List<String> tokens,
-                                 String title,
-                                 String body) throws FirebaseMessagingException {
+    // TODO: 발송된 토큰의 lastUsedAt 업데이트 로직 추가 예정
+    public void sendNotification(List<String> tokens, String title, String body) throws FirebaseMessagingException {
         if (tokens == null || tokens.isEmpty()) {
             log.info("FCM 전송 토큰이 비어 있어 전송을 건너뜁니다.");
             return;
@@ -45,6 +49,9 @@ public class FcmSendService {
             log.info("[FCM 다건 전송 요청] tokens={}", batch.size());
             BatchResponse response = FirebaseMessaging.getInstance().sendEachForMulticast(message);
             log.info("[FCM 다건 전송 결과] 성공={} 실패={}", response.getSuccessCount(), response.getFailureCount());
+
+            // TODO: 성공 토큰 lastUsedAt 업데이트
+            // TODO: 실패 토큰 삭제 처리
         }
     }
 }
