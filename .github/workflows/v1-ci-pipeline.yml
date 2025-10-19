@@ -18,7 +18,7 @@ on:
         required: true
       ECR_REPOSITORY:
         required: true
-      FCM_SERVICE_ACCOUNT_KEY_JSON:
+      FCM_SERVICE_ACCOUNT_KEY_JSON_B64:
         required: true
       SSM_PARAMETER_NAME:
         required: true
@@ -46,7 +46,7 @@ jobs:
       - name: Create secrets for Test
         run: |
           mkdir -p src/main/resources/firebase
-          echo "${{ secrets.FCM_KEY_JSON_B64 }}" | base64 --decode > src/main/resources/firebase/serviceAccountKey.json
+          echo "${{ secrets.FCM_SERVICE_ACCOUNT_KEY_JSON_B64 }}" | base64 --decode > src/main/resources/firebase/serviceAccountKey.json
 
       - name: Verify key file content
         run: |
