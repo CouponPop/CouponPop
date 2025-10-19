@@ -34,12 +34,8 @@ echo "실행할 이미지: $IMAGE_URI"
 
 # --- 4. Docker 이미지에서 동적으로 UID/GID 가져오기 ---
 echo "Docker 이미지에서 'appuser'의 UID/GID를 동적으로 가져옵니다..."
-# --rm: 컨테이너 실행 후 자동 삭제
-# --entrypoint id: 컨테이너의 기본 명령어(java)를 무시하고 'id' 명령어 실행
-# -u appuser: 'appuser'의 UID를 가져옴
-APP_UID=$(docker run --rm --entrypoint id "$IMAGE_URI" -u appuser)
-# -g appuser: 'appuser'의 GID를 가져옴
-APP_GID=$(docker run --rm --entrypoint id "$IMAGE_URI" -g appuser)
+APP_UID=$(docker run --rm --entrypoint sh "$IMAGE_URI" -c 'id -u appuser')
+APP_GID=$(docker run --rm --entrypoint sh "$IMAGE_URI" -c 'id -g appuser')
 echo "'appuser'의 실제 UID: $APP_UID, GID: $APP_GID 입니다."
 
 # --- 5. 동적으로 가져온 UID/GID로 파일 소유권 설정 ---
