@@ -5,6 +5,7 @@ import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreDetailResponse;
+import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.exception.StoreErrorCode;
@@ -120,5 +121,19 @@ public class StoreService {
         }
 
         return StoreDetailResponse.from(store);
+    }
+
+    @Transactional(readOnly = true)
+    public List<StoreMapResponse> getStoresByLocation(double latitude, double longitude, double radiusKm) {
+
+        List<Object[]> results = storeRepository.findByLocation(latitude, longitude, radiusKm);
+
+        return results.stream()
+                .map(result -> {
+                    Store store = (Store) result[0];
+                    Double distance = (Double) result[1];
+                    return StoreMapResponse.from(store, distance);
+                })
+                .toList();
     }
 }
