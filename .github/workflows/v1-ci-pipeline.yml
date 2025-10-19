@@ -18,6 +18,11 @@ on:
         required: true
       ECR_REPOSITORY:
         required: true
+      FCM_SERVICE_ACCOUNT_KEY_JSON:
+        required: true
+      SSM_PARAMETER_NAME:
+        required: true
+
 
 jobs:
   build-and-package:
@@ -40,7 +45,7 @@ jobs:
 
       - name: Create secrets for Test
         run: |
-          mkdir -p firebase
+          mkdir -p src/main/resources/firebase
           echo "${{ secrets.FCM_SERVICE_ACCOUNT_KEY_JSON }}" > src/main/resources/firebase/serviceAccountKey.json
 
       - name: Grant execute permission for gradlew
