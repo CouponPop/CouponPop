@@ -41,7 +41,7 @@ docker run -d --name $CONTAINER_NAME -p 8080:8080 \
   -e DB_PASSWORD=$DB_PASSWORD \
   -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
   -v $FCM_KEY_PATH:$FCM_CONTAINER_KEY_PATH \
-  $IMAGE_URI
+  $IMAGE_URI sleep 3600
 
 echo "컨테이너 시작 명령 전송 완료."
 echo "--- start_application.sh 종료 ---"
