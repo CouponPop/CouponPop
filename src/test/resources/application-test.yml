@@ -27,4 +27,4 @@ spring:
 
 jwt:
   secret:
-    key: test=secret-key-for-jwt-token=test=secret-key-for-jwt-token=test=secret-key-for-jwt-token
+    key: dGVzdD1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW49dGVzdD1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW49=
