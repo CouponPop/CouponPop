@@ -29,6 +29,7 @@ echo "FCM 키 파일 생성 완료: $FCM_KEY_PATH"
 
 # Docker 컨테이너의 non-root 사용자가 파일을 읽을 수 있도록
 # 모든 사용자에게 읽기(read) 권한을 부여합니다.
+chown 1000:1000 $FCM_KEY_PATH   # (Dockerfile에서 USER appuser가 UID 1000일 가능성이 높음)
 chmod 644 $FCM_KEY_PATH
 echo "FCM 키 파일의 소유권 및 권한 설정을 완료했습니다."
 
