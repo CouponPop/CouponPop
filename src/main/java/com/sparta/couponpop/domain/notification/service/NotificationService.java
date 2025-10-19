@@ -2,7 +2,6 @@ package com.sparta.couponpop.domain.notification.service;
 
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.sparta.couponpop.common.exception.GlobalException;
-import com.sparta.couponpop.common.util.DateTimeFormatters;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.entity.MemberFcmToken;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
@@ -47,7 +46,7 @@ public class NotificationService {
                 """.formatted(
                 payload.couponName(),
                 payload.couponCode(),
-                payload.expireAt().format(DateTimeFormatters.KOREAN_DATE_TIME)
+                payload.expireAt()
         );
 
         try {

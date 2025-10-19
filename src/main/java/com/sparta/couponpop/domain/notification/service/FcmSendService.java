@@ -1,11 +1,14 @@
 package com.sparta.couponpop.domain.notification.service;
 
-import com.google.firebase.messaging.*;
+import com.google.firebase.messaging.BatchResponse;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.MulticastMessage;
+import com.sparta.couponpop.domain.notification.factory.FcmMessageFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
@@ -16,6 +19,8 @@ public class FcmSendService {
 
     // FCM 멀티캐스트 API는 한 번의 요청에 최대 500개의 토큰만 허용한다.
     private static final int FCM_MULTICAST_LIMIT = 500;
+
+    private final FcmMessageFactory fcmMessageFactory;
 
     public void sendNotification(String token,
                                  String title,
@@ -31,52 +36,11 @@ public class FcmSendService {
             return;
         }
 
-        Notification notification = Notification.builder()
-                .setTitle(title)
-                .setBody(body)
-                .build();
-
-        WebpushNotification webpushNotification = WebpushNotification.builder()
-                .setTitle(title)
-                .setBody(body)
-                .build();
-
-        // Android 설정
-        AndroidConfig androidConfig = AndroidConfig.builder()
-                .setPriority(AndroidConfig.Priority.HIGH)
-                .setTtl(Duration.ofMinutes(5).toMillis())
-                .putData("platform", "android")
-                .build();
-
-        // iOS 설정
-        ApnsConfig apnsConfig = ApnsConfig.builder()
-                .putHeader("apns-priority", "10")
-                .putHeader("apns-push-type", "alert")
-                .setAps(Aps.builder()
-                        .setSound("default")
-                        .putCustomData("platform", "ios")
-                        .build())
-                .build();
-
-        // Web 설정
-        WebpushConfig webpushConfig = WebpushConfig.builder()
-                .setNotification(webpushNotification)
-                .putData("platform", "web")
-                .build();
-
         for (int start = 0; start < tokens.size(); start += FCM_MULTICAST_LIMIT) {
             int end = Math.min(start + FCM_MULTICAST_LIMIT, tokens.size());
             List<String> batch = tokens.subList(start, end);
 
-            MulticastMessage message = MulticastMessage.builder()
-                    .addAllTokens(batch)
-                    .setNotification(notification)
-                    .setAndroidConfig(androidConfig)
-                    .setApnsConfig(apnsConfig)
-                    .setWebpushConfig(webpushConfig)
-                    .putData("title", title)
-                    .putData("body", body)
-                    .build();
+            MulticastMessage message = fcmMessageFactory.createMulticastMessage(batch, title, body);
 
             log.info("[FCM 다건 전송 요청] tokens={}", batch.size());
             BatchResponse response = FirebaseMessaging.getInstance().sendEachForMulticast(message);

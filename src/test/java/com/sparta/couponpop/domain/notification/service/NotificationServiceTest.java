@@ -2,7 +2,6 @@ package com.sparta.couponpop.domain.notification.service;
 
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.sparta.couponpop.common.exception.GlobalException;
-import com.sparta.couponpop.common.util.DateTimeFormatters;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.entity.MemberFcmToken;
 import com.sparta.couponpop.domain.member.enums.MemberType;
@@ -156,7 +155,7 @@ class NotificationServiceTest {
                     """.formatted(
                     payload.couponName(),
                     payload.couponCode(),
-                    expireAt.format(DateTimeFormatters.KOREAN_DATE_TIME)
+                    expireAt
             );
 
             assertThat(tokensCaptor.getValue()).containsExactly("token-A", "token-B");

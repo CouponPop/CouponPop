@@ -1,11 +1,14 @@
 package com.sparta.couponpop.domain.notification.service;
 
 import com.google.firebase.messaging.*;
+import com.sparta.couponpop.domain.notification.factory.FcmMessageFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -16,6 +19,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
@@ -23,7 +29,11 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class FcmSendServiceTest {
 
-    private final FcmSendService fcmSendService = new FcmSendService();
+    @Mock
+    private FcmMessageFactory fcmMessageFactory;
+
+    @InjectMocks
+    private FcmSendService fcmSendService;
 
     @Nested
     @DisplayName("FCM 알림 발송")
@@ -35,6 +45,14 @@ class FcmSendServiceTest {
             String token = "test-token";
             String title = "알림 제목";
             String body = "알림 내용";
+            given(fcmMessageFactory.createMulticastMessage(anyList(), anyString(), anyString()))
+                    .willAnswer(invocation -> {
+                        @SuppressWarnings("unchecked")
+                        List<String> requestTokens = new ArrayList<>((List<String>) invocation.getArgument(0, List.class));
+                        String requestTitle = invocation.getArgument(1, String.class);
+                        String requestBody = invocation.getArgument(2, String.class);
+                        return buildMessage(requestTokens, requestTitle, requestBody);
+                    });
             FirebaseMessaging firebaseMessaging = mock(FirebaseMessaging.class);
             BatchResponse batchResponse = mock(BatchResponse.class);
 
@@ -72,6 +90,7 @@ class FcmSendServiceTest {
 
                 // then
                 mockedStatic.verifyNoInteractions();
+                verifyNoInteractions(fcmMessageFactory);
             }
         }
 
@@ -83,6 +102,14 @@ class FcmSendServiceTest {
             for (int i = 0; i < 750; i++) {
                 tokens.add("token-" + i);
             }
+            given(fcmMessageFactory.createMulticastMessage(anyList(), anyString(), anyString()))
+                    .willAnswer(invocation -> {
+                        @SuppressWarnings("unchecked")
+                        List<String> requestTokens = new ArrayList<>((List<String>) invocation.getArgument(0, List.class));
+                        String requestTitle = invocation.getArgument(1, String.class);
+                        String requestBody = invocation.getArgument(2, String.class);
+                        return buildMessage(requestTokens, requestTitle, requestBody);
+                    });
             FirebaseMessaging firebaseMessaging = mock(FirebaseMessaging.class);
             BatchResponse batchResponse = mock(BatchResponse.class);
 
@@ -104,7 +131,23 @@ class FcmSendServiceTest {
                 assertThat(capturedMessages).hasSize(2);
                 assertThat(extractTokens(capturedMessages.get(0))).hasSize(500);
                 assertThat(extractTokens(capturedMessages.get(1))).hasSize(250);
+                then(fcmMessageFactory).should(times(2)).createMulticastMessage(anyList(), eq("배치 제목"), eq("배치 본문"));
             }
+        }
+
+        private MulticastMessage buildMessage(List<String> tokens,
+                                              String title,
+                                              String body) {
+            // 팩토리가 생성하는 메시지를 모사해 빌더 기반 구성을 재현한다.
+            return MulticastMessage.builder()
+                    .addAllTokens(tokens)
+                    .setNotification(Notification.builder()
+                            .setTitle(title)
+                            .setBody(body)
+                            .build())
+                    .putData("title", title)
+                    .putData("body", body)
+                    .build();
         }
 
         private List<String> extractTokens(MulticastMessage message) {
