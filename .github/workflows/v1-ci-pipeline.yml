@@ -47,6 +47,8 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle and Run Tests
+        env:
+          SPRING_PROFILES_ACTIVE: test
         run: ./gradlew clean build
 
       - name: Remove serviceAccountKey.json
