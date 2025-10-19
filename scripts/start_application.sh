@@ -7,7 +7,7 @@ SECRET_ID="couponpop/secrets"
 CONTAINER_NAME="couponpop-app"
 IMAGE_URI_FILE="/home/ubuntu/app/image_uri.txt"
 FCM_KEY_PATH="/home/ubuntu/app/serviceAccountKey.json"
-FCM_CONTAINER_KEY_PATH="/app/src/main/resources/firebase/serviceAccountKey.json"
+FCM_CONTAINER_KEY_PATH="/config/serviceAccountKey.json"
 
 echo "--- start_application.sh 시작 ---"
 
