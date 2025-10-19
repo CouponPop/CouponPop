@@ -27,6 +27,12 @@ echo "FCM 서비스 계정 키를 파일로 생성합니다."
 echo $SECRET_JSON | jq -r .FCM_SERVICE_ACCOUNT_KEY_JSON > $FCM_KEY_PATH
 echo "FCM 키 파일 생성 완료: $FCM_KEY_PATH"
 
+# Dockerfile의 'appuser' (UID 1000)가 파일을 읽을 수 있도록 소유권을 변경합니다.
+# 'ubuntu' 사용자가 이 파일을 읽을 수 있도록 권한을 설정해 줍니다.
+chown ubuntu:ubuntu $HOST_KEY_PATH
+chmod 644 $HOST_KEY_PATH
+echo "FCM 키 파일의 소유권 및 권한 설정을 완료했습니다."
+
 # --- 3. 파일에서 실행할 이미지 URI 읽어오기 ---
 echo "$IMAGE_URI_FILE 에서 이미지 URI를 읽어옵니다."
 IMAGE_URI=$(cat $IMAGE_URI_FILE)
@@ -34,7 +40,7 @@ echo "실행할 이미지: $IMAGE_URI"
 
 # --- 4. 새 컨테이너 실행 ---
 echo "새 컨테이너($CONTAINER_NAME)를 시작합니다..."
-docker run -itd --name $CONTAINER_NAME -p 8080:8080 \
+docker run -d --name $CONTAINER_NAME -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e DB_URL=$DB_URL \
   -e DB_USERNAME=$DB_USERNAME \
