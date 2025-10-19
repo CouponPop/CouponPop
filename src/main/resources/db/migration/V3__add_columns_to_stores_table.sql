@@ -1,6 +1,6 @@
 ALTER TABLE stores
     ADD COLUMN member_id           BIGINT                NOT NULL COMMENT '매장 소유자 ID',
-    ADD COLUMN store_category      ENUM('CAFE', 'FOOD', 'CONVENIENCE')  NOT NULL COMMENT '매장 카테고리',
+    ADD COLUMN store_category      ENUM('CAFE', 'FOOD')  NOT NULL COMMENT '매장 카테고리',
     ADD COLUMN name                VARCHAR(255)          NOT NULL COMMENT '매장명',
     ADD COLUMN phone               VARCHAR(30)           NOT NULL COMMENT '매장 전화번호',
     ADD COLUMN description         TEXT                  NOT NULL COMMENT '매장 설명',
