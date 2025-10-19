@@ -27,4 +27,4 @@ spring:
 
 jwt:
   secret:
-    key: dGVzdD1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW49dGVzdD1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW49=
+    key: Y291cG9ucG9wLXRlc3QtanVuaW9yLWJhY2tlbmQtZGV2ZWxvcGVyLXNlY3JldC1rZXktZm9yLWNpLWNkCg==
