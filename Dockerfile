@@ -1,27 +1,15 @@
-# 1. Build App
-FROM gradle:8.5-jdk17 AS build
-
-WORKDIR /app
-
-# 빌드 파일들을 먼저 복사하여 의존성을 캐싱합니다.
-COPY build.gradle settings.gradle /app/
-
-# 의존성을 다운로드합니다.
-RUN gradle dependencies --no-daemon
-
-# 나머지 소스 코드를 복사합니다.
-COPY src /app/src
-
-# 애플리케이션을 빌드합니다. 테스트는 생략합니다.
-RUN gradle build --no-daemon -x test
-
-
-# 2. Make Docker Image
+# 미리 빌드된 애플리케이션을 실행할 최종 이미지를 만듭니다.
 FROM amazoncorretto:17-alpine-jdk
 
 WORKDIR /app
 
-COPY --from=build /app/build/libs/*.jar app.jar
+COPY build/libs/*.jar app.jar
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+RUN mkdir /config && chown appuser:appgroup /config
+
+USER appuser
 
 EXPOSE 8080
 
