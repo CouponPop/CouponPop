@@ -32,7 +32,7 @@ public class FcmTestController {
         // 일반 테스트
         fcmSendService.sendNotification(request.token(), request.title(), request.body());
 
-        return ApiResponse.success(null);
+        return ApiResponse.noContent();
     }
 
     @PostMapping("/fcm/test2")
@@ -48,7 +48,7 @@ public class FcmTestController {
         );
         notificationService.notifyCustomerCouponIssued(memberId, payload);
 
-        return ApiResponse.success(null);
+        return ApiResponse.noContent();
     }
 
 }
