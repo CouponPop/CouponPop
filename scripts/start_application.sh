@@ -27,10 +27,9 @@ echo "FCM 서비스 계정 키를 파일로 생성합니다."
 echo $SECRET_JSON | jq -r .FCM_SERVICE_ACCOUNT_KEY_JSON > $FCM_KEY_PATH
 echo "FCM 키 파일 생성 완료: $FCM_KEY_PATH"
 
-# Dockerfile의 'appuser' (UID 1000)가 파일을 읽을 수 있도록 소유권을 변경합니다.
-# 'ubuntu' 사용자가 이 파일을 읽을 수 있도록 권한을 설정해 줍니다.
-chown ubuntu:ubuntu $HOST_KEY_PATH
-chmod 644 $HOST_KEY_PATH
+# Docker 컨테이너의 non-root 사용자가 파일을 읽을 수 있도록
+# 모든 사용자에게 읽기(read) 권한을 부여합니다.
+chmod 644 $FCM_KEY_PATH
 echo "FCM 키 파일의 소유권 및 권한 설정을 완료했습니다."
 
 # --- 3. 파일에서 실행할 이미지 URI 읽어오기 ---
