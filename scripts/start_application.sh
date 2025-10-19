@@ -24,7 +24,7 @@ echo "비밀 정보 로드 완료."
 
 # FCM 키를 파일로 생성
 echo "FCM 서비스 계정 키를 파일로 생성합니다."
-echo $SECRET_JSON | jq -r .FCM_KEY_JSON > $FCM_KEY_PATH
+echo $SECRET_JSON | jq -r .FCM_SERVICE_ACCOUNT_KEY_JSON > $FCM_KEY_PATH
 echo "FCM 키 파일 생성 완료: $FCM_KEY_PATH"
 
 # --- 3. 파일에서 실행할 이미지 URI 읽어오기 ---
