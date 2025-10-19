@@ -8,4 +8,4 @@ spring:
         highlight_sql: false
 
 fcm:
-  firebase-config-path: classpath:config/serviceAccountKey.json
+  firebase-config-path: file:/app/config/serviceAccountKey.json
