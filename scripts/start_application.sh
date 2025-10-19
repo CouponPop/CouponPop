@@ -34,15 +34,14 @@ echo "실행할 이미지: $IMAGE_URI"
 
 # --- 4. 새 컨테이너 실행 ---
 echo "새 컨테이너($CONTAINER_NAME)를 시작합니다..."
-docker run -d --name $CONTAINER_NAME -p 8080:8080 \
-  --entrypoint /bin/sh \
+docker run -itd --name $CONTAINER_NAME -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e DB_URL=$DB_URL \
   -e DB_USERNAME=$DB_USERNAME \
   -e DB_PASSWORD=$DB_PASSWORD \
   -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
   -v $FCM_KEY_PATH:$FCM_CONTAINER_KEY_PATH \
-  $IMAGE_URI "sleep 3600"
+  $IMAGE_URI
 
 echo "컨테이너 시작 명령 전송 완료."
 echo "--- start_application.sh 종료 ---"
