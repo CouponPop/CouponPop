@@ -27,18 +27,26 @@ echo "FCM 서비스 계정 키를 파일로 생성합니다."
 echo $SECRET_JSON | jq -r .FCM_SERVICE_ACCOUNT_KEY_JSON > $FCM_KEY_PATH
 echo "FCM 키 파일 생성 완료: $FCM_KEY_PATH"
 
-# Docker 컨테이너의 non-root 사용자가 파일을 읽을 수 있도록
-# 모든 사용자에게 읽기(read) 권한을 부여합니다.
-chown 1000:1000 $FCM_KEY_PATH   # (Dockerfile에서 USER appuser가 UID 1000일 가능성이 높음)
-chmod 644 $FCM_KEY_PATH
-echo "FCM 키 파일의 소유권 및 권한 설정을 완료했습니다."
-
 # --- 3. 파일에서 실행할 이미지 URI 읽어오기 ---
 echo "$IMAGE_URI_FILE 에서 이미지 URI를 읽어옵니다."
 IMAGE_URI=$(cat $IMAGE_URI_FILE)
 echo "실행할 이미지: $IMAGE_URI"
 
-# --- 4. 새 컨테이너 실행 ---
+# --- 4. Docker 이미지에서 동적으로 UID/GID 가져오기 ---
+echo "Docker 이미지에서 'appuser'의 UID/GID를 동적으로 가져옵니다..."
+# --rm: 컨테이너 실행 후 자동 삭제
+# --entrypoint id: 컨테이너의 기본 명령어(java)를 무시하고 'id' 명령어 실행
+# -u appuser: 'appuser'의 UID를 가져옴
+APP_UID=$(docker run --rm --entrypoint id "$IMAGE_URI" -u appuser)
+# -g appuser: 'appuser'의 GID를 가져옴
+APP_GID=$(docker run --rm --entrypoint id "$IMAGE_URI" -g appuser)
+echo "'appuser'의 실제 UID: $APP_UID, GID: $APP_GID 입니다."
+
+# --- 5. 동적으로 가져온 UID/GID로 파일 소유권 설정 ---
+chown "$APP_UID:$APP_GID" $FCM_KEY_PATH
+echo "FCM 키 파일의 소유권 설정을 완료했습니다."
+
+# --- 6. 새 컨테이너 실행 ---
 echo "새 컨테이너($CONTAINER_NAME)를 시작합니다..."
 docker run -d --name $CONTAINER_NAME -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
