@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.store.repository;
 
+import com.sparta.couponpop.domain.store.dto.response.StoreWithDistanceDto;
 import com.sparta.couponpop.domain.store.entity.Store;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -33,21 +34,42 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
     /**
      * 위치 기반으로 매장을 조회합니다.
      * 거리순으로 정렬하여 반환합니다.
+     * 생성자 표현식을 사용하여 타입 안전한 DTO를 반환합니다.
      */
-    @Query(value = """
-            SELECT s.*, 
-                   (6371 * acos(
-                       cos(radians(:lat)) * cos(radians(s.latitude)) *
-                       cos(radians(s.longitude) - radians(:lng)) +
-                       sin(radians(:lat)) * sin(radians(s.latitude))
-                   )) as distance
-            FROM stores s
-            HAVING distance <= :radius
-            ORDER BY distance ASC
-            """, nativeQuery = true)
-    List<Object[]> findByLocation(@Param("lat") double latitude, 
-                                @Param("lng") double longitude, 
-                                @Param("radius") double radiusKm);
+    @Query("""
+            SELECT new com.sparta.couponpop.domain.store.dto.response.StoreWithDistanceDto(
+                s.id,
+                s.name,
+                s.address,
+                s.storeCategory,
+                s.latitude,
+                s.longitude,
+                s.imageUrl,
+                (6371 * acos(
+                    cos(radians(:lat)) * cos(radians(s.latitude)) *
+                    cos(radians(s.longitude) - radians(:lng)) +
+                    sin(radians(:lat)) * sin(radians(s.latitude))
+                ))
+            )
+            FROM Store s
+            WHERE (
+                6371 * acos(
+                    cos(radians(:lat)) * cos(radians(s.latitude)) *
+                    cos(radians(s.longitude) - radians(:lng)) +
+                    sin(radians(:lat)) * sin(radians(s.latitude))
+                )
+            ) <= :radius
+            ORDER BY (
+                6371 * acos(
+                    cos(radians(:lat)) * cos(radians(s.latitude)) *
+                    cos(radians(s.longitude) - radians(:lng)) +
+                    sin(radians(:lat)) * sin(radians(s.latitude))
+                )
+            ) ASC
+            """)
+    List<StoreWithDistanceDto> findByLocation(@Param("lat") double latitude, 
+                                             @Param("lng") double longitude, 
+                                             @Param("radius") double radiusKm);
 
     List<Store> findByMemberIdOrderByCreatedAtDesc(Long memberId);
 }
