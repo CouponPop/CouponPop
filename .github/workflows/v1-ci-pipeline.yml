@@ -38,12 +38,19 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
 
+      - name: Create serviceAccountKey.json for Test
+        run: |
+          mkdir -p firebase
+          echo "${{ secrets.FCM_SERVICE_ACCOUNT_KEY_JSON }}" > firebase/serviceAccountKey.json
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Build with Gradle and Run Tests
-        #run: ./gradlew clean build
-        run: ./gradlew clean build -x test
+        run: ./gradlew clean build
+
+      - name: Remove serviceAccountKey.json
+        run: rm rf firebase
 
       # ================================================================
       #  main 브랜치일 경우에만 실행

@@ -5,7 +5,9 @@ set -e # 오류 발생 시 중단
 AWS_REGION="ap-northeast-2"
 SECRET_ID="couponpop/secrets"
 CONTAINER_NAME="couponpop-app"
-IMAGE_URI_FILE="/home/ubuntu/app/image_uri.txt" # 읽어올 파일
+IMAGE_URI_FILE="/home/ubuntu/app/image_uri.txt"
+FCM_KEY_PATH="/home/ubuntu/app/serviceAccountKey.json"
+FCM_CONTAINER_KEY_PATH="/app/src/main/resources/firebase/serviceAccountKey.json"
 
 echo "--- start_application.sh 시작 ---"
 
@@ -18,8 +20,12 @@ export DB_URL=$(echo $SECRET_JSON | jq -r .DB_URL)
 export DB_USERNAME=$(echo $SECRET_JSON | jq -r .DB_USERNAME)
 export DB_PASSWORD=$(echo $SECRET_JSON | jq -r .DB_PASSWORD)
 export JWT_SECRET_KEY=$(echo $SECRET_JSON | jq -r .JWT_SECRET_KEY)
-# (필요한 다른 환경변수들 추가...)
 echo "비밀 정보 로드 완료."
+
+# FCM 키를 파일로 생성
+echo "FCM 서비스 계정 키를 파일로 생성합니다."
+echo $SECRET_JSON | jq -r .FCM_KEY_JSON > $FCM_KEY_PATH
+echo "FCM 키 파일 생성 완료: $FCM_KEY_PATH"
 
 # --- 3. 파일에서 실행할 이미지 URI 읽어오기 ---
 echo "$IMAGE_URI_FILE 에서 이미지 URI를 읽어옵니다."
@@ -34,6 +40,7 @@ docker run -d --name $CONTAINER_NAME -p 8080:8080 \
   -e DB_USERNAME=$DB_USERNAME \
   -e DB_PASSWORD=$DB_PASSWORD \
   -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
+  -v $FCM_KEY_PATH:$FCM_CONTAINER_KEY_PATH \
   $IMAGE_URI
 
 echo "컨테이너 시작 명령 전송 완료."
