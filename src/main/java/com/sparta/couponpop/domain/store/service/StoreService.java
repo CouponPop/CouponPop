@@ -127,9 +127,8 @@ public class StoreService {
     @Transactional(readOnly = true)
     public List<StoreMapResponse> getStoresByLocation(double latitude, double longitude, double radiusKm) {
 
-        List<StoreWithDistanceDto> results = storeRepository.findByLocation(latitude, longitude, radiusKm);
-
-        return results.stream()
+        return storeRepository.findByLocation(latitude, longitude, radiusKm)
+                .stream()
                 .map(StoreWithDistanceDto::toStoreMapResponse)
                 .toList();
     }
