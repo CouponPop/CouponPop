@@ -10,17 +10,19 @@ import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
+import com.sparta.couponpop.utils.TestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -552,62 +554,57 @@ class StoreServiceTest {
     }
 
     private Member createMember(Long memberId) {
-        Member member = Member.signUp(
-                "test@example.com",
-                "testuser",
-                "encodedPassword",
-                "01012345678",
-                MemberType.OWNER
-        );
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", memberId);
+        fieldValues.put("email", "test@example.com");
+        fieldValues.put("username", "testuser");
+        fieldValues.put("password", "encodedPassword");
+        fieldValues.put("phone", "01012345678");
+        fieldValues.put("memberType", MemberType.OWNER);
         
-        // ReflectionTestUtils를 사용하여 ID 설정
-        ReflectionTestUtils.setField(member, "id", memberId);
-        return member;
+        return TestUtils.createEntity(Member.class, fieldValues);
     }
 
     private Store createStore(Member member) {
-        Store store = Store.createStore(
-                member,
-                "스타벅스 홍대점",
-                "0212345678",
-                "홍대 중심가에 위치한 스타벅스입니다.",
-                "1234567890",
-                "서울시 마포구 홍익로 123",
-                37.5665,
-                126.9780,
-                "https://example.com/store-image.jpg",
-                StoreCategory.CAFE,
-                LocalTime.of(7, 0),
-                LocalTime.of(22, 0),
-                LocalTime.of(8, 0),
-                LocalTime.of(23, 0)
-        );
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", 1L);
+        fieldValues.put("member", member);
+        fieldValues.put("name", "스타벅스 홍대점");
+        fieldValues.put("phone", "0212345678");
+        fieldValues.put("description", "홍대 중심가에 위치한 스타벅스입니다.");
+        fieldValues.put("businessNumber", "1234567890");
+        fieldValues.put("address", "서울시 마포구 홍익로 123");
+        fieldValues.put("latitude", 37.5665);
+        fieldValues.put("longitude", 126.9780);
+        fieldValues.put("imageUrl", "https://example.com/store-image.jpg");
+        fieldValues.put("storeCategory", StoreCategory.CAFE);
+        fieldValues.put("weekdayOpenTime", LocalTime.of(7, 0));
+        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
+        fieldValues.put("weekendOpenTime", LocalTime.of(8, 0));
+        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
         
-        // 테스트용 ID 설정
-        ReflectionTestUtils.setField(store, "id", 1L);
-        return store;
+        return TestUtils.createEntity(Store.class, fieldValues);
     }
 
     private Store createFoodStore(Member member) {
-        Store store = Store.createStore(
-                member,
-                "맛있는 식당",
-                "0312345678",
-                "정말 맛있는 음식을 제공하는 식당입니다.",
-                "9876543210",
-                "서울시 강남구 테헤란로 456",
-                37.5665,
-                126.9780,
-                "https://example.com/food-store-image.jpg",
-                StoreCategory.FOOD,
-                LocalTime.of(11, 0),
-                LocalTime.of(22, 0),
-                LocalTime.of(12, 0),
-                LocalTime.of(23, 0)
-        );
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", 2L);
+        fieldValues.put("member", member);
+        fieldValues.put("name", "맛있는 식당");
+        fieldValues.put("phone", "0312345678");
+        fieldValues.put("description", "정말 맛있는 음식을 제공하는 식당입니다.");
+        fieldValues.put("businessNumber", "9876543210");
+        fieldValues.put("address", "서울시 강남구 테헤란로 456");
+        fieldValues.put("latitude", 37.5665);
+        fieldValues.put("longitude", 126.9780);
+        fieldValues.put("imageUrl", "https://example.com/food-store-image.jpg");
+        fieldValues.put("storeCategory", StoreCategory.FOOD);
+        fieldValues.put("weekdayOpenTime", LocalTime.of(11, 0));
+        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
+        fieldValues.put("weekendOpenTime", LocalTime.of(12, 0));
+        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
         
-        ReflectionTestUtils.setField(store, "id", 2L);
-        return store;
+        return TestUtils.createEntity(Store.class, fieldValues);
     }
 
     private CreateStoreRequest createUpdateRequest() {
@@ -647,68 +644,65 @@ class StoreServiceTest {
     }
 
     private Store createNearStore(Member member) {
-        Store store = Store.createStore(
-                member,
-                "가까운 카페",
-                "0212345678",
-                "가까운 위치의 카페입니다.",
-                "1234567890",
-                "서울시 중구 세종대로 110",
-                37.5665, // 서울시청 근처
-                126.9780,
-                "https://example.com/near-cafe.jpg",
-                StoreCategory.CAFE,
-                LocalTime.of(7, 0),
-                LocalTime.of(22, 0),
-                LocalTime.of(8, 0),
-                LocalTime.of(23, 0)
-        );
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", 3L);
+        fieldValues.put("member", member);
+        fieldValues.put("name", "가까운 카페");
+        fieldValues.put("phone", "0212345678");
+        fieldValues.put("description", "가까운 위치의 카페입니다.");
+        fieldValues.put("businessNumber", "1234567890");
+        fieldValues.put("address", "서울시 중구 세종대로 110");
+        fieldValues.put("latitude", 37.5665);
+        fieldValues.put("longitude", 126.9780);
+        fieldValues.put("imageUrl", "https://example.com/near-cafe.jpg");
+        fieldValues.put("storeCategory", StoreCategory.CAFE);
+        fieldValues.put("weekdayOpenTime", LocalTime.of(7, 0));
+        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
+        fieldValues.put("weekendOpenTime", LocalTime.of(8, 0));
+        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
         
-        ReflectionTestUtils.setField(store, "id", 3L);
-        return store;
+        return TestUtils.createEntity(Store.class, fieldValues);
     }
 
     private Store createFarStore(Member member) {
-        Store store = Store.createStore(
-                member,
-                "먼 카페",
-                "0212345679",
-                "먼 위치의 카페입니다.",
-                "1234567891",
-                "서울시 강남구 테헤란로 123",
-                37.5000, // 강남구
-                127.0000,
-                "https://example.com/far-cafe.jpg",
-                StoreCategory.CAFE,
-                LocalTime.of(7, 0),
-                LocalTime.of(22, 0),
-                LocalTime.of(8, 0),
-                LocalTime.of(23, 0)
-        );
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", 4L);
+        fieldValues.put("member", member);
+        fieldValues.put("name", "먼 카페");
+        fieldValues.put("phone", "0212345679");
+        fieldValues.put("description", "먼 위치의 카페입니다.");
+        fieldValues.put("businessNumber", "1234567891");
+        fieldValues.put("address", "서울시 강남구 테헤란로 123");
+        fieldValues.put("latitude", 37.5000);
+        fieldValues.put("longitude", 127.0000);
+        fieldValues.put("imageUrl", "https://example.com/far-cafe.jpg");
+        fieldValues.put("storeCategory", StoreCategory.CAFE);
+        fieldValues.put("weekdayOpenTime", LocalTime.of(7, 0));
+        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
+        fieldValues.put("weekendOpenTime", LocalTime.of(8, 0));
+        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
         
-        ReflectionTestUtils.setField(store, "id", 4L);
-        return store;
+        return TestUtils.createEntity(Store.class, fieldValues);
     }
 
     private Store createCafeStore(Member member) {
-        Store store = Store.createStore(
-                member,
-                "스타벅스 강남점",
-                "0212345678",
-                "강남에 위치한 스타벅스입니다.",
-                "1234567890",
-                "서울시 강남구 테헤란로 123",
-                37.5000,
-                127.0000,
-                "https://example.com/starbucks-gangnam.jpg",
-                StoreCategory.CAFE,
-                LocalTime.of(7, 0),
-                LocalTime.of(22, 0),
-                LocalTime.of(8, 0),
-                LocalTime.of(23, 0)
-        );
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", 5L);
+        fieldValues.put("member", member);
+        fieldValues.put("name", "스타벅스 강남점");
+        fieldValues.put("phone", "0212345678");
+        fieldValues.put("description", "강남에 위치한 스타벅스입니다.");
+        fieldValues.put("businessNumber", "1234567890");
+        fieldValues.put("address", "서울시 강남구 테헤란로 123");
+        fieldValues.put("latitude", 37.5000);
+        fieldValues.put("longitude", 127.0000);
+        fieldValues.put("imageUrl", "https://example.com/starbucks-gangnam.jpg");
+        fieldValues.put("storeCategory", StoreCategory.CAFE);
+        fieldValues.put("weekdayOpenTime", LocalTime.of(7, 0));
+        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
+        fieldValues.put("weekendOpenTime", LocalTime.of(8, 0));
+        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
         
-        ReflectionTestUtils.setField(store, "id", 5L);
-        return store;
+        return TestUtils.createEntity(Store.class, fieldValues);
     }
 }
