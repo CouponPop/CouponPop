@@ -9,6 +9,20 @@ import java.util.List;
 @Component
 public class FcmMessageFactory {
 
+    private static final long ANDROID_TTL_MINUTES = 5;
+    private static final String APNS_PRIORITY_HEADER = "apns-priority";
+    private static final String APNS_PRIORITY_VALUE = "10";
+    private static final String APNS_PUSH_TYPE_HEADER = "apns-push-type";
+    private static final String APNS_PUSH_TYPE_VALUE = "alert";
+    private static final String APS_SOUND_DEFAULT = "default";
+
+    private static final String DATA_KEY_PLATFORM = "platform";
+    private static final String PLATFORM_ANDROID = "android";
+    private static final String PLATFORM_IOS = "ios";
+    private static final String PLATFORM_WEB = "web";
+    private static final String DATA_KEY_TITLE = "title";
+    private static final String DATA_KEY_BODY = "body";
+
     public MulticastMessage createMulticastMessage(List<String> tokens, String title, String body) {
         Notification notification = createNotification(title, body);
         AndroidConfig androidConfig = createAndroidConfig();
@@ -21,8 +35,8 @@ public class FcmMessageFactory {
                 .setAndroidConfig(androidConfig)
                 .setApnsConfig(apnsConfig)
                 .setWebpushConfig(webpushConfig)
-                .putData("title", title)
-                .putData("body", body)
+                .putData(DATA_KEY_TITLE, title)
+                .putData(DATA_KEY_BODY, body)
                 .build();
     }
 
@@ -43,18 +57,18 @@ public class FcmMessageFactory {
     private AndroidConfig createAndroidConfig() {
         return AndroidConfig.builder()
                 .setPriority(AndroidConfig.Priority.HIGH)
-                .setTtl(Duration.ofMinutes(5).toMillis())
-                .putData("platform", "android")
+                .setTtl(Duration.ofMinutes(ANDROID_TTL_MINUTES).toMillis())
+                .putData(DATA_KEY_PLATFORM, PLATFORM_ANDROID)
                 .build();
     }
 
     private ApnsConfig createApnsConfig() {
         return ApnsConfig.builder()
-                .putHeader("apns-priority", "10")
-                .putHeader("apns-push-type", "alert")
+                .putHeader(APNS_PRIORITY_HEADER, APNS_PRIORITY_VALUE)
+                .putHeader(APNS_PUSH_TYPE_HEADER, APNS_PUSH_TYPE_VALUE)
                 .setAps(Aps.builder()
-                        .setSound("default")
-                        .putCustomData("platform", "ios")
+                        .setSound(APS_SOUND_DEFAULT)
+                        .putCustomData(DATA_KEY_PLATFORM, PLATFORM_IOS)
                         .build())
                 .build();
     }
@@ -64,7 +78,7 @@ public class FcmMessageFactory {
 
         return WebpushConfig.builder()
                 .setNotification(webpushNotification)
-                .putData("platform", "web")
+                .putData(DATA_KEY_PLATFORM, PLATFORM_WEB)
                 .build();
     }
 
