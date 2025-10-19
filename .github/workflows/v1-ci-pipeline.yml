@@ -48,11 +48,6 @@ jobs:
           mkdir -p src/main/resources/firebase
           echo "${{ secrets.FCM_SERVICE_ACCOUNT_KEY_JSON_B64 }}" | base64 --decode > src/main/resources/firebase/serviceAccountKey.json
 
-      - name: Verify key file content
-        run: |
-          echo "Verifying file content (first 50 characters):"
-          head -c 50 src/main/resources/firebase/serviceAccountKey.json
-
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -62,7 +57,7 @@ jobs:
         run: ./gradlew clean build
 
       - name: Remove secrets
-        run: rm rf src/main/resources/firebase
+        run: rm -rf src/main/resources/firebase
 
       # ================================================================
       #  main 브랜치일 경우에만 실행
