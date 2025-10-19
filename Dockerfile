@@ -7,7 +7,7 @@ COPY build/libs/*.jar app.jar
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-RUN mkdir /config && chown appuser:appgroup /config
+RUN mkdir /app/config && chown appuser:appgroup /app/config
 
 USER appuser
 
