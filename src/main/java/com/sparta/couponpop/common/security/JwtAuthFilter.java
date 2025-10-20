@@ -58,14 +58,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             log.debug("[JwtFilter] 인증 실패: 만료된 토큰 - {}", e.getMessage());
             handlerExceptionResolver.resolveException(request, response, null,
                     new GlobalException(AuthErrorCode.EXPIRED_TOKEN));
+            return;
         } catch (MalformedJwtException | SignatureException e) { // 토큰의 형식이 올바르지 않은 경우, 토큰의 시그니처가 올바르지 않은 경우
             log.debug("[JwtFilter] 인증 실패: 유효하지 않은 토큰 - {}", e.getMessage());
             handlerExceptionResolver.resolveException(request, response, null,
                     new GlobalException(AuthErrorCode.INVALID_TOKEN));
+            return;
         } catch (Exception e) {
             log.debug("[JwtFilter] 인증 실패: 토큰 인증 과정 중 다른 오류 발생 - {}", e.getMessage());
             handlerExceptionResolver.resolveException(request, response, null,
                     new GlobalException(CommonErrorCode.INTERNAL_SERVER_ERROR));
+            return;
         }
 
         chain.doFilter(request, response);
