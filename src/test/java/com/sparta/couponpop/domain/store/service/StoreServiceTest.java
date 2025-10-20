@@ -789,4 +789,97 @@ class StoreServiceTest {
             @Override public Double getDistance() { return distance; }
         };
     }
+
+    @Test
+    @DisplayName("손님용 매장 상세 조회 성공")
+    void getStoreDetailForCustomer_Success() {
+
+        // given
+        Long storeId = 1L;
+        Member member = createMember(10L);
+        Store store = createStore(member);
+
+        given(storeRepository.findById(storeId))
+                .willReturn(Optional.of(store));
+
+        // when
+        var result = storeService.getStoreDetailForCustomer(storeId);
+
+        // then
+        assertThat(result.imageUrl()).isEqualTo(store.getImageUrl());
+        assertThat(result.name()).isEqualTo(store.getName());
+        assertThat(result.description()).isEqualTo(store.getDescription());
+        assertThat(result.storeCategory()).isEqualTo(store.getStoreCategory());
+        assertThat(result.address()).isEqualTo(store.getAddress());
+        assertThat(result.weekdayOpenTime()).isEqualTo(store.getWeekdayOpenTime());
+        assertThat(result.weekdayCloseTime()).isEqualTo(store.getWeekdayCloseTime());
+        assertThat(result.weekendOpenTime()).isEqualTo(store.getWeekendOpenTime());
+        assertThat(result.weekendCloseTime()).isEqualTo(store.getWeekendCloseTime());
+
+        then(storeRepository).should(times(1)).findById(storeId);
+    }
+
+    @Test
+    @DisplayName("손님용 매장 상세 조회 - 존재하지 않는 매장 예외")
+    void getStoreDetailForCustomer_NotFound_ThrowsException() {
+
+        // given
+        Long storeId = 999L;
+
+        given(storeRepository.findById(storeId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> storeService.getStoreDetailForCustomer(storeId))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장을 찾을 수 없습니다.");
+
+        then(storeRepository).should(times(1)).findById(storeId);
+    }
+
+    @Test
+    @DisplayName("매장명 검색 성공")
+    void searchStoresByName_Success() {
+
+        // given
+        String keyword = "스타벅스";
+        Member member1 = createMember(1L);
+        Member member2 = createMember(2L);
+        
+        Store store1 = createStore(member1);
+        Store store2 = createCafeStore(member2);
+        List<Store> stores = Arrays.asList(store1, store2);
+
+        given(storeRepository.findByNameContainingIgnoreCase(keyword))
+                .willReturn(stores);
+
+        // when
+        List<StoreResponse> result = storeService.searchStoresByName(keyword);
+
+        // then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).name()).isEqualTo(store1.getName());
+        assertThat(result.get(1).name()).isEqualTo(store2.getName());
+
+        then(storeRepository).should(times(1)).findByNameContainingIgnoreCase(keyword);
+    }
+
+    @Test
+    @DisplayName("매장명 검색 - 검색 결과 없음")
+    void searchStoresByName_NoResults_ReturnsEmptyList() {
+
+        // given
+        String keyword = "존재하지않는매장";
+
+        given(storeRepository.findByNameContainingIgnoreCase(keyword))
+                .willReturn(Arrays.asList());
+
+        // when
+        List<StoreResponse> result = storeService.searchStoresByName(keyword);
+
+        // then
+        assertThat(result).isEmpty();
+
+        then(storeRepository).should(times(1)).findByNameContainingIgnoreCase(keyword);
+    }
 }
