@@ -23,6 +23,23 @@ public class FcmMessageFactory {
     private static final String DATA_KEY_TITLE = "title";
     private static final String DATA_KEY_BODY = "body";
 
+    public Message createMessage(String token, String title, String body) {
+        Notification notification = createNotification(title, body);
+        AndroidConfig androidConfig = createAndroidConfig();
+        ApnsConfig apnsConfig = createApnsConfig();
+        WebpushConfig webpushConfig = createWebpushConfig(title, body);
+
+        return Message.builder()
+                .setToken(token)
+                .setNotification(notification)
+                .setAndroidConfig(androidConfig)
+                .setApnsConfig(apnsConfig)
+                .setWebpushConfig(webpushConfig)
+                .putData(DATA_KEY_TITLE, title)
+                .putData(DATA_KEY_BODY, body)
+                .build();
+    }
+
     public MulticastMessage createMulticastMessage(List<String> tokens, String title, String body) {
         Notification notification = createNotification(title, body);
         AndroidConfig androidConfig = createAndroidConfig();
