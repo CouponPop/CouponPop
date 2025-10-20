@@ -2,6 +2,7 @@ package com.sparta.couponpop.domain.store.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.member.entity.Member;
+import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreDetailResponse;
@@ -28,7 +29,7 @@ public class StoreService {
     public StoreResponse createStore(Long memberId, CreateStoreRequest request) {
 
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new GlobalException(StoreErrorCode.MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         Store store = Store.createStore(
                 member,
