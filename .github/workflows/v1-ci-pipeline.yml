@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       branch_name:
-        description: 'The name of the branch (e.g., dev, main)'
+        description: 'The name of the branch triggering the workflow (e.g., main)'
         required: true
         type: string
     outputs:
@@ -64,22 +64,19 @@ jobs:
       # ================================================================
 
       - name: Configure AWS credentials (if main)
-        #if: inputs.branch_name == 'main'
-        if: inputs.branch_name == 'chore/cicd-v1'
+        if: inputs.branch_name == 'main'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR (if main)
-        #if: inputs.branch_name == 'main'
-        if: inputs.branch_name == 'chore/cicd-v1'
+        if: inputs.branch_name == 'main'
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push image (if main)
-        #if: inputs.branch_name == 'main'
-        if: inputs.branch_name == 'chore/cicd-v1'
+        if: inputs.branch_name == 'main'
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -96,8 +93,7 @@ jobs:
           echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
 
       - name: Update SSM Parameter Store with new image URI
-        #if: inputs.branch_name == 'main'
-        if: inputs.branch_name == 'chore/cicd-v1'
+        if: inputs.branch_name == 'main'
         run: |
           aws ssm put-parameter \
             --name "${{ secrets.SSM_PARAMETER_NAME }}" \
