@@ -4,8 +4,24 @@ on:
   push:
     branches:
       - chore/cicd-v1
+    #      - dev
+    #      - main
+#    paths-ignore:
+#      - '**.md'
+#      - 'docs/**'
+#      - '.gitignore'
+#      - '.github/ISSUE_TEMPLATE/**'
+#      - 'LICENSE'
+#  pull_request:
+#    branches:
 #      - dev
 #      - main
+#    paths-ignore:
+#      - '**.md'
+#      - 'docs/**'
+#      - '.gitignore'
+#      - '.github/ISSUE_TEMPLATE/**'
+#      - 'LICENSE'
 
 jobs:
   # =================================================================
