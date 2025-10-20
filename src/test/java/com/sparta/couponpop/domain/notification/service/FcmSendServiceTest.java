@@ -18,10 +18,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
@@ -39,26 +36,30 @@ class FcmSendServiceTest {
     @DisplayName("FCM 알림 발송")
     class SendNotification {
         @Test
-        @DisplayName("단일 토큰 전송 시 멀티캐스트 메시지를 생성한다")
+        @DisplayName("단일 토큰 전송 시 메시지를 생성한다")
         void sendNotification_success_singleToken() throws FirebaseMessagingException {
             // given
             String token = "test-token";
             String title = "알림 제목";
             String body = "알림 내용";
-            given(fcmMessageFactory.createMulticastMessage(anyList(), anyString(), anyString()))
+            given(fcmMessageFactory.createMessage(anyString(), anyString(), anyString()))
                     .willAnswer(invocation -> {
-                        @SuppressWarnings("unchecked")
-                        List<String> requestTokens = new ArrayList<>((List<String>) invocation.getArgument(0, List.class));
+                        String requestToken = invocation.getArgument(0, String.class);
                         String requestTitle = invocation.getArgument(1, String.class);
                         String requestBody = invocation.getArgument(2, String.class);
-                        return buildMessage(requestTokens, requestTitle, requestBody);
+                        return Message.builder()
+                                .setToken(requestToken)
+                                .setNotification(Notification.builder()
+                                        .setTitle(requestTitle)
+                                        .setBody(requestBody)
+                                        .build())
+                                .putData("title", requestTitle)
+                                .putData("body", requestBody)
+                                .build();
                     });
-            FirebaseMessaging firebaseMessaging = mock(FirebaseMessaging.class);
-            BatchResponse batchResponse = mock(BatchResponse.class);
 
-            given(batchResponse.getSuccessCount()).willReturn(1);
-            given(batchResponse.getFailureCount()).willReturn(0);
-            given(firebaseMessaging.sendEachForMulticast(any(MulticastMessage.class))).willReturn(batchResponse);
+            FirebaseMessaging firebaseMessaging = mock(FirebaseMessaging.class);
+            given(firebaseMessaging.send(any(Message.class))).willReturn("mock-message-id");
 
             try (MockedStatic<FirebaseMessaging> mockedStatic = mockStatic(FirebaseMessaging.class)) {
                 mockedStatic.when(FirebaseMessaging::getInstance).thenReturn(firebaseMessaging);
@@ -67,11 +68,11 @@ class FcmSendServiceTest {
                 fcmSendService.sendNotification(token, title, body);
 
                 // then
-                ArgumentCaptor<MulticastMessage> messageCaptor = ArgumentCaptor.forClass(MulticastMessage.class);
-                then(firebaseMessaging).should(times(1)).sendEachForMulticast(messageCaptor.capture());
-                MulticastMessage sentMessage = messageCaptor.getValue();
+                ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+                then(firebaseMessaging).should(times(1)).send(messageCaptor.capture());
+                Message sentMessage = messageCaptor.getValue();
 
-                assertThat(extractTokens(sentMessage)).containsExactly(token);
+                assertThat(extractToken(sentMessage)).isEqualTo(token);
                 Notification notification = extractNotification(sentMessage);
                 assertThat(extractNotificationValue(notification, "title")).isEqualTo(title);
                 assertThat(extractNotificationValue(notification, "body")).isEqualTo(body);
@@ -163,10 +164,21 @@ class FcmSendServiceTest {
             }
         }
 
-        private Notification extractNotification(MulticastMessage message) {
+        private String extractToken(Message message) {
+            // Message는 Getter를 제공하지 않아 리플렉션으로 토큰을 검증한다.
+            try {
+                Field field = Message.class.getDeclaredField("token");
+                field.setAccessible(true);
+                return (String) field.get(message);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new IllegalStateException("토큰 정보를 확인할 수 없습니다.", e);
+            }
+        }
+
+        private Notification extractNotification(Message message) {
             // 알림 객체 역시 리플렉션으로 확인한다.
             try {
-                Field field = MulticastMessage.class.getDeclaredField("notification");
+                Field field = Message.class.getDeclaredField("notification");
                 field.setAccessible(true);
                 return (Notification) field.get(message);
             } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -174,8 +186,7 @@ class FcmSendServiceTest {
             }
         }
 
-        private String extractNotificationValue(Notification notification,
-                                                String fieldName) {
+        private String extractNotificationValue(Notification notification, String fieldName) {
             // Notification은 비공개 필드만 노출하므로 리플렉션으로 값을 읽는다.
             try {
                 Field field = Notification.class.getDeclaredField(fieldName);
