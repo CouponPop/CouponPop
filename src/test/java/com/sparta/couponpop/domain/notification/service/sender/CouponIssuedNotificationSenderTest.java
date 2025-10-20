@@ -8,6 +8,7 @@ import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberFcmTokenRepository;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
+import com.sparta.couponpop.domain.notification.constants.NotificationTemplates;
 import com.sparta.couponpop.domain.notification.dto.command.CouponIssuedNotificationCommand;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponIssuedNotificationPayload;
 import com.sparta.couponpop.domain.notification.service.FcmSendService;
@@ -174,18 +175,14 @@ class CouponIssuedNotificationSenderTest {
                     bodyCaptor.capture()
             );
 
-            String expectedBody = """
-                    쿠폰명: %s
-                    쿠폰코드: %s
-                    만료기간: %s
-                    """.formatted(
+            String expectedBody = NotificationTemplates.COUPON_ISSUED_BODY.formatted(
                     command.payload().couponName(),
                     command.payload().couponCode(),
                     expireAt
             );
 
             assertThat(tokensCaptor.getValue()).containsExactlyInAnyOrder("token-A", "token-B");
-            assertThat(titleCaptor.getValue()).isEqualTo("쿠폰 수령이 완료되었습니다!");
+            assertThat(titleCaptor.getValue()).isEqualTo(NotificationTemplates.COUPON_ISSUED_TITLE);
             assertThat(bodyCaptor.getValue()).isEqualTo(expectedBody);
         }
 

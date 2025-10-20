@@ -7,6 +7,7 @@ import com.sparta.couponpop.domain.member.entity.MemberFcmToken;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberFcmTokenRepository;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
+import com.sparta.couponpop.domain.notification.constants.NotificationTemplates;
 import com.sparta.couponpop.domain.notification.dto.command.CouponIssuedNotificationCommand;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponIssuedNotificationPayload;
 import com.sparta.couponpop.domain.notification.enums.NotificationType;
@@ -52,12 +53,8 @@ public class CouponIssuedNotificationSender implements NotificationSender<Coupon
                 .distinct()
                 .collect(Collectors.toList());
 
-        String title = "쿠폰 수령이 완료되었습니다!";
-        String body = """
-                쿠폰명: %s
-                쿠폰코드: %s
-                만료기간: %s
-                """.formatted(
+        String title = NotificationTemplates.COUPON_ISSUED_TITLE;
+        String body = NotificationTemplates.COUPON_ISSUED_BODY.formatted(
                 payload.couponName(),
                 payload.couponCode(),
                 payload.expireAt()
