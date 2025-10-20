@@ -6,7 +6,6 @@ import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.member.dto.response.MemberProfileResponse;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.service.MemberService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +18,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -36,13 +37,6 @@ class MemberControllerTest {
     @MockitoBean
     private JwtProvider jwtProvider;
 
-    @BeforeEach
-    void setUp() {
-        AuthMember authMember = AuthMember.from(1L, "테스트이름", MemberType.CUSTOMER);
-        Authentication authenticationToken = new JwtAuthenticationToken(authMember);
-        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-    }
-
     @Test
     @DisplayName("인증된 사용자가 자신의 프로필을 조회한다.")
     void getMyProfileSuccess() throws Exception {
@@ -58,9 +52,13 @@ class MemberControllerTest {
         );
 
         given(memberService.getMemberProfile(mockMemberId)).willReturn(mockResponse);
+        AuthMember authMember = AuthMember.from(1L, "테스트이름", MemberType.CUSTOMER);
+        Authentication authentication = new JwtAuthenticationToken(authMember);
 
         // when
         ResultActions resultActions = mockMvc.perform(get("/api/v1/members/me")
+                .with(authentication(authentication))
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON));
 
         // then
@@ -73,7 +71,7 @@ class MemberControllerTest {
 
     @Test
     @DisplayName("프로필 조회를 하려면 인증이 필요하다.")
-    void getMyProfile_unauthorized() throws Exception {
+    void getMyProfileUnauthorized() throws Exception {
 
         // given
         SecurityContextHolder.clearContext();
