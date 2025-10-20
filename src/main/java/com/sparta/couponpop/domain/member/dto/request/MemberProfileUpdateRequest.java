@@ -1,8 +1,7 @@
 package com.sparta.couponpop.domain.member.dto.request;
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.Pattern;
-
-import javax.annotation.Nullable;
 
 public record MemberProfileUpdateRequest(
 
