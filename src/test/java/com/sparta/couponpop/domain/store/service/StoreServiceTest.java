@@ -7,7 +7,7 @@ import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
-import com.sparta.couponpop.domain.store.dto.response.StoreWithDistanceDto;
+import com.sparta.couponpop.domain.store.dto.response.StoreLocationProjection;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
@@ -385,8 +385,8 @@ class StoreServiceTest {
         Store store1 = createNearStore(member1); // 가까운 매장
         Store store2 = createFarStore(member2); // 먼 매장
 
-        // Mock 데이터: StoreWithDistanceDto 타입 안전한 DTO
-        StoreWithDistanceDto result1 = new StoreWithDistanceDto(
+        // Mock 데이터: StoreLocationProjection 인터페이스 프로젝션
+        StoreLocationProjection result1 = projection(
                 store1.getId(),
                 store1.getName(),
                 store1.getAddress(),
@@ -394,9 +394,9 @@ class StoreServiceTest {
                 store1.getLatitude(),
                 store1.getLongitude(),
                 store1.getImageUrl(),
-                0.5 // 0.5km
+                0.5
         );
-        StoreWithDistanceDto result2 = new StoreWithDistanceDto(
+        StoreLocationProjection result2 = projection(
                 store2.getId(),
                 store2.getName(),
                 store2.getAddress(),
@@ -404,9 +404,9 @@ class StoreServiceTest {
                 store2.getLatitude(),
                 store2.getLongitude(),
                 store2.getImageUrl(),
-                3.2 // 3.2km
+                3.2
         );
-        List<StoreWithDistanceDto> mockResults = Arrays.asList(result1, result2);
+        List<StoreLocationProjection> mockResults = Arrays.asList(result1, result2);
 
         given(storeRepository.findByLocation(latitude, longitude, radius))
                 .willReturn(mockResults);
@@ -470,7 +470,7 @@ class StoreServiceTest {
         Store cafeStore = createCafeStore(member1);
         Store foodStore = createFoodStore(member2);
 
-        StoreWithDistanceDto result1 = new StoreWithDistanceDto(
+        StoreLocationProjection result1 = projection(
                 cafeStore.getId(),
                 cafeStore.getName(),
                 cafeStore.getAddress(),
@@ -480,7 +480,7 @@ class StoreServiceTest {
                 cafeStore.getImageUrl(),
                 1.2
         );
-        StoreWithDistanceDto result2 = new StoreWithDistanceDto(
+        StoreLocationProjection result2 = projection(
                 foodStore.getId(),
                 foodStore.getName(),
                 foodStore.getAddress(),
@@ -490,7 +490,7 @@ class StoreServiceTest {
                 foodStore.getImageUrl(),
                 2.8
         );
-        List<StoreWithDistanceDto> mockResults = Arrays.asList(result1, result2);
+        List<StoreLocationProjection> mockResults = Arrays.asList(result1, result2);
 
         given(storeRepository.findByLocation(latitude, longitude, radius))
                 .willReturn(mockResults);
@@ -532,7 +532,7 @@ class StoreServiceTest {
         Store middleStore = createStore(member3);
 
         // 거리순으로 정렬된 결과 (가까운 순)
-        StoreWithDistanceDto result1 = new StoreWithDistanceDto(
+        StoreLocationProjection result1 = projection(
                 nearStore.getId(),
                 nearStore.getName(),
                 nearStore.getAddress(),
@@ -540,9 +540,9 @@ class StoreServiceTest {
                 nearStore.getLatitude(),
                 nearStore.getLongitude(),
                 nearStore.getImageUrl(),
-                0.8 // 가장 가까움
+                0.8
         );
-        StoreWithDistanceDto result2 = new StoreWithDistanceDto(
+        StoreLocationProjection result2 = projection(
                 middleStore.getId(),
                 middleStore.getName(),
                 middleStore.getAddress(),
@@ -550,9 +550,9 @@ class StoreServiceTest {
                 middleStore.getLatitude(),
                 middleStore.getLongitude(),
                 middleStore.getImageUrl(),
-                2.1 // 중간
+                2.1
         );
-        StoreWithDistanceDto result3 = new StoreWithDistanceDto(
+        StoreLocationProjection result3 = projection(
                 farStore.getId(),
                 farStore.getName(),
                 farStore.getAddress(),
@@ -560,9 +560,9 @@ class StoreServiceTest {
                 farStore.getLatitude(),
                 farStore.getLongitude(),
                 farStore.getImageUrl(),
-                4.5 // 가장 멀음
+                4.5
         );
-        List<StoreWithDistanceDto> mockResults = Arrays.asList(result1, result2, result3);
+        List<StoreLocationProjection> mockResults = Arrays.asList(result1, result2, result3);
 
         given(storeRepository.findByLocation(latitude, longitude, radius))
                 .willReturn(mockResults);
@@ -768,5 +768,25 @@ class StoreServiceTest {
         fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
         
         return TestUtils.createEntity(Store.class, fieldValues);
+    }
+
+    private StoreLocationProjection projection(Long id,
+                                               String name,
+                                               String address,
+                                               StoreCategory category,
+                                               Double latitude,
+                                               Double longitude,
+                                               String imageUrl,
+                                               Double distance) {
+        return new StoreLocationProjection() {
+            @Override public Long getId() { return id; }
+            @Override public String getName() { return name; }
+            @Override public String getAddress() { return address; }
+            @Override public String getStoreCategory() { return category.name(); }
+            @Override public Double getLatitude() { return latitude; }
+            @Override public Double getLongitude() { return longitude; }
+            @Override public String getImageUrl() { return imageUrl; }
+            @Override public Double getDistance() { return distance; }
+        };
     }
 }
