@@ -54,6 +54,8 @@ jobs:
       - name: Build with Gradle and Run Tests
         env:
           SPRING_PROFILES_ACTIVE: test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
         run: ./gradlew clean build
 
       - name: Remove secrets
