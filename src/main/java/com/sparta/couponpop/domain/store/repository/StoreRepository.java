@@ -68,4 +68,11 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
                                               @Param("radius") double radiusKm);
 
     List<Store> findByMemberIdOrderByCreatedAtDesc(Long memberId);
+
+    /**
+     * 매장명으로 매장을 검색합니다.
+     * 삭제되지 않은 매장 중에서 매장명에 키워드가 포함된 매장을 조회합니다
+     */
+    @Query("SELECT s FROM Store s WHERE s.name LIKE %:keyword% ORDER BY s.name ASC")
+    List<Store> findByNameContainingIgnoreCase(@Param("keyword") String keyword);
 }
