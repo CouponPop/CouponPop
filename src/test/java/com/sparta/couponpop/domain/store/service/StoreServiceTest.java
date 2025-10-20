@@ -789,4 +789,51 @@ class StoreServiceTest {
             @Override public Double getDistance() { return distance; }
         };
     }
+
+    @Test
+    @DisplayName("손님용 매장 상세 조회 성공")
+    void getStoreDetailForCustomer_Success() {
+
+        // given
+        Long storeId = 1L;
+        Member member = createMember(10L);
+        Store store = createStore(member);
+
+        given(storeRepository.findById(storeId))
+                .willReturn(Optional.of(store));
+
+        // when
+        var result = storeService.getStoreDetailForCustomer(storeId);
+
+        // then
+        assertThat(result.imageUrl()).isEqualTo(store.getImageUrl());
+        assertThat(result.name()).isEqualTo(store.getName());
+        assertThat(result.description()).isEqualTo(store.getDescription());
+        assertThat(result.storeCategory()).isEqualTo(store.getStoreCategory());
+        assertThat(result.address()).isEqualTo(store.getAddress());
+        assertThat(result.weekdayOpenTime()).isEqualTo(store.getWeekdayOpenTime());
+        assertThat(result.weekdayCloseTime()).isEqualTo(store.getWeekdayCloseTime());
+        assertThat(result.weekendOpenTime()).isEqualTo(store.getWeekendOpenTime());
+        assertThat(result.weekendCloseTime()).isEqualTo(store.getWeekendCloseTime());
+
+        then(storeRepository).should(times(1)).findById(storeId);
+    }
+
+    @Test
+    @DisplayName("손님용 매장 상세 조회 - 존재하지 않는 매장 예외")
+    void getStoreDetailForCustomer_NotFound_ThrowsException() {
+
+        // given
+        Long storeId = 999L;
+
+        given(storeRepository.findById(storeId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> storeService.getStoreDetailForCustomer(storeId))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장을 찾을 수 없습니다.");
+
+        then(storeRepository).should(times(1)).findById(storeId);
+    }
 }
