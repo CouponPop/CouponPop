@@ -836,4 +836,50 @@ class StoreServiceTest {
 
         then(storeRepository).should(times(1)).findById(storeId);
     }
+
+    @Test
+    @DisplayName("매장명 검색 성공")
+    void searchStoresByName_Success() {
+
+        // given
+        String keyword = "스타벅스";
+        Member member1 = createMember(1L);
+        Member member2 = createMember(2L);
+        
+        Store store1 = createStore(member1);
+        Store store2 = createCafeStore(member2);
+        List<Store> stores = Arrays.asList(store1, store2);
+
+        given(storeRepository.findByNameContainingIgnoreCase(keyword))
+                .willReturn(stores);
+
+        // when
+        List<StoreResponse> result = storeService.searchStoresByName(keyword);
+
+        // then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).name()).isEqualTo(store1.getName());
+        assertThat(result.get(1).name()).isEqualTo(store2.getName());
+
+        then(storeRepository).should(times(1)).findByNameContainingIgnoreCase(keyword);
+    }
+
+    @Test
+    @DisplayName("매장명 검색 - 검색 결과 없음")
+    void searchStoresByName_NoResults_ReturnsEmptyList() {
+
+        // given
+        String keyword = "존재하지않는매장";
+
+        given(storeRepository.findByNameContainingIgnoreCase(keyword))
+                .willReturn(Arrays.asList());
+
+        // when
+        List<StoreResponse> result = storeService.searchStoresByName(keyword);
+
+        // then
+        assertThat(result).isEmpty();
+
+        then(storeRepository).should(times(1)).findByNameContainingIgnoreCase(keyword);
+    }
 }
