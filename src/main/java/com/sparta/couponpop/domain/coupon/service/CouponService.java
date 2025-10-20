@@ -37,7 +37,7 @@ public class CouponService {
         CouponEvent event = validateEventBelongsToStore(eventId, store);
 
         // 이벤트 유효성 검증
-        event.validateIssuable(LocalDateTime.now());
+        event.validateIssuable(issuedTime);
 
         // 쿠폰 중복 수령 방지
         if (couponRepository.existsByMemberIdAndCouponEventId(memberId, eventId)) {
