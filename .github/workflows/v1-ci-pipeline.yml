@@ -54,7 +54,7 @@ jobs:
       - name: Build with Gradle and Run Tests
         env:
           SPRING_PROFILES_ACTIVE: test
-        run: ./gradlew clean build
+        run: ./gradlew clean build --no-daemon
 
       - name: Remove secrets
         run: rm -rf src/main/resources/firebase
