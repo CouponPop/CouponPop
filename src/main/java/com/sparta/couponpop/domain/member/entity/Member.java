@@ -1,6 +1,7 @@
 package com.sparta.couponpop.domain.member.entity;
 
 import com.sparta.couponpop.common.entity.BaseEntity;
+import com.sparta.couponpop.domain.member.dto.request.MemberProfileUpdateRequest;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -8,8 +9,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.function.Consumer;
 
 @Entity
 @Table(name = "members")
@@ -57,5 +60,30 @@ public class Member extends BaseEntity {
                 .phoneNumber(phoneNumber)
                 .memberType(memberType)
                 .build();
+    }
+
+    public void updateProfile(MemberProfileUpdateRequest request, String encodedPassword) {
+
+        updateIfPresent(request.username(), this::updateUsername);
+        updateIfPresent(request.phoneNumber(), this::updatePhoneNumber);
+        updateIfPresent(encodedPassword, this::updatePassword);
+    }
+
+    private void updateIfPresent(String newValue, Consumer<String> updater) {
+        if (StringUtils.hasText(newValue)) {
+            updater.accept(newValue);
+        }
+    }
+
+    private void updateUsername(String username) {
+        this.username = username;
+    }
+
+    private void updatePhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    private void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
     }
 }
