@@ -72,4 +72,12 @@ public class StoreController {
 
         return ApiResponse.success(stores);
     }
+
+    @GetMapping("/stores/{storeId}")
+    public ResponseEntity<ApiResponse<StoreDetailResponse>> getStoreDetailForCustomer(@PathVariable Long storeId) {
+
+        StoreDetailResponse response = storeService.getStoreDetailForCustomer(storeId);
+
+        return ApiResponse.success(response);
+    }
 }
