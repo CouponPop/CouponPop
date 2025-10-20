@@ -34,4 +34,4 @@ jwt:
       - /actuator/health
 
 fcm:
-  firebase-config-path: "firebase/serviceAccountKey.json"
+  firebase-config-path: "classpath:firebase/serviceAccountKey.json"
