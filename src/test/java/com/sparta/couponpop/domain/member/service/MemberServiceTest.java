@@ -49,7 +49,7 @@ class MemberServiceTest {
         MemberProfileResponse response = memberService.getMemberProfile(mockMemberId);
 
         // then
-        assertThat(response.userId()).isEqualTo(mockMemberId);
+        assertThat(response.id()).isEqualTo(mockMemberId);
         assertThat(response.username()).isEqualTo("테스트이름");
         assertThat(response.email()).isEqualTo("test@example.com");
         assertThat(response.phoneNumber()).isEqualTo("01012345678");

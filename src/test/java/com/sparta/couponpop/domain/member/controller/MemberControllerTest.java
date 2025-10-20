@@ -48,16 +48,16 @@ class MemberControllerTest {
     void getMyProfileSuccess() throws Exception {
 
         // given
-        Long mockUserId = 1L;
+        Long mockMemberId = 1L;
         MemberProfileResponse mockResponse = new MemberProfileResponse(
-                mockUserId,
+                mockMemberId,
                 "테스트이름",
                 "test@example.com",
                 "01012345678",
                 MemberType.CUSTOMER
         );
 
-        given(memberService.getMemberProfile(mockUserId)).willReturn(mockResponse);
+        given(memberService.getMemberProfile(mockMemberId)).willReturn(mockResponse);
 
         // when
         ResultActions resultActions = mockMvc.perform(get("/api/v1/members/me")

@@ -4,7 +4,7 @@ import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 
 public record MemberProfileResponse(
-        Long userId,
+        Long id,
         String username,
         String email,
         String phoneNumber,
