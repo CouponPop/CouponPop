@@ -80,4 +80,12 @@ public class StoreController {
 
         return ApiResponse.success(response);
     }
+
+    @GetMapping("/stores/search")
+    public ResponseEntity<ApiResponse<List<StoreResponse>>> searchStores(@RequestParam String keyword) {
+
+        List<StoreResponse> stores = storeService.searchStoresByName(keyword);
+
+        return ApiResponse.success(stores);
+    }
 }
