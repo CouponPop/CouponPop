@@ -72,4 +72,20 @@ public class StoreController {
 
         return ApiResponse.success(stores);
     }
+
+    @GetMapping("/stores/{storeId}")
+    public ResponseEntity<ApiResponse<StoreDetailResponse>> getStoreDetailForCustomer(@PathVariable Long storeId) {
+
+        StoreDetailResponse response = storeService.getStoreDetailForCustomer(storeId);
+
+        return ApiResponse.success(response);
+    }
+
+    @GetMapping("/stores/search")
+    public ResponseEntity<ApiResponse<List<StoreResponse>>> searchStores(@RequestParam String keyword) {
+
+        List<StoreResponse> stores = storeService.searchStoresByName(keyword);
+
+        return ApiResponse.success(stores);
+    }
 }
