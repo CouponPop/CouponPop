@@ -46,7 +46,7 @@ public class Coupon extends BaseEntity {
     private Member member;
 
 
-    @Builder(access = AccessLevel.PROTECTED)
+    @Builder(access = AccessLevel.PRIVATE)
     private Coupon(String couponCode, LocalDateTime receivedAt, LocalDateTime usedAt, CouponStatus couponStatus, CouponEvent couponEvent, Member member) {
         this.couponCode = couponCode;
         this.receivedAt = receivedAt;
