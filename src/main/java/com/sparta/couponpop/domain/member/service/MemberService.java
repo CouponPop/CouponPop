@@ -48,7 +48,18 @@ public class MemberService {
 
     private boolean hasPasswordInput(MemberProfileUpdateRequest request) {
 
-        return StringUtils.hasText(request.password()) && StringUtils.hasText(request.passwordConfirm());
+        boolean hasPassword = StringUtils.hasText(request.password());
+        boolean hasPasswordConfirm = StringUtils.hasText(request.passwordConfirm());
+
+        if (!hasPassword && !hasPasswordConfirm) { // 둘 다 없음
+            return false;
+        }
+
+        if (!hasPassword || !hasPasswordConfirm) { // 둘 중 하나만 없음
+            throw new GlobalException(MemberErrorCode.PASSWORD_INPUT_INCOMPLETE);
+        }
+
+        return true;
     }
 
     private void validatePasswordMatch(String password, String confirmPassword) {
