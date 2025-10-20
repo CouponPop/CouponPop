@@ -5,6 +5,7 @@ import com.sparta.couponpop.common.security.annotation.CurrentMember;
 import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreDetailResponse;
+import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
 import com.sparta.couponpop.domain.store.service.StoreService;
 import jakarta.validation.Valid;
@@ -15,13 +16,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/owner/stores")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class StoreController {
 
     private final StoreService storeService;
 
-    @GetMapping
+    @GetMapping("/owner/stores")
     public ResponseEntity<ApiResponse<List<StoreResponse>>> getStores(@CurrentMember AuthMember authMember) {
 
         List<StoreResponse> storeResponses = storeService.getStoresByOwner(authMember.id());
@@ -29,7 +30,7 @@ public class StoreController {
         return ApiResponse.success(storeResponses);
     }
 
-    @PostMapping
+    @PostMapping("/owner/stores")
     public ResponseEntity<ApiResponse<StoreResponse>> createStore(@CurrentMember AuthMember authMember, @RequestBody @Valid CreateStoreRequest request) {
 
         StoreResponse storeResponse = storeService.createStore(authMember.id(), request);
@@ -37,7 +38,7 @@ public class StoreController {
         return ApiResponse.created(storeResponse);
     }
 
-    @PutMapping("/{storeId}")
+    @PutMapping("/owner/stores/{storeId}")
     public ResponseEntity<ApiResponse<StoreResponse>> updateStore(@CurrentMember AuthMember authMember, @PathVariable Long storeId, @RequestBody @Valid CreateStoreRequest request) {
 
         StoreResponse storeResponse = storeService.updateStore(storeId, authMember.id(), request);
@@ -45,7 +46,7 @@ public class StoreController {
         return ApiResponse.success(storeResponse);
     }
 
-    @DeleteMapping("/{storeId}")
+    @DeleteMapping("/owner/stores/{storeId}")
     public ResponseEntity<ApiResponse<Void>> deleteStore(@CurrentMember AuthMember authMember, @PathVariable Long storeId) {
 
         storeService.deleteStore(storeId, authMember.id());
@@ -53,11 +54,22 @@ public class StoreController {
         return ApiResponse.noContent();
     }
 
-    @GetMapping("/{storeId}")
+    @GetMapping("/owner/stores/{storeId}")
     public ResponseEntity<ApiResponse<StoreDetailResponse>> getStoreDetail(@CurrentMember AuthMember authMember, @PathVariable Long storeId) {
 
         StoreDetailResponse response = storeService.getStoreDetail(storeId, authMember.id());
 
         return ApiResponse.success(response);
+    }
+
+    @GetMapping("/stores")
+    public ResponseEntity<ApiResponse<List<StoreMapResponse>>> getStoresByLocation(
+            @RequestParam double lat,
+            @RequestParam double lng,
+            @RequestParam(defaultValue = "5.0") double radius) {
+
+        List<StoreMapResponse> stores = storeService.getStoresByLocation(lat, lng, radius);
+
+        return ApiResponse.success(stores);
     }
 }

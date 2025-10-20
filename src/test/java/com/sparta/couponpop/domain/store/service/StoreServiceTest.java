@@ -5,10 +5,13 @@ import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
+import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
+import com.sparta.couponpop.domain.store.dto.response.StoreWithDistanceDto;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
+import com.sparta.couponpop.utils.TestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +20,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalTime;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -358,9 +365,220 @@ class StoreServiceTest {
         // when & then
         assertThatThrownBy(() -> storeService.deleteStore(storeId, memberId))
                 .isInstanceOf(GlobalException.class)
-                .hasMessage("매장을 찾을 수 없습니다.");
+                .hasMessage("이미 삭제된 매장입니다.");
 
         then(storeRepository).should(times(1)).findByIdIncludingDeleted(storeId);
+    }
+
+    @Test
+    @DisplayName("위치 기반 매장 조회 성공")
+    void getStoresByLocation_Success() {
+
+        // given
+        double latitude = 37.5665; // 서울시청 위도
+        double longitude = 126.9780; // 서울시청 경도
+        double radius = 5.0; // 5km 반경
+
+        Member member1 = createMember(1L);
+        Member member2 = createMember(2L);
+        
+        Store store1 = createNearStore(member1); // 가까운 매장
+        Store store2 = createFarStore(member2); // 먼 매장
+
+        // Mock 데이터: StoreWithDistanceDto 타입 안전한 DTO
+        StoreWithDistanceDto result1 = new StoreWithDistanceDto(
+                store1.getId(),
+                store1.getName(),
+                store1.getAddress(),
+                store1.getStoreCategory(),
+                store1.getLatitude(),
+                store1.getLongitude(),
+                store1.getImageUrl(),
+                0.5 // 0.5km
+        );
+        StoreWithDistanceDto result2 = new StoreWithDistanceDto(
+                store2.getId(),
+                store2.getName(),
+                store2.getAddress(),
+                store2.getStoreCategory(),
+                store2.getLatitude(),
+                store2.getLongitude(),
+                store2.getImageUrl(),
+                3.2 // 3.2km
+        );
+        List<StoreWithDistanceDto> mockResults = Arrays.asList(result1, result2);
+
+        given(storeRepository.findByLocation(latitude, longitude, radius))
+                .willReturn(mockResults);
+
+        // when
+        List<StoreMapResponse> result = storeService.getStoresByLocation(latitude, longitude, radius);
+
+        // then
+        assertThat(result).hasSize(2);
+        
+        // 첫 번째 매장 (가까운 매장)
+        StoreMapResponse firstStore = result.get(0);
+        assertThat(firstStore.id()).isEqualTo(store1.getId());
+        assertThat(firstStore.name()).isEqualTo(store1.getName());
+        assertThat(firstStore.storeCategory()).isEqualTo(store1.getStoreCategory());
+        assertThat(firstStore.distance()).isEqualTo(0.5);
+        
+        // 두 번째 매장 (먼 매장)
+        StoreMapResponse secondStore = result.get(1);
+        assertThat(secondStore.id()).isEqualTo(store2.getId());
+        assertThat(secondStore.name()).isEqualTo(store2.getName());
+        assertThat(secondStore.storeCategory()).isEqualTo(store2.getStoreCategory());
+        assertThat(secondStore.distance()).isEqualTo(3.2);
+
+        then(storeRepository).should(times(1)).findByLocation(latitude, longitude, radius);
+    }
+
+    @Test
+    @DisplayName("위치 기반 매장 조회 - 반경 내 매장이 없는 경우")
+    void getStoresByLocation_NoStoresInRadius_ReturnsEmptyList() {
+
+        // given
+        double latitude = 37.5665;
+        double longitude = 126.9780;
+        double radius = 1.0; // 1km 반경 (매우 좁은 반경)
+
+        given(storeRepository.findByLocation(latitude, longitude, radius))
+                .willReturn(Arrays.asList());
+
+        // when
+        List<StoreMapResponse> result = storeService.getStoresByLocation(latitude, longitude, radius);
+
+        // then
+        assertThat(result).isEmpty();
+
+        then(storeRepository).should(times(1)).findByLocation(latitude, longitude, radius);
+    }
+
+    @Test
+    @DisplayName("위치 기반 매장 조회 - 다양한 카테고리 매장")
+    void getStoresByLocation_DifferentCategories_Success() {
+
+        // given
+        double latitude = 37.5665;
+        double longitude = 126.9780;
+        double radius = 5.0;
+
+        Member member1 = createMember(1L);
+        Member member2 = createMember(2L);
+        
+        Store cafeStore = createCafeStore(member1);
+        Store foodStore = createFoodStore(member2);
+
+        StoreWithDistanceDto result1 = new StoreWithDistanceDto(
+                cafeStore.getId(),
+                cafeStore.getName(),
+                cafeStore.getAddress(),
+                cafeStore.getStoreCategory(),
+                cafeStore.getLatitude(),
+                cafeStore.getLongitude(),
+                cafeStore.getImageUrl(),
+                1.2
+        );
+        StoreWithDistanceDto result2 = new StoreWithDistanceDto(
+                foodStore.getId(),
+                foodStore.getName(),
+                foodStore.getAddress(),
+                foodStore.getStoreCategory(),
+                foodStore.getLatitude(),
+                foodStore.getLongitude(),
+                foodStore.getImageUrl(),
+                2.8
+        );
+        List<StoreWithDistanceDto> mockResults = Arrays.asList(result1, result2);
+
+        given(storeRepository.findByLocation(latitude, longitude, radius))
+                .willReturn(mockResults);
+
+        // when
+        List<StoreMapResponse> result = storeService.getStoresByLocation(latitude, longitude, radius);
+
+        // then
+        assertThat(result).hasSize(2);
+        
+        // 카페 매장 검증
+        StoreMapResponse cafe = result.get(0);
+        assertThat(cafe.storeCategory()).isEqualTo(StoreCategory.CAFE);
+        assertThat(cafe.name()).isEqualTo("스타벅스 강남점");
+        
+        // 음식점 매장 검증
+        StoreMapResponse food = result.get(1);
+        assertThat(food.storeCategory()).isEqualTo(StoreCategory.FOOD);
+        assertThat(food.name()).isEqualTo("맛있는 식당");
+
+        then(storeRepository).should(times(1)).findByLocation(latitude, longitude, radius);
+    }
+
+    @Test
+    @DisplayName("위치 기반 매장 조회 - 거리순 정렬 확인")
+    void getStoresByLocation_DistanceOrdering_Success() {
+
+        // given
+        double latitude = 37.5665;
+        double longitude = 126.9780;
+        double radius = 5.0;
+
+        Member member1 = createMember(1L);
+        Member member2 = createMember(2L);
+        Member member3 = createMember(3L);
+        
+        Store farStore = createStore(member1);
+        Store nearStore = createStore(member2);
+        Store middleStore = createStore(member3);
+
+        // 거리순으로 정렬된 결과 (가까운 순)
+        StoreWithDistanceDto result1 = new StoreWithDistanceDto(
+                nearStore.getId(),
+                nearStore.getName(),
+                nearStore.getAddress(),
+                nearStore.getStoreCategory(),
+                nearStore.getLatitude(),
+                nearStore.getLongitude(),
+                nearStore.getImageUrl(),
+                0.8 // 가장 가까움
+        );
+        StoreWithDistanceDto result2 = new StoreWithDistanceDto(
+                middleStore.getId(),
+                middleStore.getName(),
+                middleStore.getAddress(),
+                middleStore.getStoreCategory(),
+                middleStore.getLatitude(),
+                middleStore.getLongitude(),
+                middleStore.getImageUrl(),
+                2.1 // 중간
+        );
+        StoreWithDistanceDto result3 = new StoreWithDistanceDto(
+                farStore.getId(),
+                farStore.getName(),
+                farStore.getAddress(),
+                farStore.getStoreCategory(),
+                farStore.getLatitude(),
+                farStore.getLongitude(),
+                farStore.getImageUrl(),
+                4.5 // 가장 멀음
+        );
+        List<StoreWithDistanceDto> mockResults = Arrays.asList(result1, result2, result3);
+
+        given(storeRepository.findByLocation(latitude, longitude, radius))
+                .willReturn(mockResults);
+
+        // when
+        List<StoreMapResponse> result = storeService.getStoresByLocation(latitude, longitude, radius);
+
+        // then
+        assertThat(result).hasSize(3);
+        
+        // 거리순 정렬 확인
+        assertThat(result.get(0).distance()).isEqualTo(0.8);
+        assertThat(result.get(1).distance()).isEqualTo(2.1);
+        assertThat(result.get(2).distance()).isEqualTo(4.5);
+
+        then(storeRepository).should(times(1)).findByLocation(latitude, longitude, radius);
     }
 
     private CreateStoreRequest createStoreRequest() {
@@ -400,60 +618,57 @@ class StoreServiceTest {
     }
 
     private Member createMember(Long memberId) {
-        Member member = Member.signUp(
-                "test@example.com",
-                "testuser",
-                "encodedPassword",
-                "01012345678",
-                MemberType.OWNER
-        );
-        // 테스트를 위해 ID를 설정하기 위해 리플렉션 사용
-        try {
-            var idField = Member.class.getDeclaredField("id");
-            idField.setAccessible(true);
-            idField.set(member, memberId);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to set member ID", e);
-        }
-        return member;
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", memberId);
+        fieldValues.put("email", "test@example.com");
+        fieldValues.put("username", "testuser");
+        fieldValues.put("password", "encodedPassword");
+        fieldValues.put("phone", "01012345678");
+        fieldValues.put("memberType", MemberType.OWNER);
+        
+        return TestUtils.createEntity(Member.class, fieldValues);
     }
 
     private Store createStore(Member member) {
-        return Store.createStore(
-                member,
-                "스타벅스 홍대점",
-                "0212345678",
-                "홍대 중심가에 위치한 스타벅스입니다.",
-                "1234567890",
-                "서울시 마포구 홍익로 123",
-                37.5665,
-                126.9780,
-                "https://example.com/store-image.jpg",
-                StoreCategory.CAFE,
-                LocalTime.of(7, 0),
-                LocalTime.of(22, 0),
-                LocalTime.of(8, 0),
-                LocalTime.of(23, 0)
-        );
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", 1L);
+        fieldValues.put("member", member);
+        fieldValues.put("name", "스타벅스 홍대점");
+        fieldValues.put("phone", "0212345678");
+        fieldValues.put("description", "홍대 중심가에 위치한 스타벅스입니다.");
+        fieldValues.put("businessNumber", "1234567890");
+        fieldValues.put("address", "서울시 마포구 홍익로 123");
+        fieldValues.put("latitude", 37.5665);
+        fieldValues.put("longitude", 126.9780);
+        fieldValues.put("imageUrl", "https://example.com/store-image.jpg");
+        fieldValues.put("storeCategory", StoreCategory.CAFE);
+        fieldValues.put("weekdayOpenTime", LocalTime.of(7, 0));
+        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
+        fieldValues.put("weekendOpenTime", LocalTime.of(8, 0));
+        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
+        
+        return TestUtils.createEntity(Store.class, fieldValues);
     }
 
     private Store createFoodStore(Member member) {
-        return Store.createStore(
-                member,
-                "맛있는 식당",
-                "0312345678",
-                "정말 맛있는 음식을 제공하는 식당입니다.",
-                "9876543210",
-                "서울시 강남구 테헤란로 456",
-                37.5665,
-                126.9780,
-                "https://example.com/food-store-image.jpg",
-                StoreCategory.FOOD,
-                LocalTime.of(11, 0),
-                LocalTime.of(22, 0),
-                LocalTime.of(12, 0),
-                LocalTime.of(23, 0)
-        );
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", 2L);
+        fieldValues.put("member", member);
+        fieldValues.put("name", "맛있는 식당");
+        fieldValues.put("phone", "0312345678");
+        fieldValues.put("description", "정말 맛있는 음식을 제공하는 식당입니다.");
+        fieldValues.put("businessNumber", "9876543210");
+        fieldValues.put("address", "서울시 강남구 테헤란로 456");
+        fieldValues.put("latitude", 37.5665);
+        fieldValues.put("longitude", 126.9780);
+        fieldValues.put("imageUrl", "https://example.com/food-store-image.jpg");
+        fieldValues.put("storeCategory", StoreCategory.FOOD);
+        fieldValues.put("weekdayOpenTime", LocalTime.of(11, 0));
+        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
+        fieldValues.put("weekendOpenTime", LocalTime.of(12, 0));
+        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
+        
+        return TestUtils.createEntity(Store.class, fieldValues);
     }
 
     private CreateStoreRequest createUpdateRequest() {
@@ -490,5 +705,68 @@ class StoreServiceTest {
                 LocalTime.of(12, 0),
                 LocalTime.of(23, 0)
         );
+    }
+
+    private Store createNearStore(Member member) {
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", 3L);
+        fieldValues.put("member", member);
+        fieldValues.put("name", "가까운 카페");
+        fieldValues.put("phone", "0212345678");
+        fieldValues.put("description", "가까운 위치의 카페입니다.");
+        fieldValues.put("businessNumber", "1234567890");
+        fieldValues.put("address", "서울시 중구 세종대로 110");
+        fieldValues.put("latitude", 37.5665);
+        fieldValues.put("longitude", 126.9780);
+        fieldValues.put("imageUrl", "https://example.com/near-cafe.jpg");
+        fieldValues.put("storeCategory", StoreCategory.CAFE);
+        fieldValues.put("weekdayOpenTime", LocalTime.of(7, 0));
+        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
+        fieldValues.put("weekendOpenTime", LocalTime.of(8, 0));
+        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
+        
+        return TestUtils.createEntity(Store.class, fieldValues);
+    }
+
+    private Store createFarStore(Member member) {
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", 4L);
+        fieldValues.put("member", member);
+        fieldValues.put("name", "먼 카페");
+        fieldValues.put("phone", "0212345679");
+        fieldValues.put("description", "먼 위치의 카페입니다.");
+        fieldValues.put("businessNumber", "1234567891");
+        fieldValues.put("address", "서울시 강남구 테헤란로 123");
+        fieldValues.put("latitude", 37.5000);
+        fieldValues.put("longitude", 127.0000);
+        fieldValues.put("imageUrl", "https://example.com/far-cafe.jpg");
+        fieldValues.put("storeCategory", StoreCategory.CAFE);
+        fieldValues.put("weekdayOpenTime", LocalTime.of(7, 0));
+        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
+        fieldValues.put("weekendOpenTime", LocalTime.of(8, 0));
+        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
+        
+        return TestUtils.createEntity(Store.class, fieldValues);
+    }
+
+    private Store createCafeStore(Member member) {
+        Map<String, Object> fieldValues = new HashMap<>();
+        fieldValues.put("id", 5L);
+        fieldValues.put("member", member);
+        fieldValues.put("name", "스타벅스 강남점");
+        fieldValues.put("phone", "0212345678");
+        fieldValues.put("description", "강남에 위치한 스타벅스입니다.");
+        fieldValues.put("businessNumber", "1234567890");
+        fieldValues.put("address", "서울시 강남구 테헤란로 123");
+        fieldValues.put("latitude", 37.5000);
+        fieldValues.put("longitude", 127.0000);
+        fieldValues.put("imageUrl", "https://example.com/starbucks-gangnam.jpg");
+        fieldValues.put("storeCategory", StoreCategory.CAFE);
+        fieldValues.put("weekdayOpenTime", LocalTime.of(7, 0));
+        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
+        fieldValues.put("weekendOpenTime", LocalTime.of(8, 0));
+        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
+        
+        return TestUtils.createEntity(Store.class, fieldValues);
     }
 }
