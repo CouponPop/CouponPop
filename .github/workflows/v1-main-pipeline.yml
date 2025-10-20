@@ -43,7 +43,7 @@ jobs:
   # =================================================================
   call-cd:
     name: CD - Deploy to Production
-    if: github.ref_name == 'main' && needs.call-ci.result == 'success'
+    if: github.ref_name == 'main' && github.event_name == 'push' && needs.call-ci.result == 'success'
     needs: call-ci
     uses: ./.github/workflows/v1-cd-blue-green.yml
     permissions:
