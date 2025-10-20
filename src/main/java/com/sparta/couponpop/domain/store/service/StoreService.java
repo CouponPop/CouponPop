@@ -134,6 +134,16 @@ public class StoreService {
     }
 
     @Transactional(readOnly = true)
+    public List<StoreResponse> searchStoresByName(String keyword) {
+
+        List<Store> stores = storeRepository.findByNameContainingIgnoreCase(keyword);
+
+        return stores.stream()
+                .map(StoreResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<StoreMapResponse> getStoresByLocation(double latitude, double longitude, double radiusKm) {
 
         return storeRepository.findByLocation(latitude, longitude, radiusKm)
