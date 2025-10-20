@@ -94,4 +94,21 @@ public class CouponEvent extends BaseEntity {
             throw new GlobalException(CouponEventErrorCode.EVENT_OWNER_MISMATCH);
         }
     }
+
+    // 발급 가능 여부 검증
+    public void validateIssuable(LocalDateTime now) {
+        if (couponEventStatus != CouponEventStatus.IN_PROGRESS) {
+            throw new GlobalException(CouponEventErrorCode.EVENT_NOT_IN_PROGRESS);
+        }
+        if (now.isBefore(eventStartAt) || now.isAfter(eventEndAt)) {
+            throw new GlobalException(CouponEventErrorCode.EVENT_NOT_IN_PROGRESS_TIME);
+        }
+        if (issuedCount >= totalCount) {
+            throw new GlobalException(CouponEventErrorCode.EVENT_COUPON_SOLD_OUT);
+        }
+    }
+
+    public void issue() {
+        this.issuedCount += 1;
+    }
 }
