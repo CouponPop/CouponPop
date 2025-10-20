@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "coupons",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_member_coupon_event", columnNames = {"member_id", "coupon_event_id"}),
-                @UniqueConstraint(name = "uq_coupon_code", columnNames = "coupon_code")
+                @UniqueConstraint(name = "uk_coupons_member_coupon_event", columnNames = {"member_id", "coupon_event_id"}),
+                @UniqueConstraint(name = "uk_coupons_coupon_code", columnNames = "coupon_code")
         }
 )
 @Getter
