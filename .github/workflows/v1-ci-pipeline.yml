@@ -54,6 +54,7 @@ jobs:
       - name: Build with Gradle and Run Tests
         env:
           SPRING_PROFILES_ACTIVE: test
+          TZ: Asia/Seoul
         run: ./gradlew clean build --no-daemon
 
       - name: Remove secrets
