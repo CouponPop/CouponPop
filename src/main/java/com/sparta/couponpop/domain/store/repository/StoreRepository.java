@@ -1,6 +1,6 @@
 package com.sparta.couponpop.domain.store.repository;
 
-import com.sparta.couponpop.domain.store.dto.response.StoreWithDistanceDto;
+import com.sparta.couponpop.domain.store.dto.response.StoreLocationProjection;
 import com.sparta.couponpop.domain.store.entity.Store;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -39,24 +39,31 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
      */
     @Query(value = """
             SELECT 
-                s.id AS id,
-                s.name AS name,
-                s.address AS address,
-                s.store_category AS storeCategory,
-                s.latitude AS latitude,
-                s.longitude AS longitude,
-                s.image_url AS imageUrl,
+                sub.id AS id,
+                sub.name AS name,
+                sub.address AS address,
+                sub.store_category AS storeCategory,
+                sub.latitude AS latitude,
+                sub.longitude AS longitude,
+                sub.image_url AS imageUrl,
                 sub.distance AS distance
             FROM (
                 SELECT 
-                    s.*,
-                    ST_Distance_Sphere(s.location, POINT(:lng, :lat)) / 1000 AS distance
+                    s.id,
+                    s.name,
+                    s.address,
+                    s.store_category,
+                    s.latitude,
+                    s.longitude,
+                    s.image_url,
+                    ST_Distance_Sphere(s.location, ST_SRID(POINT(:lng, :lat), 4326)) / 1000 AS distance
                 FROM stores s
+                WHERE s.deleted_at IS NULL
             ) AS sub
             WHERE sub.distance <= :radius
             ORDER BY sub.distance ASC
             """, nativeQuery = true)
-    List<StoreWithDistanceDto> findByLocation(@Param("lat") double latitude,
+    List<StoreLocationProjection> findByLocation(@Param("lat") double latitude,
                                               @Param("lng") double longitude,
                                               @Param("radius") double radiusKm);
 
