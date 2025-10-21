@@ -6,31 +6,39 @@ import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.auth.dto.request.LoginRequest;
 import com.sparta.couponpop.domain.auth.dto.request.LogoutRequest;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
+import com.sparta.couponpop.domain.auth.dto.request.WithdrawRequest;
 import com.sparta.couponpop.domain.auth.dto.response.LoginResponse;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
+import com.sparta.couponpop.domain.auth.event.TokenBlacklistEvent;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
 import com.sparta.couponpop.domain.member.entity.Member;
-import com.sparta.couponpop.domain.member.entity.MemberFcmToken;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberFcmTokenRepository;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
+import com.sparta.couponpop.domain.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+
+    private final MemberService memberService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final MemberRepository memberRepository;
     private final MemberFcmTokenRepository memberFcmTokenRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public SignUpResponse signUp(SignUpRequest signUpRequest) {
@@ -84,29 +92,50 @@ public class AuthService {
     @Transactional
     public void logout(String authorizationHeader, LogoutRequest logoutRequest, AuthMember authMember) {
 
-        expireToken(authorizationHeader);
+        String resolvedToken = extractToken(authorizationHeader);
+        long expirationMillis = jwtProvider.getExpirationMillis(resolvedToken);
+
+        blacklistToken(resolvedToken, expirationMillis);
         expireFcmToken(authMember.id(), logoutRequest.fcmToken());
     }
 
-    // 로그아웃, 회원 탈퇴 시 블랙리스트 추가하여 토큰 만료 처리
-    private void expireToken(String authorizationHeader) {
+    // 회원 탈퇴가 되면 토큰만료 이벤트 발행, 회원탈퇴가 되지 않으면 롤백
+    @Transactional
+    public void withdraw(String authorizationHeader, AuthMember authMember, WithdrawRequest withdrawRequest) {
 
-        String token = jwtProvider.resolveToken(authorizationHeader);
-        if (token == null) {
-            throw new GlobalException(AuthErrorCode.INVALID_TOKEN);
-        }
+        String resolvedToken = extractToken(authorizationHeader);
+        long expirationMillis = jwtProvider.getExpirationMillis(resolvedToken);
 
-        long expirationMillis = jwtProvider.getExpirationMillis(token);
+        Member memberToWithdraw = memberService.findMemberById(authMember.id());
 
+        memberToWithdraw.withdraw();
+        expireFcmToken(memberToWithdraw.getId(), withdrawRequest.fcmToken());
+        publishBlacklistTokenEvent(resolvedToken, expirationMillis);
+    }
+
+    // 즉시 블랙리스트 추가
+    private void blacklistToken(String token, long expirationMillis) {
         tokenBlacklistService.blacklistToken(token, expirationMillis);
     }
 
+    // 블랙리스트 이벤트 발행
+    private void publishBlacklistTokenEvent(String token, long expirationMillis) {
+
+        TokenBlacklistEvent event = TokenBlacklistEvent.of(token, expirationMillis);
+        eventPublisher.publishEvent(event);
+        log.debug("[publishBlacklistTokenEvent] 토큰 블랙리스트 이벤트 발행 - token={}", token);
+    }
+
+    // FCM 토큰 삭제는 실패하더라도 전체 작업이 롤백되지는 않도록 ifPresent 사용
     private void expireFcmToken(Long memberId, String fcmToken) {
 
-        MemberFcmToken memberFcmToken = memberFcmTokenRepository
+        memberFcmTokenRepository
                 .findByMemberIdAndFcmToken(memberId, fcmToken)
-                .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND));
+                .ifPresent(memberFcmTokenRepository::delete);
+    }
 
-        memberFcmTokenRepository.delete(memberFcmToken);
+    private String extractToken(String authorizationHeader) {
+        return Optional.ofNullable(jwtProvider.resolveToken(authorizationHeader))
+                .orElseThrow(() -> new GlobalException(AuthErrorCode.INVALID_TOKEN));
     }
 }

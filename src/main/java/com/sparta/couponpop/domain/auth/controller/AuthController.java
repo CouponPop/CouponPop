@@ -6,6 +6,7 @@ import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.auth.dto.request.LoginRequest;
 import com.sparta.couponpop.domain.auth.dto.request.LogoutRequest;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
+import com.sparta.couponpop.domain.auth.dto.request.WithdrawRequest;
 import com.sparta.couponpop.domain.auth.dto.response.LoginResponse;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.service.AuthService;
@@ -39,12 +40,22 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    @PreAuthorize("isAuthenticated()") // auth는 모두 접근이므로, 로그아웃은 인증된 사용자만 접근 가능
+    @PreAuthorize("isAuthenticated()") // auth는 모두 접근가능하므로, 로그아웃은 인증된 사용자만 접근 가능
     public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authorizationHeader,
-                                                    @Valid @RequestBody LogoutRequest logoutRequest,
-                                                    @CurrentMember AuthMember authMember) {
+                                                    @CurrentMember AuthMember authMember,
+                                                    @Valid @RequestBody LogoutRequest logoutRequest) {
 
         authService.logout(authorizationHeader, logoutRequest, authMember);
+        return ApiResponse.noContent();
+    }
+
+    @DeleteMapping("/withdraw")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> withdraw(@RequestHeader("Authorization") String authorizationHeader,
+                                                      @CurrentMember AuthMember authMember,
+                                                      @RequestBody WithdrawRequest withdrawRequest) {
+
+        authService.withdraw(authorizationHeader, authMember, withdrawRequest);
         return ApiResponse.noContent();
     }
 }

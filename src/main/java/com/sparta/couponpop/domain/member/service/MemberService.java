@@ -69,7 +69,7 @@ public class MemberService {
         }
     }
 
-    private Member findMemberById(Long memberId) {
+    public Member findMemberById(Long memberId) {
 
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
