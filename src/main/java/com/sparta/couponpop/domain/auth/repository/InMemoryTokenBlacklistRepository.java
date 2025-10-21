@@ -1,7 +1,6 @@
 package com.sparta.couponpop.domain.auth.repository;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 
 import java.util.Map;
@@ -37,11 +36,15 @@ public class InMemoryTokenBlacklistRepository implements TokenBlacklistRepositor
         return true;
     }
 
-    @Scheduled(fixedRate = 60 * 60 * 1000) // 1시간마다 실행
-    public void cleanupExpiredTokens() {
+    @Override
+    public void deleteAllExpired(long now) {
 
-        long now = System.currentTimeMillis();
         blacklist.entrySet().removeIf(entry -> entry.getValue() < now);
-        log.info("[Blacklist Repository] Blacklist 정리 완료 | 남은 개수: {}", blacklist.size());
+    }
+
+    @Override
+    public int count() {
+
+        return blacklist.size();
     }
 }
