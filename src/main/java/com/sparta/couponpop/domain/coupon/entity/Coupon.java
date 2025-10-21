@@ -1,7 +1,9 @@
 package com.sparta.couponpop.domain.coupon.entity;
 
 import com.sparta.couponpop.common.entity.BaseEntity;
+import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
+import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.member.entity.Member;
 import jakarta.persistence.*;
@@ -75,6 +77,29 @@ public class Coupon extends BaseEntity {
 
     public boolean isAvailable() {
         return CouponStatus.AVAILABLE.equals(this.couponStatus);
+    }
+
+    // 쿠폰이 만료되었는지
+    public boolean isExpired(LocalDateTime now) {
+        return now.isAfter(this.expireAt);
+    }
+
+    public void use(LocalDateTime usedAt) {
+        // 이미 사용된 쿠폰 방어 로직
+        if (this.usedAt != null) {
+            throw new GlobalException(CouponErrorCode.COUPON_ALREADY_USED);
+        }
+        // 쿠폰 사용 가능 상태 검증 - AVAILABLE 이 아닌 USED, EXPIRED, CANCELED 이면 사용 못하는 쿠폰
+        if (!isAvailable()) {
+            throw new GlobalException(CouponErrorCode.COUPON_ALREADY_USED);
+        }
+        // 만료 시간 검증
+        if (isExpired(usedAt)) {
+            throw new GlobalException(CouponErrorCode.COUPON_EXPIRED);
+        }
+
+        this.couponStatus = CouponStatus.USED;
+        this.usedAt = usedAt;
     }
 
     public boolean isUsed() {
