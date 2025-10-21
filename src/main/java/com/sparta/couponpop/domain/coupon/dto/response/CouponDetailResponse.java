@@ -28,7 +28,7 @@ public record CouponDetailResponse(
                 coupon.getReceivedAt(),
                 coupon.getExpireAt(),
                 coupon.getUsedAt(),
-                tempCode.map(code -> new QrCode("https://couponpop.com/q/" + tempCode, "사장님께 QR코드를 보여주세요"))
+                tempCode.map(code -> new QrCode("https://couponpop.com/q/" + code, "사장님께 QR코드를 보여주세요"))
                         .orElse(null),
                 EventInfo.from(coupon.getCouponEvent()),
                 StoreInfo.from(coupon.getCouponEvent().getStore())
