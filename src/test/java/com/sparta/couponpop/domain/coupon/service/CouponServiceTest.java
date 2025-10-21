@@ -90,6 +90,7 @@ class CouponServiceTest {
 
         coupon = TestUtils.createEntity(Coupon.class, Map.of(
                 "id", 1L,
+                "couponCode", "CPN-9515BD7FE9CD",
                 "receivedAt", couponIssuedAt,
                 "expireAt", eventEndAt,
                 "couponStatus", CouponStatus.AVAILABLE,
