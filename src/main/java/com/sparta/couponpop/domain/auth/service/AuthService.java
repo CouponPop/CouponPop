@@ -79,8 +79,8 @@ public class AuthService {
         return LoginResponse.from(accessToken);
     }
 
-    // TODO: JWT Token은 Transactional 영향 받지 않으므로, TransactionalEventListener 등 으로 원자적 처리 고려
-    // TODO: 다만 두 작업이 원자적으로 처리되어야 할 필요성이 있는지는 고민 필요
+    // 트랜잭션은 DB 작업(FcmToken 삭제)만 보장하며,
+    // Redis 블랙리스트 작업은 별도 (분산 트랜잭션 고려하지 않음)
     @Transactional
     public void logout(String authorizationHeader, LogoutRequest logoutRequest, AuthMember authMember) {
 
