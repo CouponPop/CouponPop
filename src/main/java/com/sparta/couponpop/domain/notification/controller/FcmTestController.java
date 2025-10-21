@@ -51,4 +51,14 @@ public class FcmTestController {
         return ApiResponse.noContent();
     }
 
+    @PostMapping("fcm/test3")
+    public ResponseEntity<ApiResponse<Void>> sendLocationBasedCouponEventNotification() {
+        log.debug("[+] 위치 기반 쿠폰 이벤트 알림 푸시 메세지 전송");
+
+        // 위치 기반 쿠폰 이벤트 알림 테스트
+        notificationService.notifyLocationBasedCouponEvent();
+
+        return ApiResponse.noContent();
+    }
+
 }
