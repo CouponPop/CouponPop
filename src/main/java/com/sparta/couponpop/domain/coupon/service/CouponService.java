@@ -30,6 +30,8 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class CouponService {
 
+    private static final long TEMP_CODE_TTL_SECONDS = 600L;
+
     private final MemberRepository memberRepository;
     private final StoreRepository storeRepository;
     private final CouponEventRepository couponEventRepository;
@@ -87,7 +89,7 @@ public class CouponService {
         Optional<String> tempCode = Optional.empty();
         if (coupon.isAvailable()) {
             String code = UUID.randomUUID().toString();
-            temporaryCouponCodeRepository.setTemporaryCoupon(couponId, code, 600);
+            temporaryCouponCodeRepository.setTemporaryCoupon(couponId, code, TEMP_CODE_TTL_SECONDS);
             tempCode = Optional.of(code);
             log.info("임시 쿠폰 Redis 저장");
         }
