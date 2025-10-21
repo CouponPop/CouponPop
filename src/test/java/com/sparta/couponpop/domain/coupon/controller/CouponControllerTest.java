@@ -6,6 +6,8 @@ import com.sparta.couponpop.common.security.JwtAuthenticationToken;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.coupon.dto.request.CouponIssueRequest;
+import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
+import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
 import com.sparta.couponpop.domain.coupon.service.CouponService;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
@@ -28,9 +30,11 @@ import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -206,4 +210,102 @@ class CouponControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("쿠폰 정보 상세 조회 요청")
+    class GetCouponDetailTests {
+
+        public static CouponDetailResponse createSample(Long storeId, Long eventId, Long couponId) {
+            // QR 코드
+            CouponDetailResponse.QrCode qrCode = new CouponDetailResponse.QrCode(
+                    "https://couponpop.com/q/ABC123XYZ",
+                    "사장님께 QR코드를 보여주세요"
+            );
+
+            // 이벤트 기간
+            CouponDetailResponse.EventInfo.EventPeriod period = new CouponDetailResponse.EventInfo.EventPeriod(
+                    LocalDateTime.of(2025, 10, 21, 0, 0),
+                    LocalDateTime.of(2025, 10, 31, 23, 59)
+            );
+
+            //  이벤트 정보
+            CouponDetailResponse.EventInfo eventInfo = new CouponDetailResponse.EventInfo(
+                    eventId,
+                    "아메리카노 1+1 이벤트",
+                    period
+            );
+
+            // 매장 정보
+            CouponDetailResponse.StoreInfo storeInfo = new CouponDetailResponse.StoreInfo(
+                    storeId,
+                    "스타벅스 강남점",
+                    "서울 강남구 역삼동 123-45",
+                    "02-1234-5678"
+            );
+
+            // CouponDetailResponse 생성
+            return new CouponDetailResponse(
+                    couponId,
+                    CouponStatus.AVAILABLE,
+                    LocalDateTime.of(2025, 10, 21, 12, 0),
+                    LocalDateTime.of(2025, 11, 21, 23, 59),
+                    null,
+                    qrCode,
+                    eventInfo,
+                    storeInfo
+            );
+        }
+
+        @Test
+        @DisplayName("쿠폰 정보 상세 조회 요청 - 200 반환")
+        void getCouponDetail_Success() throws Exception {
+            // given
+            Long couponId = 1L;
+            CouponDetailResponse response = createSample(100L, 1L, couponId);
+
+            given(couponService.getCouponDetail(anyLong(), anyLong())).willReturn(response);
+
+            // when & then
+            mockMvc.perform(
+                            get("/api/v1/coupons/{couponId}", couponId)
+                    )
+                    .andDo(print())
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.id").value(1L))
+                    .andExpect(jsonPath("$.data.status").value("AVAILABLE"))
+                    .andExpect(jsonPath("$.data.event.id").value(1L))
+                    .andExpect(jsonPath("$.data.store.id").value(100L));
+        }
+
+        @Test
+        @DisplayName("쿠폰 정보 상세 조회 실패 - 쿠폰 없음")
+        void getCouponDetail_NotFound() throws Exception {
+            // given
+            willThrow(new GlobalException(CouponErrorCode.COUPON_NOT_FOUND))
+                    .given(couponService)
+                    .getCouponDetail(anyLong(), anyLong());
+
+            // when & then
+            mockMvc.perform(
+                            get("/api/v1/coupons/{couponId}", 999L)
+                    )
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.message").value(CouponErrorCode.COUPON_NOT_FOUND.getMessage()));
+        }
+
+        @Test
+        @DisplayName("쿠폰 정보 상세 조회 실패 - 쿠폰 접근 권한 없음")
+        void getCouponDetail_AccessDenied() throws Exception {
+            // given
+            willThrow(new GlobalException(CouponErrorCode.COUPON_ACCESS_DENIED))
+                    .given(couponService)
+                    .getCouponDetail(anyLong(), anyLong());
+
+            // when & then
+            mockMvc.perform(
+                            get("/api/v1/coupons/{couponId}", 999L)
+                    )
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.error.message").value(CouponErrorCode.COUPON_ACCESS_DENIED.getMessage()));
+        }
+    }
 }

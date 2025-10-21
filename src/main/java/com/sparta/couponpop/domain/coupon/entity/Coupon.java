@@ -32,6 +32,8 @@ public class Coupon extends BaseEntity {
 
     private LocalDateTime receivedAt;
 
+    private LocalDateTime expireAt;
+
     private LocalDateTime usedAt;
 
     @Enumerated(EnumType.STRING)
@@ -69,6 +71,10 @@ public class Coupon extends BaseEntity {
 
     private static String generateCouponCode() {
         return "CPN-" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+    }
+
+    public boolean isAvailable() {
+        return CouponStatus.AVAILABLE.equals(this.couponStatus);
     }
 
     public boolean isUsed() {
