@@ -24,6 +24,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class RedisService {
 
+    private static final int DEFAULT_SCAN_COUNT = 1_000;
+
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -50,13 +52,12 @@ public class RedisService {
      */
     public Set<String> scanKeysByPrefix(String prefix) {
         final String pattern = prefix + "*";
-        final int scanCount = 1_000;
 
         return redisTemplate.execute((RedisCallback<Set<String>>) connection -> {
             Set<String> results = new LinkedHashSet<>();
             ScanOptions options = ScanOptions.scanOptions()
                     .match(pattern)
-                    .count(scanCount)
+                    .count(DEFAULT_SCAN_COUNT)
                     .build();
 
             RedisKeyCommands redisKeyCommands = connection.keyCommands();
