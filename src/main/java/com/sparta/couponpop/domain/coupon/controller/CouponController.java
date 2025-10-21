@@ -4,14 +4,12 @@ import com.sparta.couponpop.common.response.ApiResponse;
 import com.sparta.couponpop.common.security.annotation.CurrentMember;
 import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.coupon.dto.request.CouponIssueRequest;
+import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
 import com.sparta.couponpop.domain.coupon.service.CouponService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
@@ -27,5 +25,11 @@ public class CouponController {
         LocalDateTime issuedTime = LocalDateTime.now();
         couponService.issueEventCoupon(authMember.id(), request.storeId(), request.eventId(), issuedTime);
         return ApiResponse.noContent();
+    }
+
+    @GetMapping("/coupons/{couponId}")
+    public ResponseEntity<ApiResponse<CouponDetailResponse>> getCouponDetail(@PathVariable Long couponId, @CurrentMember AuthMember authMember) {
+        CouponDetailResponse response = couponService.getCouponDetail(couponId, authMember.id());
+        return ApiResponse.success(response);
     }
 }

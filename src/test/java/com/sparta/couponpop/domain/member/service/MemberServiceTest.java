@@ -1,24 +1,29 @@
 package com.sparta.couponpop.domain.member.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
+import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
+import com.sparta.couponpop.domain.member.dto.request.MemberProfileUpdateRequest;
 import com.sparta.couponpop.domain.member.dto.response.MemberProfileResponse;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.utils.TestUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,8 +32,24 @@ class MemberServiceTest {
     @Mock
     private MemberRepository memberRepository;
 
+    @Mock
+    private BCryptPasswordEncoder passwordEncoder;
+
     @InjectMocks
     private MemberService memberService;
+
+    private Member mockMember;
+
+    @BeforeEach
+    void setUp() {
+        mockMember = TestUtils.createEntity(Member.class, Map.of(
+                "id", 1L,
+                "username", "기존이름",
+                "email", "test@example.com",
+                "password", "기존비밀번호",
+                "phoneNumber", "01099999999",
+                "memberType", MemberType.CUSTOMER));
+    }
 
     @Test
     @DisplayName("회원의 고유식별자를 통해 회원 프로필을 조회한다.")
@@ -67,5 +88,81 @@ class MemberServiceTest {
         assertThatThrownBy(() -> memberService.getMemberProfile(999L))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
+    }
+
+
+    @Test
+    @DisplayName("비밀번호를 제외한 프로필 정보를 받아, 회원 프로필을 수정한다.")
+    void updateProfileSuccessWithoutPassword() {
+
+        // given
+        MemberProfileUpdateRequest request = new MemberProfileUpdateRequest("새이름", "", "", "01012345678");
+        given(memberRepository.findById(1L)).willReturn(Optional.of(mockMember));
+
+        // when
+        MemberProfileResponse response = memberService.updateMemberProfile(1L, request);
+
+        // then
+        assertThat(response.username()).isEqualTo(request.username());
+        assertThat(response.phoneNumber()).isEqualTo(request.phoneNumber());
+        assertThat(mockMember.getPassword()).isEqualTo("기존비밀번호");
+    }
+
+    @Test
+    @DisplayName("비밀번호를 폼한 프로필 정보를 입력 받아, 회원 프로필을 수정한다.")
+    void updateProfileSuccessWithPassword() {
+
+        // given
+        MemberProfileUpdateRequest request = new MemberProfileUpdateRequest(
+                "새로운이름", "새로운비밀번호1234!", "새로운비밀번호1234!", "01012345678"
+        );
+
+        given(memberRepository.findById(1L)).willReturn(Optional.of(mockMember));
+        given(passwordEncoder.encode("새로운비밀번호1234!")).willReturn("새로운인코딩된비밀번호");
+
+        // when
+        MemberProfileResponse response = memberService.updateMemberProfile(1L, request);
+
+        // then
+        assertThat(mockMember.getPassword()).isEqualTo("새로운인코딩된비밀번호");
+        assertThat(response.username()).isEqualTo("새로운이름");
+    }
+
+    @Test
+    @DisplayName("비밀번호와 비밀번호 확인이 다르면 비밀번호 불일치 예외가 발생한다.")
+    void updateProfileFailurePasswordsNotMatch() {
+
+        // given
+        MemberProfileUpdateRequest request = new MemberProfileUpdateRequest(
+                "새로운이름", "새로운비밀번호1234!", "다른비밀번호1234!", "01012345678"
+        );
+
+        given(memberRepository.findById(1L)).willReturn(Optional.of(mockMember));
+
+        // when & then
+        GlobalException exception = assertThrows(GlobalException.class, () -> {
+            memberService.updateMemberProfile(1L, request);
+        });
+
+        assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.PASSWORDS_NOT_MATCH);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 회원 ID으로 프로필 수정을 요청하면 예외가 발생한다.")
+    void updateProfileFailureMemberNotFound() {
+
+        // given
+        MemberProfileUpdateRequest request = new MemberProfileUpdateRequest(
+                "새로운이름", "새로운비밀번호1234!", "새로운비밀번호1234!", "01012345678"
+        );
+
+        given(memberRepository.findById(999L)).willReturn(Optional.empty());
+
+        // when & then
+        GlobalException exception = assertThrows(GlobalException.class, () -> {
+            memberService.updateMemberProfile(999L, request);
+        });
+
+        assertThat(exception.getErrorCode()).isEqualTo(MemberErrorCode.MEMBER_NOT_FOUND);
     }
 }
