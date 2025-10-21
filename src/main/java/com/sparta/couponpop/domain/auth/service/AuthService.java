@@ -23,6 +23,7 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Transactional
     public SignUpResponse signUp(SignUpRequest signUpRequest) {
@@ -69,5 +70,23 @@ public class AuthService {
                 loginMember.getMemberType());
 
         return LoginResponse.from(accessToken);
+    }
+
+    public void logout(String authorizationHeader) {
+
+        expireToken(authorizationHeader);
+    }
+
+    // 로그아웃, 회원 탈퇴 시 블랙리스트 추가하여 토큰 만료 처리
+    private void expireToken(String authorizationHeader) {
+
+        String token = jwtProvider.resolveToken(authorizationHeader);
+        if (token == null) {
+            throw new GlobalException(AuthErrorCode.INVALID_TOKEN);
+        }
+
+        long expirationMillis = jwtProvider.getExpirationMillis(token);
+
+        tokenBlacklistService.blacklistToken(token, expirationMillis);
     }
 }

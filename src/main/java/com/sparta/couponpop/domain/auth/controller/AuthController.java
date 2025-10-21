@@ -10,10 +10,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -35,6 +33,14 @@ public class AuthController {
 
         LoginResponse loginResponse = authService.login(loginRequest);
         return ApiResponse.success(loginResponse);
+    }
+
+    @PostMapping("/logout")
+    @PreAuthorize("isAuthenticated()") // auth는 모두 접근이므로, 로그아웃은 인증된 사용자만 접근 가능
+    public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authorizationHeader) {
+
+        authService.logout(authorizationHeader);
+        return ApiResponse.noContent();
     }
 
     // TODO: 로그아웃 시 FCM 토큰 삭제 기능 추가 예정
