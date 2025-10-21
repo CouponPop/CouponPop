@@ -1,7 +1,10 @@
 package com.sparta.couponpop.domain.auth.controller;
 
 import com.sparta.couponpop.common.response.ApiResponse;
+import com.sparta.couponpop.common.security.annotation.CurrentMember;
+import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.auth.dto.request.LoginRequest;
+import com.sparta.couponpop.domain.auth.dto.request.LogoutRequest;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
 import com.sparta.couponpop.domain.auth.dto.response.LoginResponse;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
@@ -37,12 +40,11 @@ public class AuthController {
 
     @PostMapping("/logout")
     @PreAuthorize("isAuthenticated()") // auth는 모두 접근이므로, 로그아웃은 인증된 사용자만 접근 가능
-    public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authorizationHeader,
+                                                    @Valid @RequestBody LogoutRequest logoutRequest,
+                                                    @CurrentMember AuthMember authMember) {
 
-        authService.logout(authorizationHeader);
+        authService.logout(authorizationHeader, logoutRequest, authMember);
         return ApiResponse.noContent();
     }
-
-    // TODO: 로그아웃 시 FCM 토큰 삭제 기능 추가 예정
-    // TODO: https://github.com/orgs/CouponPop/projects/1/views/2?pane=issue&itemId=134369719&issue=CouponPop%7CCouponPop%7C61
 }
