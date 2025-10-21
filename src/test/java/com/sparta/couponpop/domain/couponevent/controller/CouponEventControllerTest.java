@@ -1,6 +1,7 @@
 package com.sparta.couponpop.domain.couponevent.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sparta.couponpop.common.security.JwtAuthFilter;
 import com.sparta.couponpop.common.security.JwtAuthenticationToken;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
@@ -48,6 +49,9 @@ class CouponEventControllerTest {
 
     @MockitoBean
     private JwtProvider jwtProvider;
+
+    @MockitoBean
+    private JwtAuthFilter jwtAuthFilter;
 
     @MockitoBean
     private CouponEventService couponEventService;
