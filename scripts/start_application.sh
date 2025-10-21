@@ -47,6 +47,9 @@ echo "FCM 키 파일의 소유권 설정을 완료했습니다."
 # --- 6. 새 컨테이너 실행 ---
 echo "새 컨테이너($CONTAINER_NAME)를 시작합니다..."
 docker run -d --name $CONTAINER_NAME -p 8080:8080 \
+  --log-driver json-file \
+  --log-opt max-size=10m \
+  --log-opt max-file=3 \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Seoul" \
   -e DB_URL=$DB_URL \
