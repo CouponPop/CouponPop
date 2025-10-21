@@ -1,8 +1,11 @@
 package com.sparta.couponpop.domain.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sparta.couponpop.common.security.JwtAuthFilter;
 import com.sparta.couponpop.common.security.JwtProvider;
+import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.auth.dto.request.LoginRequest;
+import com.sparta.couponpop.domain.auth.dto.request.LogoutRequest;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
 import com.sparta.couponpop.domain.auth.dto.response.LoginResponse;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
@@ -15,12 +18,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -41,6 +47,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private JwtProvider jwtProvider;
+
+    @MockitoBean
+    private JwtAuthFilter jwtAuthFilter;
 
     @Test
     @DisplayName("회원 가입을 한다.")
@@ -210,6 +219,32 @@ class AuthControllerTest {
         resultActions
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.message").value("이메일을 입력해주세요."))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("로그아웃에 성공한다.")
+    @WithMockUser
+    void logoutSuccess() throws Exception {
+
+        // given
+        String testAuthorizationHeader = "Bearer testAccessToken";
+        LogoutRequest requestDto = new LogoutRequest("testFcmToken");
+
+        // authService.logout()은 void를 반환
+        doNothing().when(authService).logout(anyString(), any(LogoutRequest.class), any(AuthMember.class));
+
+        // when
+        ResultActions resultActions = mockMvc.perform(
+                post("/api/v1/auth/logout") // 요청 URL
+                        .header("Authorization", testAuthorizationHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto))
+        );
+
+        // then
+        resultActions
+                .andExpect(status().isNoContent())
                 .andDo(print());
     }
 }

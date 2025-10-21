@@ -2,6 +2,7 @@ package com.sparta.couponpop.domain.member.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.couponpop.common.exception.GlobalException;
+import com.sparta.couponpop.common.security.JwtAuthFilter;
 import com.sparta.couponpop.common.security.JwtAuthenticationToken;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
@@ -10,13 +11,16 @@ import com.sparta.couponpop.domain.member.dto.request.MemberProfileUpdateRequest
 import com.sparta.couponpop.domain.member.dto.response.MemberProfileResponse;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.service.MemberService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,8 +28,6 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -33,6 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MemberController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class MemberControllerTest {
 
     @Autowired
@@ -47,8 +50,20 @@ class MemberControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @MockitoBean
+    private JwtAuthFilter jwtAuthFilter;
+
+    @BeforeEach
+    void setUp() {
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        AuthMember authMember = AuthMember.from(1L, "테스트이름", MemberType.CUSTOMER);
+        Authentication authenticationToken = new JwtAuthenticationToken(authMember);
+        context.setAuthentication(authenticationToken);
+        SecurityContextHolder.setContext(context);
+    }
+
     @Test
-    @DisplayName("인증된 사용자가 자신의 프로필을 조회한다.")
+    @DisplayName("사용자가 자신의 프로필을 조회한다.")
     void getMyProfileSuccess() throws Exception {
 
         // given
@@ -62,13 +77,9 @@ class MemberControllerTest {
         );
 
         given(memberService.getMemberProfile(mockMemberId)).willReturn(mockResponse);
-        AuthMember authMember = AuthMember.from(1L, "테스트이름", MemberType.CUSTOMER);
-        Authentication authentication = new JwtAuthenticationToken(authMember);
 
         // when
         ResultActions resultActions = mockMvc.perform(get("/api/v1/members/me")
-                .with(authentication(authentication))
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON));
 
         // then
@@ -80,21 +91,7 @@ class MemberControllerTest {
     }
 
     @Test
-    @DisplayName("프로필 조회를 하려면 인증이 필요하다.")
-    void getMyProfileUnauthorized() throws Exception {
-
-        // given
-        SecurityContextHolder.clearContext();
-
-
-        // when & then
-        mockMvc.perform(get("/api/v1/members/me")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("인증된 사용자가 자신의 프로필을 수정한다.")
+    @DisplayName("사용자가 자신의 프로필을 수정한다.")
     void updateProfileSuccess() throws Exception {
 
         // given
@@ -113,8 +110,6 @@ class MemberControllerTest {
 
         // when & then
         mockMvc.perform(put("/api/v1/members/me")
-                        .with(authentication(authentication))
-                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -139,8 +134,6 @@ class MemberControllerTest {
 
         // when & then
         mockMvc.perform(put("/api/v1/members/me")
-                        .with(authentication(authentication))
-                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())

@@ -2,6 +2,7 @@ package com.sparta.couponpop.domain.coupon.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.couponpop.common.exception.GlobalException;
+import com.sparta.couponpop.common.security.JwtAuthFilter;
 import com.sparta.couponpop.common.security.JwtAuthenticationToken;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
@@ -52,6 +53,9 @@ class CouponControllerTest {
 
     @MockitoBean
     private JwtProvider jwtProvider;
+
+    @MockitoBean
+    private JwtAuthFilter jwtAuthFilter;
 
     @MockitoBean
     private CouponService couponService;

@@ -8,6 +8,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
 import java.util.Base64;
@@ -18,6 +19,7 @@ import java.util.Date;
 public class JwtProvider {
 
     private static final long ACCESS_TOKEN_EXPIRATION = 60 * 60 * 1000L; // 1시간
+    private static final String BEARER_PREFIX = "Bearer ";
 
     @Value("${jwt.secret.key}")
     private String base64SecretKey;
@@ -48,5 +50,17 @@ public class JwtProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public String resolveToken(String authorizationHeader) {
+
+        if (StringUtils.hasText(authorizationHeader) && authorizationHeader.startsWith(BEARER_PREFIX)) {
+            return authorizationHeader.substring(BEARER_PREFIX.length());
+        }
+        return null;
+    }
+
+    public long getExpirationMillis(String token) {
+        return validateToken(token).getExpiration().getTime();
     }
 }
