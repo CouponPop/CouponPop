@@ -239,7 +239,7 @@ class CouponServiceTest {
             assertThat(response.qrCode()).isNotNull();
 
             verify(temporaryCouponCodeRepository, times(1))
-                    .setTemporaryCoupon(anyLong(), anyString(), anyLong());
+                    .setTemporaryCoupon(anyLong(), anyString(), anyString(), anyLong());
         }
 
         @Test
@@ -269,7 +269,7 @@ class CouponServiceTest {
             assertThat(response.qrCode()).isNull();
 
             verify(temporaryCouponCodeRepository, times(0))
-                    .setTemporaryCoupon(anyLong(), anyString(), anyLong());
+                    .setTemporaryCoupon(anyLong(), anyString(), anyString(), anyLong());
         }
 
         @Test

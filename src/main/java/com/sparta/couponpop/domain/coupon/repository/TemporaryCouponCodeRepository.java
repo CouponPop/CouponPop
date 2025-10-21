@@ -16,9 +16,9 @@ public class TemporaryCouponCodeRepository {
     private final RedisTemplate<String, Object> redisTemplate;
 
     // 임시 쿠폰 코드 저장 (TTL 적용)
-    public void setTemporaryCoupon(Long couponId, String tempCode, long ttlSeconds) {
+    public void setTemporaryCoupon(Long couponId, String tempCode, String couponCode, long ttlSeconds) {
         String key = generateTempCouponKey(couponId, tempCode);
-        redisTemplate.opsForValue().set(key, couponId, Duration.ofSeconds(ttlSeconds));
+        redisTemplate.opsForValue().set(key, couponCode, Duration.ofSeconds(ttlSeconds));
     }
 
     // 임시 코드 검증
