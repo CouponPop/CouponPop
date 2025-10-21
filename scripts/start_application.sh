@@ -20,6 +20,8 @@ export DB_URL=$(echo $SECRET_JSON | jq -r .DB_URL)
 export DB_USERNAME=$(echo $SECRET_JSON | jq -r .DB_USERNAME)
 export DB_PASSWORD=$(echo $SECRET_JSON | jq -r .DB_PASSWORD)
 export JWT_SECRET_KEY=$(echo $SECRET_JSON | jq -r .JWT_SECRET_KEY)
+export REDIS_HOST=$(echo $SECRET_JSON | jq -r .REDIS_HOST)
+export REDIS_PORT=$(echo $SECRET_JSON | jq -r .REDIS_PORT)
 echo "비밀 정보 로드 완료."
 
 # FCM 키를 파일로 생성
@@ -50,6 +52,8 @@ docker run -d --name $CONTAINER_NAME -p 8080:8080 \
   -e DB_USERNAME=$DB_USERNAME \
   -e DB_PASSWORD=$DB_PASSWORD \
   -e JWT_SECRET_KEY=$JWT_SECRET_KEY \
+  -e REDIS_HOST=$REDIS_HOST \
+  -e REDIS_PORT=$REDIS_PORT \
   -v $FCM_KEY_PATH:$FCM_CONTAINER_KEY_PATH \
   $IMAGE_URI
 
