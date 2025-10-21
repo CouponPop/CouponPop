@@ -59,7 +59,7 @@ public class Store extends BaseEntity {
     @Column(nullable = false)
     private double longitude;
 
-    @Column(nullable = false, columnDefinition = "POINT SRID 4326")
+    @Column(nullable = false, columnDefinition = "POINT SRID 4326", insertable = false, updatable = false)
     private Point location;
 
     @Column(name = "image_url", nullable = false, length = 500)
