@@ -9,7 +9,10 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum CouponErrorCode implements ErrorCode {
 
-    COUPON_ALREADY_ISSUED(HttpStatus.BAD_REQUEST, "해당 쿠폰은 이미 발급되었습니다.");
+    COUPON_ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 쿠폰에 접근할 수 없습니다."),
+
+    COUPON_ALREADY_ISSUED(HttpStatus.BAD_REQUEST, "해당 쿠폰은 이미 발급되었습니다."),
+    COUPON_NOT_FOUND(HttpStatus.BAD_REQUEST, "존재하지 않은 쿠폰입니다.");
 
 
     private final HttpStatus httpStatus;
