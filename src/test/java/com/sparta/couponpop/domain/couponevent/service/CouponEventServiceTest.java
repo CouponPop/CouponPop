@@ -6,10 +6,13 @@ import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
+import com.sparta.couponpop.domain.couponevent.dto.response.StoreCouponEventListResponse;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
+import com.sparta.couponpop.domain.couponevent.repository.dto.CouponEventWithUsedCountProjection;
+import com.sparta.couponpop.domain.couponevent.repository.dto.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
@@ -23,13 +26,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
@@ -219,4 +222,133 @@ class CouponEventServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("매장 별 이벤트 목록 조회")
+    class GetCouponEventsByStoreTests {
+
+        private static final LocalDateTime now = LocalDateTime.of(2025, 10, 20, 16, 0);
+
+        private CouponEventWithUsedCountProjection createMockCoupon(Long id, String name, LocalDateTime start, LocalDateTime end) {
+            return new CouponEventWithUsedCountProjection(
+                    id,
+                    name,
+                    start,
+                    end,
+                    CouponEventStatus.IN_PROGRESS,
+                    100,
+                    50,
+                    25,
+                    LocalDateTime.now().minusDays(2),
+                    LocalDateTime.now().minusDays(1)
+            );
+        }
+
+        @Test
+        @DisplayName("첫 페이지 조회 - hasNext true")
+        void getCouponEventsByStore_firstPage_hasNextTrue() {
+            // given
+            var cursor = StoreCouponEventsCursor.first();
+            List<CouponEventWithUsedCountProjection> mockedProjections = List.of(
+                    createMockCoupon(1L, "이벤트1", now.minusDays(1), now.plusDays(1)),
+                    createMockCoupon(2L, "이벤트2", now.minusDays(1), now.plusDays(1)),
+                    createMockCoupon(3L, "이벤트3", now.minusDays(1), now.plusDays(1))
+            );
+            int pageSize = 2;
+
+            Member member = TestUtils.createEntity(Member.class, Map.of("id", 1L));
+            Store store = TestUtils.createEntity(Store.class, Map.of(
+                    "id", 1L,
+                    "name", "매장",
+                    "member", member
+            ));
+
+            given(storeRepository.findById(store.getId())).willReturn(Optional.of(store));
+            given(couponEventRepository.fetchCouponEventsByStoreAndStatus(any(Store.class), any(CouponEventStatus.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
+                    .willReturn(mockedProjections);
+
+            // when
+            StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, cursor, pageSize);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.storeId()).isEqualTo(store.getId());
+            assertThat(response.storeName()).isEqualTo(store.getName());
+            assertThat(response.events()).hasSizeLessThanOrEqualTo(2); // pageSize
+            assertThat(response.nextCursor()).isNotNull();
+            assertThat(response.nextCursor().lastEventId()).isEqualTo(2L);
+        }
+
+        @Test
+        @DisplayName("마지막 페이지 조회 - hasNext false")
+        void getCouponEventsByStore_lastPage_hasNextFalse() {
+            // given
+            LocalDateTime lastStartAt = now.minusDays(1);
+            LocalDateTime lastEndAt = now.plusDays(1);
+            Long lastEventId = 3L;
+            var cursor = StoreCouponEventsCursor.ofNullable(lastStartAt, lastEndAt, lastEventId);
+            int pageSize = 3;
+
+            List<CouponEventWithUsedCountProjection> mockedProjections = List.of(
+                    createMockCoupon(1L, "이벤트1", now.minusDays(1), now.plusDays(1)),
+                    createMockCoupon(2L, "이벤트2", now.minusDays(1), now.plusDays(1)),
+                    createMockCoupon(lastEventId, "이벤트3", lastStartAt, lastEndAt)
+            );
+
+            Member member = TestUtils.createEntity(Member.class, Map.of("id", 1L));
+            Store store = TestUtils.createEntity(Store.class, Map.of(
+                    "id", 1L,
+                    "name", "매장",
+                    "member", member
+            ));
+
+            given(storeRepository.findById(store.getId())).willReturn(Optional.of(store));
+            given(couponEventRepository.fetchCouponEventsByStoreAndStatus(any(Store.class), any(CouponEventStatus.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
+                    .willReturn(mockedProjections);
+
+            // when
+            StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, cursor, pageSize);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.events()).hasSizeLessThanOrEqualTo(3); // pageSize
+            assertThat(response.nextCursor()).isNull();
+        }
+
+        @Test
+        @DisplayName("커서 이후 조회")
+        void getCouponEventsByStore_nextCursorPage() {
+            // given
+            var cursor = StoreCouponEventsCursor.ofNullable(now.minusDays(1), now.plusDays(1), 2L);
+            int pageSize = 2;
+
+            List<CouponEventWithUsedCountProjection> mockedProjections = List.of(
+                    createMockCoupon(3L, "이벤트3", now.minusDays(1), now.plusDays(1)),
+                    createMockCoupon(4L, "이벤트4", now.minusDays(1), now.plusDays(1)),
+                    createMockCoupon(5L, "이벤트5", now.minusDays(1), now.plusDays(1))
+            );
+
+            Member member = TestUtils.createEntity(Member.class, Map.of("id", 1L));
+            Store store = TestUtils.createEntity(Store.class, Map.of(
+                    "id", 1L,
+                    "name", "매장",
+                    "member", member
+            ));
+
+            given(storeRepository.findById(store.getId())).willReturn(Optional.of(store));
+            given(couponEventRepository.fetchCouponEventsByStoreAndStatus(any(Store.class), any(CouponEventStatus.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
+                    .willReturn(mockedProjections);
+
+            // when
+            StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(
+                    member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, cursor, pageSize
+            );
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.events()).hasSizeLessThanOrEqualTo(2); // pageSize
+            assertThat(response.nextCursor()).isNotNull();
+            assertThat(response.nextCursor().lastEventId()).isEqualTo(4L);
+        }
+
+    }
 }
