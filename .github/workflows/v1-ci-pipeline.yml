@@ -59,8 +59,15 @@ jobs:
           REDIS_PORT: 6379
         run: ./gradlew clean build --no-daemon
 
+      - name: Upload JaCoCo Coverage Report
+        if: inputs.branch_name == 'main' || inputs.branch_name == 'chore/cicd-jacoco'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-html-report
+          path: build/reports/jacoco/test/html
+
       - name: Upload Test Report
-        if: always()
+        if: inputs.branch_name == 'main' || inputs.branch_name == 'chore/cicd-jacoco'
         uses: actions/upload-artifact@v4
         with:
           name: test-report
