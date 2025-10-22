@@ -60,20 +60,19 @@ jobs:
         run: ./gradlew clean build --no-daemon
 
       - name: Upload JaCoCo Coverage Report
-        if: inputs.branch_name == 'main' || inputs.branch_name == 'chore/cicd-jacoco'
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-html-report
           path: build/jacocoHtml/
 
       - name: Upload Test Report
-        if: inputs.branch_name == 'main' || inputs.branch_name == 'chore/cicd-jacoco'
         uses: actions/upload-artifact@v4
         with:
           name: test-report
           path: build/reports/tests/test
 
-      - name: Test Coverage Report
+      - name: Jacoco Report Comment on PR
+        if: github.event_name == 'pull_request'
         id: jacoco
         uses: madrapps/jacoco-report@v1.7.2
         with:

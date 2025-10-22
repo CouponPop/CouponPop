@@ -3,7 +3,6 @@ name: CouponPop Main CI/CD
 on:
   push:
     branches:
-      - chore/cicd-jacoco
       - dev
       - main
     paths-ignore:
