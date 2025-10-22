@@ -322,7 +322,7 @@ class AuthServiceTest {
             MemberFcmToken mockFcmToken = TestUtils.createEntity(MemberFcmToken.class, Map.of("fcmToken", "testFcmToken"));
 
             // member 조회
-            given(memberService.findMemberById(testAuthMember.id())).willReturn(mockMember);
+            given(memberRepository.findById(testAuthMember.id())).willReturn(Optional.of(mockMember));
 
             // JWT
             given(jwtProvider.resolveToken(testAuthorizationHeader)).willReturn(testToken);
@@ -354,7 +354,7 @@ class AuthServiceTest {
 
             // given
             WithdrawRequest testWithdrawRequest = new WithdrawRequest("testFcmToken");
-            given(memberService.findMemberById(testAuthMember.id()))
+            given(memberRepository.findById(testAuthMember.id()))
                     .willThrow(new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
 
             // JWT

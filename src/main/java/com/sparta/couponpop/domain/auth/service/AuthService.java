@@ -15,7 +15,6 @@ import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberFcmTokenRepository;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
-import com.sparta.couponpop.domain.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -34,10 +33,9 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
-    private final MemberService memberService;
-    private final TokenBlacklistService tokenBlacklistService;
     private final MemberRepository memberRepository;
     private final MemberFcmTokenRepository memberFcmTokenRepository;
+    private final TokenBlacklistService tokenBlacklistService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -106,7 +104,8 @@ public class AuthService {
         String resolvedToken = extractToken(authorizationHeader);
         long expirationMillis = jwtProvider.getExpirationMillis(resolvedToken);
 
-        Member memberToWithdraw = memberService.findMemberById(authMember.id());
+        Member memberToWithdraw = memberRepository.findById(authMember.id())
+                .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         memberToWithdraw.withdraw();
         expireFcmToken(memberToWithdraw.getId(), withdrawRequest.fcmToken());
