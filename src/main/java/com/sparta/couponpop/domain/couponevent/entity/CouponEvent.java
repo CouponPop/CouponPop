@@ -111,4 +111,16 @@ public class CouponEvent extends BaseEntity {
     public void issue() {
         this.issuedCount += 1;
     }
+
+    public void validateInProgress(LocalDateTime now) {
+        if (now.isBefore(eventStartAt)) {
+            throw new GlobalException(CouponEventErrorCode.EVENT_NOT_STARTED);
+        }
+        if (now.isAfter(eventEndAt)) {
+            throw new GlobalException(CouponEventErrorCode.EVENT_ENDED);
+        }
+        if (couponEventStatus != CouponEventStatus.IN_PROGRESS) {
+            throw new GlobalException(CouponEventErrorCode.EVENT_NOT_IN_PROGRESS);
+        }
+    }
 }
