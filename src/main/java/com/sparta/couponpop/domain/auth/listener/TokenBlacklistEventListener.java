@@ -23,6 +23,6 @@ public class TokenBlacklistEventListener {
     public void handleTokenBlacklist(TokenBlacklistEvent event) {
 
         tokenBlacklistService.blacklistToken(event.token(), event.expirationMillis());
-        log.debug("[publishBlacklistTokenEvent] 토큰 블랙리스트 이벤트 수행 완료 - token={}", event.token());
+        log.debug("[handleTokenBlacklist] 토큰 블랙리스트 이벤트 수행 완료 - token={}", event.token());
     }
 }
