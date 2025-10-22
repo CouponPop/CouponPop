@@ -158,7 +158,7 @@ afterEvaluate {
 tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification) {
     dependsOn tasks.named('jacocoTestReport')
     violationRules {
-        rule {// Line Coverage 최소 60% 이
+        rule {
             enabled = true
             element = 'BUNDLE'
             limit {
