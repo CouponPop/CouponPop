@@ -84,9 +84,13 @@ public class Coupon extends BaseEntity {
         return now.isAfter(this.expireAt);
     }
 
+    public boolean isUsed() {
+        return this.usedAt != null && CouponStatus.USED.equals(this.couponStatus);
+    }
+
     public void use(LocalDateTime usedAt) {
         // 이미 사용된 쿠폰 방어 로직
-        if (this.usedAt != null) {
+        if (isUsed()) {
             throw new GlobalException(CouponErrorCode.COUPON_ALREADY_USED);
         }
         // 쿠폰 사용 가능 상태 검증 - AVAILABLE 이 아닌 USED, EXPIRED, CANCELED 이면 사용 못하는 쿠폰
@@ -102,7 +106,5 @@ public class Coupon extends BaseEntity {
         this.usedAt = usedAt;
     }
 
-    public boolean isUsed() {
-        return CouponStatus.USED.equals(this.couponStatus);
-    }
+
 }
