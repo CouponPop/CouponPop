@@ -6,10 +6,14 @@ import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
+import com.sparta.couponpop.domain.couponevent.dto.response.StoreCouponEventListResponse;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
+import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
+import com.sparta.couponpop.domain.couponevent.repository.dto.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.store.entity.Store;
+import com.sparta.couponpop.domain.store.exception.StoreErrorCode;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +34,7 @@ public class CouponEventService {
 
     private static final long MAX_EVENT_HOURS = 48L; // 이벤트 최대 기간(시간)
 
+    // TODO : 정확한 시간? 에 이벤트를 어떻게 시작할 수 있을까?
     @Transactional
     public CreateCouponEventResponse createCouponEvent(CreateCouponEventRequest request, Long userId) {
         /*
@@ -56,6 +62,34 @@ public class CouponEventService {
         couponEvent.validateOwner(loginUserId);
         int usedCouponCount = couponRepository.countByEventIdAndStatus(eventId, CouponStatus.USED);
         return CouponEventDetailResponse.of(couponEvent, usedCouponCount, now);
+    }
+
+    /**
+     * 매장별 쿠폰 이벤트 목록 조회 (Cursor 기반 페이징)
+     *
+     * @param memberId    요청한 회원 ID
+     * @param storeId     조회할 매장 ID
+     * @param eventStatus 조회할 이벤트 상태 (예: IN_PROGRESS)
+     * @param cursor      이전 페이지 마지막 이벤트 정보를 담은 커서
+     * @param pageSize    한 페이지당 조회할 이벤트 수
+     * @return StoreCouponEventListResponse 페이징된 이벤트 목록 및 다음 커서 정보
+     * @throws GlobalException 매장을 찾을 수 없거나, 회원이 매장 소유자가 아닌 경우 발생
+     */
+    public StoreCouponEventListResponse getCouponEventsByStore(Long memberId, Long storeId, CouponEventStatus eventStatus, StoreCouponEventsCursor cursor, int pageSize) {
+        // 매장 조회 및 소유자 검증
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
+
+        if (!store.getMember().getId().equals(memberId)) {
+            throw new GlobalException(StoreErrorCode.STORE_ACCESS_PERMISSION_DENIED);
+        }
+
+        // Store 의 eventStatus 이벤트 목록 조회
+        List<CouponEventDetailResponse> couponEventDetailResponses = couponEventRepository.fetchCouponEventsByStoreAndStatus(store, eventStatus, cursor, pageSize + 1).stream()
+                .map(CouponEventDetailResponse::of)
+                .toList();
+
+        return StoreCouponEventListResponse.of(store.getId(), store.getName(), couponEventDetailResponses, pageSize);
     }
 
     private void validateEventDuration(LocalDateTime start, LocalDateTime end) {

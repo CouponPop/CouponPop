@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface CouponEventRepository extends JpaRepository<CouponEvent, Long> {
+public interface CouponEventRepository extends JpaRepository<CouponEvent, Long>, CouponEventQueryRepository {
 
     @Query("""
             SELECT e
