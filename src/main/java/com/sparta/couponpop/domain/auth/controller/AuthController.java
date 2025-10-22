@@ -53,7 +53,7 @@ public class AuthController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> withdraw(@RequestHeader("Authorization") String authorizationHeader,
                                                       @CurrentMember AuthMember authMember,
-                                                      @RequestBody WithdrawRequest withdrawRequest) {
+                                                      @Valid @RequestBody WithdrawRequest withdrawRequest) {
 
         authService.withdraw(authorizationHeader, authMember, withdrawRequest);
         return ApiResponse.noContent();
