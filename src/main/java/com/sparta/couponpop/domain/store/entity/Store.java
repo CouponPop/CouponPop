@@ -9,10 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.PrecisionModel;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -23,8 +20,6 @@ import java.time.LocalTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("deleted_at IS NULL")
 public class Store extends BaseEntity {
-
-    private static final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -103,7 +98,6 @@ public class Store extends BaseEntity {
         this.address = address;
         this.latitude = latitude;
         this.longitude = longitude;
-        this.location = createPoint(longitude, latitude);
         this.imageUrl = imageUrl;
         this.storeCategory = storeCategory;
         this.weekdayOpenTime = weekdayOpenTime;
@@ -165,7 +159,6 @@ public class Store extends BaseEntity {
         this.address = address;
         this.latitude = latitude;
         this.longitude = longitude;
-        this.location = createPoint(longitude, latitude);
         this.imageUrl = imageUrl;
         this.storeCategory = storeCategory;
         this.weekdayOpenTime = weekdayOpenTime;
@@ -178,9 +171,4 @@ public class Store extends BaseEntity {
         this.deletedAt = LocalDateTime.now();
     }
 
-    private static Point createPoint(double longitude, double latitude) {
-        Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
-        point.setSRID(4326);
-        return point;
-    }
 }
