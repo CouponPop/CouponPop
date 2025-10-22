@@ -44,6 +44,14 @@ public class RedisService {
         return redisTemplate.delete(key);
     }
 
+    // 키 집합 삭제
+    public long deleteKeys(Set<String> keys) {
+        if (keys.isEmpty()) {
+            return 0;
+        }
+        return redisTemplate.delete(keys);
+    }
+
     /**
      * 주어진 prefix로 시작하는 모든 키들을 스캔하여 집합으로 반환
      *

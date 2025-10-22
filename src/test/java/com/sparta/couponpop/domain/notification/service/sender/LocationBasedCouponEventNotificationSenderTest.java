@@ -58,6 +58,7 @@ class LocationBasedCouponEventNotificationSenderTest {
             // then
             then(redisService).should().scanKeysByPrefix(keyPrefix);
             then(redisService).should(never()).fetchCacheValues(anySet(), eq(LocationCacheValue.class));
+            then(redisService).should(never()).deleteKeys(anySet());
             then(storeRepository).shouldHaveNoInteractions();
             then(fcmSendService).shouldHaveNoInteractions();
         }
@@ -77,6 +78,7 @@ class LocationBasedCouponEventNotificationSenderTest {
             // then
             then(redisService).should().scanKeysByPrefix(keyPrefix);
             then(redisService).should().fetchCacheValues(locationKeys, LocationCacheValue.class);
+            then(redisService).should(never()).deleteKeys(anySet());
             then(storeRepository).shouldHaveNoInteractions();
             then(fcmSendService).shouldHaveNoInteractions();
         }
@@ -114,6 +116,7 @@ class LocationBasedCouponEventNotificationSenderTest {
                     eq(1.0),
                     any(LocalDateTime.class)
             );
+            then(redisService).should().deleteKeys(locationKeys);
             then(fcmSendService).should(never()).sendNotification(anyString(), anyString(), anyString());
         }
 
@@ -150,6 +153,7 @@ class LocationBasedCouponEventNotificationSenderTest {
                     eq(1.0),
                     any(LocalDateTime.class)
             );
+            then(redisService).should().deleteKeys(locationKeys);
             then(fcmSendService).should(never()).sendNotification(anyString(), anyString(), anyString());
         }
 
@@ -185,6 +189,7 @@ class LocationBasedCouponEventNotificationSenderTest {
             sender.send(LocationBasedCouponEventNotificationCommand.of());
 
             // then
+            then(redisService).should().deleteKeys(locationKeys);
             then(fcmSendService).should().sendNotification(cacheValue.fcmToken(), expectedTitle, expectedBody);
         }
 
@@ -218,6 +223,8 @@ class LocationBasedCouponEventNotificationSenderTest {
             // when & then
             assertThatCode(() -> sender.send(LocationBasedCouponEventNotificationCommand.of()))
                     .doesNotThrowAnyException();
+
+            then(redisService).should().deleteKeys(locationKeys);
         }
 
         private StoreAndCouponEventCountProjection projection(long openStoreCount, long activeCouponEventCount) {

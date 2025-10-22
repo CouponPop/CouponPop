@@ -99,5 +99,9 @@ public class LocationBasedCouponEventNotificationSender implements NotificationS
                 log.error("{} 전송 중 오류가 발생했습니다. token={}, message={}", notificationTypeDescription, token, e.getMessage(), e);
             }
         }
+
+        // 6. Key들을 삭제한다.
+        long deletedCount = redisService.deleteKeys(locationKeys);
+        log.info("위치 기반 캐시 키들을 삭제했습니다. keyPrefix={}, deletedCount={}", keyPrefix, deletedCount);
     }
 }
