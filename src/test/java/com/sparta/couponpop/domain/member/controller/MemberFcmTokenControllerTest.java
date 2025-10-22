@@ -8,9 +8,7 @@ import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.member.dto.request.MemberFcmTokenRequest;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.service.MemberFcmTokenService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -56,27 +54,38 @@ class MemberFcmTokenControllerTest {
         SecurityContextHolder.setContext(context);
     }
 
-    @Test
-    @DisplayName("회원 FCM 토큰 생성 및 갱신 - 성공")
-    void upsertMemberFcmToken_success() throws Exception {
-        // given
-        MemberFcmTokenRequest request = MemberFcmTokenRequest.builder()
-                .fcmToken("sample_fcm_token")
-                .deviceType("ANDROID")
-                .deviceIdentifier("device-123")
-                .build();
-
-        willDoNothing().given(memberFcmTokenService).upsertTokenForMember(any(MemberFcmTokenRequest.class), anyLong());
-
-        // when & then
-        mockMvc.perform(
-                        post("/api/v1/members/fcm-token")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request))
-                )
-                .andDo(print())
-                .andExpect(status().isNoContent());
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
     }
 
+    @Nested
+    @DisplayName("POST /api/v1/members/fcm-token")
+    class UpsertMemberFcmToken {
+
+        private static final String URL = "/api/v1/members/fcm-token";
+
+        @Test
+        @DisplayName("회원 FCM 토큰 생성 및 갱신 - 성공")
+        void upsertMemberFcmToken_success() throws Exception {
+            // given
+            MemberFcmTokenRequest request = MemberFcmTokenRequest.builder()
+                    .fcmToken("sample_fcm_token")
+                    .deviceType("ANDROID")
+                    .deviceIdentifier("device-123")
+                    .build();
+
+            willDoNothing().given(memberFcmTokenService).upsertTokenForMember(any(MemberFcmTokenRequest.class), anyLong());
+
+            // when & then
+            mockMvc.perform(
+                            post(URL)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request))
+                    )
+                    .andDo(print())
+                    .andExpect(status().isNoContent());
+        }
+    }
 
 }
