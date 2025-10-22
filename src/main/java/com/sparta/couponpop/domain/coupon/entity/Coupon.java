@@ -95,7 +95,7 @@ public class Coupon extends BaseEntity {
         }
         // 쿠폰 사용 가능 상태 검증 - AVAILABLE 이 아닌 USED, EXPIRED, CANCELED 이면 사용 못하는 쿠폰
         if (!isAvailable()) {
-            throw new GlobalException(CouponErrorCode.COUPON_ALREADY_USED);
+            throw new GlobalException(CouponErrorCode.COUPON_NOT_AVAILABLE);
         }
         // 만료 시간 검증
         if (isExpired(usedAt)) {

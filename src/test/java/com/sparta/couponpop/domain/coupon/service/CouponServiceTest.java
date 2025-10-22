@@ -432,7 +432,7 @@ class CouponServiceTest {
             // when & then
             assertThatThrownBy(() -> couponService.useCoupon(coupon.getId(), "QR123", member.getId(), usedAt))
                     .isInstanceOf(GlobalException.class)
-                    .hasMessage(CouponErrorCode.COUPON_ALREADY_USED.getMessage());
+                    .hasMessage(CouponErrorCode.COUPON_NOT_AVAILABLE.getMessage());
         }
     }
 }
