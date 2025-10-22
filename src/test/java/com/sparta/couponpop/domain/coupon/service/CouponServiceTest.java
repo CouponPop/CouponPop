@@ -1,12 +1,15 @@
 package com.sparta.couponpop.domain.coupon.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
+import com.sparta.couponpop.domain.coupon.dto.request.MemberIssuedCouponCursor;
 import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
+import com.sparta.couponpop.domain.coupon.dto.response.IssuedCouponListResponse;
 import com.sparta.couponpop.domain.coupon.entity.Coupon;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
 import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
 import com.sparta.couponpop.domain.coupon.repository.TemporaryCouponCodeRepository;
+import com.sparta.couponpop.domain.coupon.repository.dto.CouponSummaryInfoProjection;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
@@ -27,6 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -433,6 +437,120 @@ class CouponServiceTest {
             assertThatThrownBy(() -> couponService.useCoupon(coupon.getId(), "QR123", member.getId(), usedAt))
                     .isInstanceOf(GlobalException.class)
                     .hasMessage(CouponErrorCode.COUPON_NOT_AVAILABLE.getMessage());
+        }
+    }
+
+    @Nested
+    @DisplayName("쿠폰 리스트 조회 - 커서 기반")
+    class GetIssuedCoupons {
+        private static final LocalDateTime now = LocalDateTime.of(2025, 10, 20, 16, 0);
+
+        private CouponSummaryInfoProjection createMockCoupon(Long id, LocalDateTime eventEndAt) {
+            return new CouponSummaryInfoProjection(
+                    id,
+                    CouponStatus.AVAILABLE,
+                    now.minusDays(1),
+                    now.plusDays(5),
+                    null,
+                    id,
+                    "Event " + id,
+                    now.minusDays(2),
+                    eventEndAt,
+                    1L,
+                    "Store " + id,
+                    null,
+                    37.0,
+                    127.0,
+                    "image.png"
+            );
+        }
+
+        @Test
+        @DisplayName("첫 페이지 조회 - hasNext true")
+        void getIssuedCoupons_firstPage_hasNextTrue() {
+            // given
+            var cursor = MemberIssuedCouponCursor.first();
+            int pageSize = 2;
+
+            List<CouponSummaryInfoProjection> mockCoupons = List.of(
+                    createMockCoupon(1L, now.minusHours(1)),
+                    createMockCoupon(2L, now),
+                    createMockCoupon(3L, now.plusHours(1)) // pageSize + 1
+            );
+
+            given(couponRepository.findAllByMemberIdWithEventAndStore(anyLong(), any(CouponStatus.class), isNull(), isNull(), eq(pageSize + 1)))
+                    .willReturn(mockCoupons);
+
+            // when
+            IssuedCouponListResponse response = couponService.getIssuedCoupons(
+                    member.getId(), CouponStatus.AVAILABLE, cursor, pageSize
+            );
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.size()).isEqualTo(pageSize); // 리스트 trimming
+            assertThat(response.hasNext()).isTrue();
+            assertThat(response.nextCursor()).isNotNull();
+            assertThat(response.nextCursor().lastCouponId()).isEqualTo(2L);
+        }
+
+        @Test
+        @DisplayName("마지막 페이지 조회 - hasNext false")
+        void getIssuedCoupons_lastPage_hasNextFalse() {
+            // given
+            LocalDateTime lastEventEndAt = now.plusHours(1);
+            Long lastCouponId = 3L;
+            var cursor = new MemberIssuedCouponCursor(lastEventEndAt, lastCouponId);
+            int pageSize = 3;
+
+            List<CouponSummaryInfoProjection> mockCoupons = List.of(
+                    createMockCoupon(1L, now.minusHours(1)),
+                    createMockCoupon(2L, now),
+                    createMockCoupon(lastCouponId, lastEventEndAt)
+            );
+
+            given(couponRepository.findAllByMemberIdWithEventAndStore(anyLong(), any(CouponStatus.class), any(LocalDateTime.class), anyLong(), eq(pageSize + 1)))
+                    .willReturn(mockCoupons);
+
+            // when
+            IssuedCouponListResponse response = couponService.getIssuedCoupons(
+                    member.getId(), CouponStatus.AVAILABLE, cursor, pageSize
+            );
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.size()).isEqualTo(pageSize);
+            assertThat(response.hasNext()).isFalse();
+            assertThat(response.nextCursor()).isNull();
+        }
+
+        @Test
+        @DisplayName("커서 이후 조회")
+        void getIssuedCoupons_nextCursorPage() {
+            // given
+            var lastCursor = new MemberIssuedCouponCursor(now.minusHours(1), 1L);
+            int pageSize = 2;
+
+            List<CouponSummaryInfoProjection> mockCoupons = List.of(
+                    createMockCoupon(2L, now),
+                    createMockCoupon(3L, now.plusHours(1)),
+                    createMockCoupon(4L, now.plusHours(2))
+            );
+
+            given(couponRepository.findAllByMemberIdWithEventAndStore(anyLong(), any(CouponStatus.class), any(LocalDateTime.class), anyLong(), eq(pageSize + 1)))
+                    .willReturn(mockCoupons);
+
+            // when
+            IssuedCouponListResponse response = couponService.getIssuedCoupons(
+                    member.getId(), CouponStatus.AVAILABLE, lastCursor, pageSize
+            );
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.size()).isEqualTo(pageSize); // 리스트 trimming
+            assertThat(response.hasNext()).isTrue();
+            assertThat(response.nextCursor()).isNotNull();
+            assertThat(response.nextCursor().lastCouponId()).isEqualTo(3L);
         }
     }
 }
