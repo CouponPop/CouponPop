@@ -297,4 +297,142 @@ class CouponServiceTest {
                     .hasMessage(CouponErrorCode.COUPON_ACCESS_DENIED.getMessage());
         }
     }
+
+    @Nested
+    @DisplayName("쿠폰 사용 (useCoupon)")
+    class UseCouponTests {
+
+        @Test
+        @DisplayName("쿠폰 사용 - 성공")
+        void useCoupon_Success() {
+            // given
+            given(temporaryCouponCodeRepository.validateTemporaryCoupon(anyLong(), anyString())).willReturn(true);
+            given(couponRepository.findByIdWithCouponEventForUpdate(anyLong())).willReturn(Optional.of(coupon));
+
+            LocalDateTime usedAt = eventStartAt.plusHours(10);
+            String qrCode = "QR123";
+
+            // when
+            couponService.useCoupon(coupon.getId(), qrCode, member.getId(), usedAt);
+
+            // then
+            assertThat(coupon.getCouponStatus()).isEqualTo(CouponStatus.USED);
+            assertThat(coupon.getUsedAt()).isEqualTo(usedAt);
+
+            verify(temporaryCouponCodeRepository, times(1))
+                    .deleteTemporaryCoupon(anyLong(), anyString());
+        }
+
+        @Test
+        @DisplayName("쿠폰 사용 실패 - 임시 코드 없을 때 예외치")
+        void useCoupon_InvalidQRCode() {
+            // given
+            given(temporaryCouponCodeRepository.validateTemporaryCoupon(anyLong(), anyString())).willReturn(false);
+
+            LocalDateTime usedAt = eventStartAt.plusHours(10);
+            String qrCode = "QR123";
+
+            // when & then
+            assertThatThrownBy(() -> couponService.useCoupon(coupon.getId(), qrCode, member.getId(), usedAt))
+                    .isInstanceOf(GlobalException.class)
+                    .hasMessage(CouponErrorCode.COUPON_INVALID_TEMP_CODE.getMessage());
+        }
+
+        @Test
+        @DisplayName("쿠폰 사용 실패 - 이벤트 시작 전")
+        void useCoupon_EventNotStarted() {
+            // given
+            given(temporaryCouponCodeRepository.validateTemporaryCoupon(anyLong(), anyString())).willReturn(true);
+            given(couponRepository.findByIdWithCouponEventForUpdate(anyLong())).willReturn(Optional.of(coupon));
+
+            LocalDateTime usedAt = eventStartAt.minusMinutes(1);
+            String qrCode = "QR123";
+
+            // when & then
+            assertThatThrownBy(() -> couponService.useCoupon(coupon.getId(), qrCode, member.getId(), usedAt))
+                    .isInstanceOf(GlobalException.class)
+                    .hasMessage(CouponEventErrorCode.EVENT_NOT_STARTED.getMessage());
+        }
+
+        @Test
+        @DisplayName("쿠폰 사용 실패 - 이벤트 종료 후")
+        void useCoupon_EventEnded() {
+            // given
+            given(temporaryCouponCodeRepository.validateTemporaryCoupon(anyLong(), anyString())).willReturn(true);
+            given(couponRepository.findByIdWithCouponEventForUpdate(anyLong())).willReturn(Optional.of(coupon));
+
+            LocalDateTime usedAt = eventEndAt.plusMinutes(1);
+            String qrCode = "QR123";
+
+            // when & then
+            assertThatThrownBy(() -> couponService.useCoupon(coupon.getId(), qrCode, member.getId(), usedAt))
+                    .isInstanceOf(GlobalException.class)
+                    .hasMessage(CouponEventErrorCode.EVENT_ENDED.getMessage());
+        }
+
+        @Test
+        @DisplayName("쿠폰 사용 실패 - 쿠폰 소유자 불일치")
+        void useCoupon_AccessDenied() {
+            // given
+            given(temporaryCouponCodeRepository.validateTemporaryCoupon(anyLong(), anyString())).willReturn(true);
+            given(couponRepository.findByIdWithCouponEventForUpdate(anyLong())).willReturn(Optional.of(coupon));
+
+            LocalDateTime usedAt = eventStartAt.plusHours(10);
+            String qrCode = "QR123";
+
+            // when & then
+            assertThatThrownBy(() -> couponService.useCoupon(coupon.getId(), qrCode, 999L, usedAt))
+                    .isInstanceOf(GlobalException.class)
+                    .hasMessage(CouponErrorCode.COUPON_ACCESS_DENIED.getMessage());
+        }
+
+        @Test
+        @DisplayName("쿠폰 사용 실패 - 쿠폰 이미 사용됨 (usedAt != null)")
+        void useCoupon_AlreadyUsed1() {
+            // given
+            LocalDateTime usedAt = eventStartAt.plusHours(10);
+            coupon = TestUtils.createEntity(Coupon.class, Map.of(
+                    "id", 1L,
+                    "couponCode", "CPN-9515BD7FE9CD",
+                    "receivedAt", couponIssuedAt,
+                    "expireAt", eventEndAt,
+                    "usedAt", usedAt,
+                    "couponStatus", CouponStatus.USED,
+                    "couponEvent", couponEvent,
+                    "member", member
+            ));
+
+            given(temporaryCouponCodeRepository.validateTemporaryCoupon(anyLong(), anyString())).willReturn(true);
+            given(couponRepository.findByIdWithCouponEventForUpdate(anyLong())).willReturn(Optional.of(coupon));
+
+            // when & then
+            assertThatThrownBy(() -> couponService.useCoupon(coupon.getId(), "QR123", member.getId(), usedAt))
+                    .isInstanceOf(GlobalException.class)
+                    .hasMessage(CouponErrorCode.COUPON_ALREADY_USED.getMessage());
+        }
+
+        @Test
+        @DisplayName("쿠폰 사용 실패 - 쿠폰 이미 사용됨 (isAvailable == false)")
+        void useCoupon_AlreadyUsed2() {
+            // given
+            LocalDateTime usedAt = eventStartAt.plusHours(10);
+            coupon = TestUtils.createEntity(Coupon.class, Map.of(
+                    "id", 1L,
+                    "couponCode", "CPN-9515BD7FE9CD",
+                    "receivedAt", couponIssuedAt,
+                    "expireAt", eventEndAt,
+                    "couponStatus", CouponStatus.USED,
+                    "couponEvent", couponEvent,
+                    "member", member
+            ));
+
+            given(temporaryCouponCodeRepository.validateTemporaryCoupon(anyLong(), anyString())).willReturn(true);
+            given(couponRepository.findByIdWithCouponEventForUpdate(anyLong())).willReturn(Optional.of(coupon));
+
+            // when & then
+            assertThatThrownBy(() -> couponService.useCoupon(coupon.getId(), "QR123", member.getId(), usedAt))
+                    .isInstanceOf(GlobalException.class)
+                    .hasMessage(CouponErrorCode.COUPON_NOT_AVAILABLE.getMessage());
+        }
+    }
 }
