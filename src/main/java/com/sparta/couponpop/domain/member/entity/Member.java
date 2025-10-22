@@ -86,4 +86,8 @@ public class Member extends BaseEntity {
     private void updatePassword(String encodedPassword) {
         this.password = encodedPassword;
     }
+
+    public void withdraw() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }
