@@ -2,14 +2,21 @@ package com.sparta.couponpop.domain.auth.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.security.JwtProvider;
+import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.auth.dto.request.LoginRequest;
+import com.sparta.couponpop.domain.auth.dto.request.LogoutRequest;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
 import com.sparta.couponpop.domain.auth.dto.response.LoginResponse;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
 import com.sparta.couponpop.domain.member.entity.Member;
+import com.sparta.couponpop.domain.member.entity.MemberFcmToken;
 import com.sparta.couponpop.domain.member.enums.MemberType;
+import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
+import com.sparta.couponpop.domain.member.repository.MemberFcmTokenRepository;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
+import com.sparta.couponpop.utils.TestUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,12 +25,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -38,10 +45,31 @@ class AuthServiceTest {
     private MemberRepository memberRepository;
 
     @Mock
+    private MemberFcmTokenRepository memberFcmTokenRepository;
+
+    @Mock
     private JwtProvider jwtProvider;
+
+    @Mock
+    private TokenBlacklistService tokenBlacklistService;
 
     @InjectMocks
     private AuthService authService;
+
+    private AuthMember testAuthMember;
+    private LogoutRequest testLogoutRequest;
+    private String testAuthorizationHeader;
+    private String testToken;
+    private long testExpirationMillis;
+
+    @BeforeEach
+    void setUp() {
+        testAuthMember = AuthMember.from(1L, "테스트이름", MemberType.CUSTOMER);
+        testLogoutRequest = new LogoutRequest("testFcmToken");
+        testAuthorizationHeader = "Bearer " + "testAccessToken";
+        testToken = "testAccessToken";
+        testExpirationMillis = System.currentTimeMillis() + 3600000;
+    }
 
     @Test
     @DisplayName("회원가입 정보를 받아 멤버를 생성한다.")
@@ -171,5 +199,68 @@ class AuthServiceTest {
 
         assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.INVALID_CREDENTIALS);
         verify(jwtProvider, never()).createAccessToken(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("로그아웃 정보를 받아 로그아웃에 성공한다.")
+    void logoutSuccess() {
+
+        // given
+        MemberFcmToken mockFcmToken = TestUtils.createEntity(MemberFcmToken.class, Map.of("fcmToken", "testFcmToken"));// 임시 객체
+
+        given(jwtProvider.resolveToken(testAuthorizationHeader)).willReturn(testToken);
+        given(jwtProvider.getExpirationMillis(testToken)).willReturn(testExpirationMillis);
+
+        given(memberFcmTokenRepository.findByMemberIdAndFcmToken(testAuthMember.id(), testLogoutRequest.fcmToken()))
+                .willReturn(Optional.of(mockFcmToken));
+
+        // when
+        authService.logout(testAuthorizationHeader, testLogoutRequest, testAuthMember);
+
+        // then
+        // 1. expireToken() 검증
+        verify(jwtProvider).resolveToken(testAuthorizationHeader);
+        verify(jwtProvider).getExpirationMillis(testToken);
+        verify(tokenBlacklistService).blacklistToken(testToken, testExpirationMillis);
+
+        // 2. expireFcmToken() 검증
+        verify(memberFcmTokenRepository).findByMemberIdAndFcmToken(testAuthMember.id(), testLogoutRequest.fcmToken());
+        verify(memberFcmTokenRepository).delete(mockFcmToken);
+    }
+
+    @Test
+    @DisplayName("토큰이 존재하지 않으면, 로그아웃에 실패한다.")
+    void logoutFailureInvalidTokenHeader() {
+
+        // given
+        given(jwtProvider.resolveToken(testAuthorizationHeader)).willReturn(null);
+
+        // when & then
+        GlobalException exception = assertThrows(GlobalException.class, () -> {
+            authService.logout(testAuthorizationHeader, testLogoutRequest, testAuthMember);
+        });
+
+        assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.INVALID_TOKEN);
+        verify(memberFcmTokenRepository, never()).findByMemberIdAndFcmToken(anyLong(), anyString());
+    }
+
+    @Test
+    @DisplayName("FCM 토큰이 존재하지 않으면, 예외를 발생한다.")
+    void logout_Failure_FcmTokenNotFound() {
+
+        // given
+        given(jwtProvider.resolveToken(testAuthorizationHeader)).willReturn(testToken);
+        given(jwtProvider.getExpirationMillis(testToken)).willReturn(testExpirationMillis);
+
+        given(memberFcmTokenRepository.findByMemberIdAndFcmToken(testAuthMember.id(), testLogoutRequest.fcmToken()))
+                .willReturn(Optional.empty());
+
+        // when & then
+        GlobalException exception = assertThrows(GlobalException.class, () -> {
+            authService.logout(testAuthorizationHeader, testLogoutRequest, testAuthMember);
+        });
+
+        assertThat(exception.getErrorCode()).isEqualTo(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND);
+        verify(memberFcmTokenRepository, never()).delete(any(MemberFcmToken.class));
     }
 }

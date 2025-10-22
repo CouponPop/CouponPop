@@ -4,6 +4,7 @@ import com.sparta.couponpop.common.exception.CommonErrorCode;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
+import com.sparta.couponpop.domain.auth.service.TokenBlacklistService;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -30,24 +31,33 @@ import java.io.IOException;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private static final String BEARER_PREFIX = "Bearer ";
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
     private final JwtProvider jwtProvider;
     private final HandlerExceptionResolver handlerExceptionResolver;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain) throws ServletException, IOException {
 
+        String bearerToken = jwtProvider.resolveToken(request.getHeader(AUTHORIZATION_HEADER));
+
         try {
-            String bearerToken = resolveToken(request);
 
             // 토큰 존재 여부 확인
             if (!StringUtils.hasText(bearerToken)) {
                 log.debug("[JwtFilter] 토큰이 존재하지 않는 요청");
                 chain.doFilter(request, response);
+                return;
+            }
+
+            // 블랙리스트 검증
+            if (tokenBlacklistService.isBlacklisted(bearerToken)) {
+                log.debug("[JwtFilter] 인증 실패: 블랙리스트에 등록된 토큰 - {}", bearerToken);
+                handlerExceptionResolver.resolveException(request, response, null,
+                        new GlobalException(AuthErrorCode.INVALID_TOKEN));
                 return;
             }
 
@@ -64,8 +74,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             handlerExceptionResolver.resolveException(request, response, null,
                     new GlobalException(AuthErrorCode.INVALID_TOKEN));
             return;
+        } catch (GlobalException e) {
+            log.debug("[JwtFilter] 인증 실패: 정의한 다른 오류 발생 - {}", e.getMessage());
+            handlerExceptionResolver.resolveException(request, response, null, e);
+            return;
         } catch (Exception e) {
-            log.debug("[JwtFilter] 인증 실패: 토큰 인증 과정 중 다른 오류 발생 - {}", e.getMessage());
+            log.debug("[JwtFilter] 인증 실패: 정의하지 않은 다른 오류 발생 - {}", e.getMessage());
             handlerExceptionResolver.resolveException(request, response, null,
                     new GlobalException(CommonErrorCode.INTERNAL_SERVER_ERROR));
             return;
@@ -83,15 +97,5 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         AuthMember authMember = AuthMember.from(userId, username, memberType);
         Authentication authenticationToken = new JwtAuthenticationToken(authMember);
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-    }
-
-    private String resolveToken(HttpServletRequest request) {
-
-        String header = request.getHeader(AUTHORIZATION_HEADER);
-        if (StringUtils.hasText(header) && header.startsWith(BEARER_PREFIX)) {
-            return header.substring(BEARER_PREFIX.length());
-        }
-
-        return null;
     }
 }
