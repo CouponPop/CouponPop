@@ -7,6 +7,7 @@ import com.sparta.couponpop.common.security.JwtAuthenticationToken;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.coupon.dto.request.CouponIssueRequest;
+import com.sparta.couponpop.domain.coupon.dto.request.UseCouponRequest;
 import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -29,8 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.times;
@@ -310,6 +311,93 @@ class CouponControllerTest {
                     )
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.error.message").value(CouponErrorCode.COUPON_ACCESS_DENIED.getMessage()));
+        }
+    }
+
+    @Nested
+    @DisplayName("쿠폰 사용 요청")
+    class UseCouponTests {
+
+        @Test
+        @DisplayName("쿠폰 사용 성공 - 204 No Content")
+        void useCoupon_Success() throws Exception {
+            // given
+            UseCouponRequest request = new UseCouponRequest("TEMP123", 1L);
+
+
+            // when
+            mockMvc.perform(
+                            post("/api/v1/coupons/use")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request))
+                    )
+                    .andDo(print())
+                    .andExpect(status().isNoContent());
+
+            // then
+            verify(couponService, times(1))
+                    .useCoupon(anyLong(), anyString(), anyLong(), any(LocalDateTime.class));
+        }
+
+        @Test
+        @DisplayName("쿠폰 사용 요청 실패 - 임시 코드 유효하지 않음")
+        void useCoupon_InvalidTempCode() throws Exception {
+            // given
+            UseCouponRequest request = new UseCouponRequest("INVALID", 1L);
+
+            Mockito.doThrow(new GlobalException(CouponErrorCode.COUPON_INVALID_TEMP_CODE))
+                    .when(couponService).useCoupon(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.any(LocalDateTime.class));
+
+            willThrow(new GlobalException(CouponErrorCode.COUPON_INVALID_TEMP_CODE))
+                    .given(couponService)
+                    .useCoupon(anyLong(), anyString(), anyLong(), any(LocalDateTime.class));
+
+            // when & then
+            mockMvc.perform(
+                            post("/api/v1/coupons/use")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request))
+                    )
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.message").value(CouponErrorCode.COUPON_INVALID_TEMP_CODE.getMessage()));
+        }
+
+        @Test
+        @DisplayName("쿠폰 사용 요청 실패 - qrCode 누락")
+        void useCoupon_fail_missingQrCode() throws Exception {
+            String requestBody = """
+                    {
+                        "couponId": 1
+                    }
+                    """;
+
+            mockMvc.perform(
+                            post("/api/v1/coupons/use")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestBody)
+                    )
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.message").value("QR 코드는 필수입니다."));
+        }
+
+        @Test
+        @DisplayName("쿠폰 사용 요청 실패 - couponId 누락")
+        void useCoupon_fail_missingCouponId() throws Exception {
+            String requestBody = """
+                    {
+                        "qrCode": "foejsnvp"
+                    }
+                    """;
+
+            mockMvc.perform(
+                            post("/api/v1/coupons/use")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(requestBody)
+                    )
+                    .andDo(print())
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.message").value("사용하려는 쿠폰 ID는 필수입니다."));
         }
     }
 }
