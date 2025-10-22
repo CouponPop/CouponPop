@@ -40,6 +40,7 @@ public class LocationBasedCouponEventNotificationSender implements NotificationS
         String notificationTypeDescription = getType().getDescription();
         LocalDateTime now = LocalDateTime.now();
 
+        // TODO: https://github.com/CouponPop/coupon-pop-api/pull/91#discussion_r2450300987
         // 1. prefix로 위치 기반 캐시 키 조회
         String keyPrefix = RedisKeyProperties.LOCATION_MEMBER_DEVICE.getKeyPrefix();
         Set<String> locationKeys = redisService.scanKeysByPrefix(keyPrefix);
