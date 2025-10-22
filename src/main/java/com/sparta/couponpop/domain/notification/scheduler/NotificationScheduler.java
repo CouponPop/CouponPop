@@ -21,6 +21,12 @@ public class NotificationScheduler {
     @Scheduled(cron = "0 0 12,18 * * *", zone = TIME_ZONE)
     public void executeLocationBasedCouponEventNotification() {
         log.info("위치 기반 쿠폰 이벤트 알림 배치를 시작합니다.");
-        notificationService.notifyLocationBasedCouponEvent();
+
+        try {
+            notificationService.notifyLocationBasedCouponEvent();
+            log.info("위치 기반 쿠폰 이벤트 알림 배치를 성공적으로 완료했습니다.");
+        } catch (Exception e) {
+            log.error("위치 기반 쿠폰 이벤트 알림 배치 실행 중 오류가 발생했습니다: {}", e.getMessage(), e);
+        }
     }
 }
