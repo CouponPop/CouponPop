@@ -13,7 +13,7 @@ public record StoreCouponEventsCursor(
     }
 
     public static StoreCouponEventsCursor ofNullable(LocalDateTime lastStartAt, LocalDateTime lastEndAt, Long lastEventId) {
-        return (lastStartAt != null && lastEndAt != null & lastEventId != null) ?
+        return (lastStartAt != null && lastEndAt != null && lastEventId != null) ?
                 new StoreCouponEventsCursor(lastStartAt, lastEndAt, lastEventId) :
                 StoreCouponEventsCursor.first();
     }
