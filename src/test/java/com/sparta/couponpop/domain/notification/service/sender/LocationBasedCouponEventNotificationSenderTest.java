@@ -117,7 +117,7 @@ class LocationBasedCouponEventNotificationSenderTest {
                     any(LocalDateTime.class)
             );
             then(redisService).should().deleteKeys(locationKeys);
-            then(fcmSendService).should(never()).sendNotification(anyString(), anyString(), anyString());
+            then(fcmSendService).should(never()).sendNotification(anyLong(), anyString(), anyString(), anyString());
         }
 
         @Test
@@ -154,7 +154,7 @@ class LocationBasedCouponEventNotificationSenderTest {
                     any(LocalDateTime.class)
             );
             then(redisService).should().deleteKeys(locationKeys);
-            then(fcmSendService).should(never()).sendNotification(anyString(), anyString(), anyString());
+            then(fcmSendService).should(never()).sendNotification(anyLong(), anyString(), anyString(), anyString());
         }
 
         @Test
@@ -190,7 +190,7 @@ class LocationBasedCouponEventNotificationSenderTest {
 
             // then
             then(redisService).should().deleteKeys(locationKeys);
-            then(fcmSendService).should().sendNotification(cacheValue.fcmToken(), expectedTitle, expectedBody);
+            then(fcmSendService).should().sendNotification(cacheValue.memberId(), cacheValue.fcmToken(), expectedTitle, expectedBody);
         }
 
         @Test
@@ -218,7 +218,7 @@ class LocationBasedCouponEventNotificationSenderTest {
 
             willThrow(FirebaseMessagingException.class)
                     .given(fcmSendService)
-                    .sendNotification(eq(cacheValue.fcmToken()), anyString(), anyString());
+                    .sendNotification(eq(cacheValue.memberId()), eq(cacheValue.fcmToken()), anyString(), anyString());
 
             // when & then
             assertThatCode(() -> sender.send(LocationBasedCouponEventNotificationCommand.of()))

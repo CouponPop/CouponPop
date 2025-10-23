@@ -107,7 +107,7 @@ class CouponIssuedNotificationSenderTest {
 
             // then
             then(memberFcmTokenRepository).should().findByMemberAndNotificationEnabledIsTrue(member);
-            then(fcmSendService).should(never()).sendNotification(anyList(), anyString(), anyString());
+            then(fcmSendService).should(never()).sendNotification(anyLong(), anyList(), anyString(), anyString());
         }
 
         @Test
@@ -170,6 +170,7 @@ class CouponIssuedNotificationSenderTest {
 
             // then
             then(fcmSendService).should().sendNotification(
+                    eq(memberId),
                     tokensCaptor.capture(),
                     titleCaptor.capture(),
                     bodyCaptor.capture()
@@ -219,7 +220,7 @@ class CouponIssuedNotificationSenderTest {
             given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of(token));
 
             FirebaseMessagingException messagingException = mock(FirebaseMessagingException.class);
-            willThrow(messagingException).given(fcmSendService).sendNotification(anyList(), anyString(), anyString());
+            willThrow(messagingException).given(fcmSendService).sendNotification(eq(memberId), anyList(), anyString(), anyString());
 
             // when & then
             assertThatCode(() -> sender.send(command)).doesNotThrowAnyException();
