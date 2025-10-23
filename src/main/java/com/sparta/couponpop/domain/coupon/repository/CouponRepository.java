@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface CouponRepository extends JpaRepository<Coupon, Long> {
+public interface CouponRepository extends JpaRepository<Coupon, Long>, CouponQueryRepository {
 
     @Query("""
             select count(c)
@@ -38,4 +38,5 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
             where c.id = :couponId
             """)
     Optional<Coupon> findByIdWithCouponEventForUpdate(@Param("couponId") Long couponId);
+
 }
