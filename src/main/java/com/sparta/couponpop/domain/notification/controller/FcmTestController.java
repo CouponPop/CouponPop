@@ -30,7 +30,8 @@ public class FcmTestController {
         log.debug("[+] 푸시 메세지 전송");
 
         // 일반 테스트
-        fcmSendService.sendNotification(request.token(), request.title(), request.body());
+        Long memberId = 1L; // 테스트용 회원 ID
+        fcmSendService.sendNotification(memberId, request.token(), request.title(), request.body());
 
         return ApiResponse.noContent();
     }

@@ -9,6 +9,7 @@ plugins {
     id 'org.springframework.boot' version '3.4.10'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.flywaydb.flyway' version '11.14.0'
+    id 'jacoco'
 }
 
 flyway {
@@ -17,6 +18,10 @@ flyway {
     baselineOnMigrate = true
     baselineVersion = 1
     cleanDisabled = true
+}
+
+jacoco {
+    toolVersion = "0.8.14"
 }
 
 group = 'com.sparta'
@@ -93,8 +98,71 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 }
 
+def jacocoExcludes = [
+        // --- Spring Boot/JPA 관련 ---
+        '**/configuration/**',
+        '**/config/**',
+        '**/dto/**',
+        '**/exception/**',
+        '**/error/**',
+        '**/filter/**',
+        '**/handler/**',
+        '**/security/**',
+        '**/util/**',
+
+        // --- QueryDSL 관련 ---
+        '**/Q*.class',
+
+        // --- 기타 생성 코드 ---
+        '**/*Application.class',
+        '**/Test*.class',
+
+        // --- Flyway 관련 ---
+        '**/db/migration/**',
+]
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+
+tasks.named('jacocoTestReport', JacocoReport) {
+    dependsOn test
+    reports {
+        xml.required = true
+        csv.required = false
+        html.outputLocation.set(layout.buildDirectory.dir('jacocoHtml'))
+    }
+}
+
+afterEvaluate {
+    def configureExclusions = {
+        classDirectories.setFrom(
+                files(classDirectories.files.collect {
+                    fileTree(dir: it, exclude: jacocoExcludes)
+                })
+        )
+    }
+    tasks.named('jacocoTestReport', JacocoReport).configure(configureExclusions)
+    tasks.named('jacocoTestCoverageVerification', JacocoCoverageVerification).configure(configureExclusions)
+}
+
+tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification) {
+    dependsOn tasks.named('jacocoTestReport')
+    violationRules {
+        rule {
+            enabled = true
+            element = 'BUNDLE'
+            limit {
+                counter = 'LINE'
+                minimum = 0.60
+            } // BUNDLE 기준 line covered ratio 60% 이상
+        }
+    }
+}
+
+tasks.named('build') {
+    dependsOn jacocoTestCoverageVerification
 }
 
 clean {
