@@ -7,13 +7,18 @@ import com.sparta.couponpop.common.security.JwtAuthenticationToken;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.coupon.dto.request.CouponIssueRequest;
+import com.sparta.couponpop.domain.coupon.dto.request.MemberIssuedCouponCursor;
 import com.sparta.couponpop.domain.coupon.dto.request.UseCouponRequest;
 import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
+import com.sparta.couponpop.domain.coupon.dto.response.IssuedCouponListResponse;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
+import com.sparta.couponpop.domain.coupon.repository.dto.CouponSummaryInfoProjection;
 import com.sparta.couponpop.domain.coupon.service.CouponService;
+import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.member.enums.MemberType;
+import com.sparta.couponpop.utils.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,6 +35,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
@@ -398,6 +405,72 @@ class CouponControllerTest {
                     .andDo(print())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.error.message").value("사용하려는 쿠폰 ID는 필수입니다."));
+        }
+    }
+
+    @Nested
+    @DisplayName("쿠폰 리스트 조회")
+    class GetIssuedCoupons {
+
+        private static final LocalDateTime now = LocalDateTime.now();
+
+        @Test
+        @DisplayName("첫 페이지 조회 - hasNext true")
+        void getIssuedCoupons_firstPage_hasNextTrue() throws Exception {
+            // given
+            CouponSummaryInfoProjection.EventInfo event = new CouponSummaryInfoProjection.EventInfo(1L, "이벤트",
+                    new CouponSummaryInfoProjection.EventInfo.EventPeriod(
+                            now.minusDays(2),
+                            now.plusDays(1)
+                    ));
+            List<CouponSummaryInfoProjection> mockCoupons = List.of(
+                    new CouponSummaryInfoProjection(1L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, event, null),
+                    new CouponSummaryInfoProjection(2L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, event, null),
+                    new CouponSummaryInfoProjection(3L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, event, null)
+            );
+//
+            IssuedCouponListResponse mockResponse = IssuedCouponListResponse.of(mockCoupons, 2);
+
+            given(couponService.getIssuedCoupons(anyLong(), eq(CouponStatus.AVAILABLE), any(MemberIssuedCouponCursor.class), eq(2)))
+                    .willReturn(mockResponse);
+
+            // when & then
+            mockMvc.perform(
+                            get("/api/v1/coupons")
+                                    .param("type", "AVAILABLE")
+                                    .param("size", "2")
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.coupons.length()").value(2))
+                    .andExpect(jsonPath("$.data.hasNext").value(true))
+                    .andExpect(jsonPath("$.data.nextCursor").isNotEmpty());
+        }
+
+        @Test
+        @DisplayName("다음 페이지 조회 - 마지막 페이지 (hasNext false)")
+        void getIssuedCoupons_nextPage_lastPage() throws Exception {
+            // given
+            List<CouponSummaryInfoProjection> mockCoupons = List.of(
+                    new CouponSummaryInfoProjection(3L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, null, null)
+            );
+
+            IssuedCouponListResponse mockResponse = IssuedCouponListResponse.of(mockCoupons, 2);
+
+            given(couponService.getIssuedCoupons(anyLong(), eq(CouponStatus.AVAILABLE), any(MemberIssuedCouponCursor.class), eq(2)))
+                    .willReturn(mockResponse);
+
+            // when & then
+            mockMvc.perform(
+                            get("/api/v1/coupons")
+                                    .param("type", "AVAILABLE")
+                                    .param("lastEventEndAt", now.minusDays(1).toString())
+                                    .param("lastCouponId", "2")
+                                    .param("size", "2")
+                                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.coupons.length()").value(1))
+                    .andExpect(jsonPath("$.data.hasNext").value(false))
+                    .andExpect(jsonPath("$.data.nextCursor").isEmpty());
         }
     }
 }

@@ -1,11 +1,15 @@
 package com.sparta.couponpop.domain.coupon.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
+import com.sparta.couponpop.domain.coupon.dto.request.MemberIssuedCouponCursor;
 import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
+import com.sparta.couponpop.domain.coupon.dto.response.IssuedCouponListResponse;
 import com.sparta.couponpop.domain.coupon.entity.Coupon;
+import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
 import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
 import com.sparta.couponpop.domain.coupon.repository.TemporaryCouponCodeRepository;
+import com.sparta.couponpop.domain.coupon.repository.dto.CouponSummaryInfoProjection;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
@@ -21,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -158,6 +163,27 @@ public class CouponService {
 
         // Redis 임시 코드 삭제
         temporaryCouponCodeRepository.deleteTemporaryCoupon(couponId, qrCode);
+    }
+
+    /**
+     * 사용자가 발급받은 쿠폰 목록을 페이지네이션 방식으로 조회합니다.
+     *
+     * <p>조회 시 pageSize + 1개를 가져와서 다음 페이지 존재 여부(hasNext)를 판단합니다.</p>
+     *
+     * @param memberId 조회 대상 회원 ID
+     * @param status   조회할 쿠폰 상태
+     * @param cursor   이전 페이지 마지막 쿠폰 정보로, 다음 페이지 조회 기준이 됩니다.
+     *                 첫 페이지 조회 시 null 또는 MemberIssuedCouponCursor.first() 사용
+     * @param pageSize 한 페이지에 보여줄 최대 쿠폰 수
+     * @return 쿠폰 목록과 페이지 정보가 포함된 IssuedCouponListResponse
+     */
+    public IssuedCouponListResponse getIssuedCoupons(Long memberId, CouponStatus status, MemberIssuedCouponCursor cursor, int pageSize) {
+        // pageSize + 1 조회 (hasNext 확인용)
+        List<CouponSummaryInfoProjection> coupons = couponRepository.findAllByMemberIdWithEventAndStore(
+                memberId, status, cursor.lastEventEndAt(), cursor.lastCouponId(), pageSize + 1
+        );
+
+        return IssuedCouponListResponse.of(coupons, pageSize);
     }
 
     private CouponEvent validateEventBelongsToStore(Long eventId, Store store) {
