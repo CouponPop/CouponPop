@@ -6,8 +6,8 @@ import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import java.time.LocalDateTime;
 
 public record CouponEventWithUsedCountProjection(
-        Long id, String
-        eventName,
+        Long id,
+        String eventName,
         LocalDateTime start,
         LocalDateTime end,
         CouponEventStatus eventStatus,
@@ -15,7 +15,7 @@ public record CouponEventWithUsedCountProjection(
         int issuedCount,
         int usedCouponCount,
         LocalDateTime createdAt,
-        LocalDateTime updatedA
+        LocalDateTime updatedAt
 ) {
     @QueryProjection
     public CouponEventWithUsedCountProjection {
