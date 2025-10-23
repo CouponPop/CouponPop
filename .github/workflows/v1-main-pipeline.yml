@@ -33,6 +33,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      pull-requests: write
     with:
       # 현재 브랜치 이름('dev' 또는 'main')을 전달
       branch_name: ${{ github.ref_name }}
