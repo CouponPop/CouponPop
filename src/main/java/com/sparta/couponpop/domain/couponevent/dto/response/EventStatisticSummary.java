@@ -24,4 +24,17 @@ public record EventStatisticSummary(
                 unused
         );
     }
+
+    public static EventStatisticSummary of(int total, int issued, int usedCouponCount) {
+        int unused = issued - usedCouponCount;
+        int unclaimed = total - issued;
+
+        return new EventStatisticSummary(
+                total,
+                unclaimed,
+                issued,
+                usedCouponCount,
+                unused
+        );
+    }
 }
