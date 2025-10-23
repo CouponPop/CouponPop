@@ -61,7 +61,7 @@ public class CouponIssuedNotificationSender implements NotificationSender<Coupon
         );
 
         try {
-            fcmSendService.sendNotification(tokens, title, body);
+            fcmSendService.sendNotification(member.getId(), tokens, title, body);
         } catch (FirebaseMessagingException e) {
             log.error("{} 전송 중 오류가 발생했습니다. tokens={}, message={}", notificationTypeDescription, tokens, e.getMessage(), e);
         }
