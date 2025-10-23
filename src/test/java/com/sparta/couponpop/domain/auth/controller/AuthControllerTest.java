@@ -7,6 +7,7 @@ import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.auth.dto.request.LoginRequest;
 import com.sparta.couponpop.domain.auth.dto.request.LogoutRequest;
 import com.sparta.couponpop.domain.auth.dto.request.SignUpRequest;
+import com.sparta.couponpop.domain.auth.dto.request.WithdrawRequest;
 import com.sparta.couponpop.domain.auth.dto.response.LoginResponse;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.service.AuthService;
@@ -27,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -237,6 +239,31 @@ class AuthControllerTest {
         // when
         ResultActions resultActions = mockMvc.perform(
                 post("/api/v1/auth/logout") // 요청 URL
+                        .header("Authorization", testAuthorizationHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto))
+        );
+
+        // then
+        resultActions
+                .andExpect(status().isNoContent())
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴를 한다.")
+    @WithMockUser
+    void withdrawSuccess() throws Exception {
+
+        // given
+        String testAuthorizationHeader = "Bearer testToken";
+        WithdrawRequest requestDto = new WithdrawRequest("testFcmToken");
+
+        doNothing().when(authService).withdraw(anyString(), any(AuthMember.class), any(WithdrawRequest.class));
+
+        // when
+        ResultActions resultActions = mockMvc.perform(
+                delete("/api/v1/auth/withdraw")
                         .header("Authorization", testAuthorizationHeader)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto))

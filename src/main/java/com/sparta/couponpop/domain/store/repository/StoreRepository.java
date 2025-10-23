@@ -1,19 +1,22 @@
 package com.sparta.couponpop.domain.store.repository;
 
+import com.sparta.couponpop.domain.store.dto.response.StoreAndCouponEventCountProjection;
 import com.sparta.couponpop.domain.store.dto.response.StoreLocationProjection;
 import com.sparta.couponpop.domain.store.entity.Store;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Optional;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface StoreRepository extends JpaRepository<Store, Long> {
 
     /**
      * 삭제된 매장을 포함하여 ID로 매장을 조회합니다.
      * 매장 삭제 시 권한 검증을 위해 사용됩니다.
+     *
      * @SQLRestriction을 무시하고 모든 매장을 조회합니다.
      */
     @Query(value = "SELECT * FROM stores WHERE id = :storeId", nativeQuery = true)
@@ -64,8 +67,53 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
             ORDER BY sub.distance ASC
             """, nativeQuery = true)
     List<StoreLocationProjection> findByLocation(@Param("lat") double latitude,
-                                              @Param("lng") double longitude,
-                                              @Param("radius") double radiusKm);
+                                                 @Param("lng") double longitude,
+                                                 @Param("radius") double radiusKm);
+
+    // TODO: 추후 개선 필요 (ES 등 외부 검색엔진 도입 검토)
+    @Query(value = """
+            SELECT 
+                COUNT(DISTINCT subStore.id) AS openStoreCount,
+                COUNT(ce.id) AS activeCouponEventCount
+            FROM (
+                SELECT 
+                    s.id,
+                    ST_Distance_Sphere(s.location, ST_SRID(POINT(:lng, :lat), 4326)) / 1000 AS distance,
+                    CASE WHEN DAYOFWEEK(:nowTs) IN (1, 7) THEN s.weekend_open_time ELSE s.weekday_open_time END AS open_time,
+                    CASE WHEN DAYOFWEEK(:nowTs) IN (1, 7) THEN s.weekend_close_time ELSE s.weekday_close_time END AS close_time
+                FROM stores s
+                WHERE s.deleted_at IS NULL
+            ) AS subStore
+            LEFT JOIN coupon_events ce 
+                ON ce.store_id = subStore.id
+                AND ce.coupon_event_status IN ('SCHEDULED', 'IN_PROGRESS')
+                AND ce.total_count > ce.issued_count
+            WHERE subStore.distance <= :radius
+                AND subStore.open_time IS NOT NULL
+                AND subStore.close_time IS NOT NULL
+                AND (
+                        -- 정상 구간(당일 마감)
+                        (
+                            subStore.open_time <= subStore.close_time
+                            AND (
+                                TIME(:nowTs) >= subStore.open_time
+                                AND TIME(:nowTs) <  subStore.close_time
+                            )
+                        )
+                        -- 심야 구간(익일 마감)
+                        OR (
+                            subStore.open_time > subStore.close_time
+                            AND (
+                                TIME(:nowTs) >= subStore.open_time
+                                OR TIME(:nowTs) < subStore.close_time
+                            )
+                        )
+                )
+            """, nativeQuery = true)
+    StoreAndCouponEventCountProjection findNearbyOpenStoreAndEventCount(@Param("lat") double latitude,
+                                                                        @Param("lng") double longitude,
+                                                                        @Param("radius") double radiusKm,
+                                                                        @Param("nowTs") LocalDateTime nowTs);
 
     List<Store> findByMemberIdOrderByCreatedAtDesc(Long memberId);
 
