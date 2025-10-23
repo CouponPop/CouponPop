@@ -89,13 +89,14 @@ public class LocationBasedCouponEventNotificationSender implements NotificationS
             }
 
             // 5. FCM 토큰으로 푸시 알림 전송
+            Long memberId = locationCacheValue.memberId();
             String token = locationCacheValue.fcmToken();
 
             String title = NotificationTemplates.LOCATION_BASED_COUPON_EVENT_TITLE.formatted(openStoreCount);
             String body = NotificationTemplates.LOCATION_BASED_COUPON_EVENT_BODY.formatted(openStoreCount, activeCouponEventCount);
 
             try {
-                fcmSendService.sendNotification(token, title, body);
+                fcmSendService.sendNotification(memberId, token, title, body);
             } catch (FirebaseMessagingException e) {
                 log.error("{} 전송 중 오류가 발생했습니다. token={}, message={}", notificationTypeDescription, token, e.getMessage(), e);
             }
