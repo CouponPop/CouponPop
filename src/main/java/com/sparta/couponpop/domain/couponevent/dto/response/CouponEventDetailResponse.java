@@ -35,7 +35,7 @@ public record CouponEventDetailResponse(
                 eventWithUsedCount.eventStatus(),
                 EventStatisticSummary.of(eventWithUsedCount.totalCount(), eventWithUsedCount.issuedCount(), eventWithUsedCount.usedCouponCount()),
                 eventWithUsedCount.createdAt(),
-                eventWithUsedCount.updatedA()
+                eventWithUsedCount.updatedAt()
         );
     }
 }

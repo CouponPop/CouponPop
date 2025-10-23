@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.couponevent.repository.dto;
+package com.sparta.couponpop.domain.couponevent.dto.cursor;
 
 import java.time.LocalDateTime;
 

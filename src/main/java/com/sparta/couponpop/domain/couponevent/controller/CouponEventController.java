@@ -8,7 +8,7 @@ import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailRes
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.StoreCouponEventListResponse;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
-import com.sparta.couponpop.domain.couponevent.repository.dto.StoreCouponEventsCursor;
+import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.couponevent.service.CouponEventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

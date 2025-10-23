@@ -2,7 +2,7 @@ package com.sparta.couponpop.domain.couponevent.repository;
 
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.repository.dto.CouponEventWithUsedCountProjection;
-import com.sparta.couponpop.domain.couponevent.repository.dto.StoreCouponEventsCursor;
+import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.store.entity.Store;
 
 import java.util.List;
