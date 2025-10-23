@@ -136,21 +136,15 @@ tasks.named('jacocoTestReport', JacocoReport) {
 }
 
 afterEvaluate {
-    tasks.named('jacocoTestReport', JacocoReport).configure {
+    def configureExclusions = {
         classDirectories.setFrom(
                 files(classDirectories.files.collect {
                     fileTree(dir: it, exclude: jacocoExcludes)
                 })
         )
     }
-
-    tasks.named('jacocoTestCoverageVerification', JacocoCoverageVerification).configure {
-        classDirectories.setFrom(
-                files(classDirectories.files.collect {
-                    fileTree(dir: it, exclude: jacocoExcludes)
-                })
-        )
-    }
+    tasks.named('jacocoTestReport', JacocoReport).configure(configureExclusions)
+    tasks.named('jacocoTestCoverageVerification', JacocoCoverageVerification).configure(configureExclusions)
 }
 
 tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification) {

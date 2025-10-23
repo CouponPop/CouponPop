@@ -30,6 +30,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      pull-requests: write
     outputs:
       image_uri: ${{ steps.build-image.outputs.image_uri }}
 
