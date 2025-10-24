@@ -86,9 +86,9 @@ public class CouponEventQueryRepositoryImpl implements CouponEventQueryRepositor
                                 store.id,
                                 store.name,
                                 new QStoreCouponEventStatisticsProjection_CouponStats(
-                                        couponEvent.totalCount.sum(),
-                                        couponEvent.issuedCount.sum(),
-                                        usedCount
+                                        couponEvent.totalCount.sum().coalesce(0),
+                                        couponEvent.issuedCount.sum().coalesce(0),
+                                        usedCount.coalesce(0)
                                 ),
                                 couponEvent.eventEndAt.max()
                         )
