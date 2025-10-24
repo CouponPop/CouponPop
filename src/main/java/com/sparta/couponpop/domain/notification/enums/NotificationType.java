@@ -9,8 +9,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum NotificationType {
-    COUPON_ISSUED("쿠폰 수령 알림"),
-    LOCATION_BASED_EVENT("위치 기반 이벤트 알림");
+    COUPON_ISSUED("쿠폰 수령 알림");
 
     private final String description;
 }

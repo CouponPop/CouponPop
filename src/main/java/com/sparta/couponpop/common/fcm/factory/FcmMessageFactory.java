@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.notification.factory;
+package com.sparta.couponpop.common.fcm.factory;
 
 import com.google.firebase.messaging.*;
 import org.springframework.stereotype.Component;
