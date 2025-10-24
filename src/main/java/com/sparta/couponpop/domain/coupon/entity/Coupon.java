@@ -51,9 +51,10 @@ public class Coupon extends BaseEntity {
 
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Coupon(String couponCode, LocalDateTime receivedAt, LocalDateTime usedAt, CouponStatus couponStatus, CouponEvent couponEvent, Member member) {
+    private Coupon(String couponCode, LocalDateTime receivedAt, LocalDateTime expireAt, LocalDateTime usedAt, CouponStatus couponStatus, CouponEvent couponEvent, Member member) {
         this.couponCode = couponCode;
         this.receivedAt = receivedAt;
+        this.expireAt = expireAt;
         this.usedAt = usedAt;
         this.couponStatus = couponStatus;
         this.couponEvent = couponEvent;
@@ -65,6 +66,7 @@ public class Coupon extends BaseEntity {
         return Coupon.builder()
                 .couponCode(couponCode)
                 .receivedAt(issuedTime)
+                .expireAt(couponEvent.getEventEndAt())
                 .couponStatus(CouponStatus.AVAILABLE)
                 .couponEvent(couponEvent)
                 .member(member)
