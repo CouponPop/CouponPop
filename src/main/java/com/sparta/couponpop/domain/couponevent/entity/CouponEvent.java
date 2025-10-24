@@ -95,6 +95,7 @@ public class CouponEvent extends BaseEntity {
         }
     }
 
+    // TODO : 발급 여부 시간 기준으로만 측정
     // 발급 가능 여부 검증
     public void validateIssuable(LocalDateTime now) {
         if (couponEventStatus != CouponEventStatus.IN_PROGRESS) {

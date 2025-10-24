@@ -62,9 +62,10 @@ public class CouponService {
         event.issue();
 
         // TODO : 쿠폰 생성 시 만료 시간 누락
-        // 쿠폰 생성 및 저장
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        // 쿠폰 생성 및 저장
         Coupon issuedCoupon = Coupon.createIssuedCoupon(member, event, issuedTime);
         couponRepository.save(issuedCoupon);
     }
