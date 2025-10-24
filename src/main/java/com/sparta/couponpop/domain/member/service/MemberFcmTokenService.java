@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -69,5 +70,57 @@ public class MemberFcmTokenService {
                                     member.getId(), request.deviceIdentifier(), request.fcmToken());
                         }
                 );
+    }
+
+    // 단일 토큰 최근 사용 날짜(lastUsedAt) UPDATE
+    @Transactional
+    public void updateLastUsedAt(String fcmToken) {
+        MemberFcmToken memberFcmToken = memberFcmTokenRepository.findByFcmToken(fcmToken)
+                .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND));
+
+        memberFcmToken.updateLastUsedAt(LocalDateTime.now());
+    }
+
+    // 단일 토큰 삭제
+    @Transactional
+    public void deleteToken(String fcmToken) {
+        MemberFcmToken memberFcmToken = memberFcmTokenRepository.findByFcmToken(fcmToken)
+                .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND));
+
+        memberFcmTokenRepository.delete(memberFcmToken);
+    }
+
+    /**
+     * FCM 전송 결과에 따라 성공 토큰은 업데이트, 실패 토큰은 삭제를 원자적으로 처리한다.
+     */
+    @Transactional
+    public void updateTokensAfterSend(Set<String> successTokens, Set<String> failureTokens) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (successTokens != null && !successTokens.isEmpty()) {
+            updateLastUsedAtInternal(successTokens, now);
+        }
+
+        if (failureTokens != null && !failureTokens.isEmpty()) {
+            deleteTokensInternal(failureTokens);
+        }
+    }
+
+    private void updateLastUsedAtInternal(Set<String> fcmTokens, LocalDateTime now) {
+        if (fcmTokens == null || fcmTokens.isEmpty()) {
+            return;
+        }
+
+        int updatedCount = memberFcmTokenRepository.updateLastUsedAtByFcmTokenIn(fcmTokens, now);
+        log.info("FCM 성공 토큰 {}개 최근 사용 날짜 업데이트 완료", updatedCount);
+    }
+
+    private void deleteTokensInternal(Set<String> fcmTokens) {
+        if (fcmTokens == null || fcmTokens.isEmpty()) {
+            return;
+        }
+
+        int deletedCount = memberFcmTokenRepository.deleteByFcmTokenIn(fcmTokens);
+        log.info("FCM 실패 토큰 {}개 삭제 완료", deletedCount);
     }
 }

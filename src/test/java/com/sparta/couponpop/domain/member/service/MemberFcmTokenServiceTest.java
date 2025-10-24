@@ -20,14 +20,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
 
 @ExtendWith(MockitoExtension.class)
 class MemberFcmTokenServiceTest {
@@ -153,6 +154,116 @@ class MemberFcmTokenServiceTest {
             then(memberFcmTokenRepository).should(never()).findByFcmToken(anyString());
             then(memberFcmTokenRepository).should(never()).findByMemberAndDeviceIdentifier(any(Member.class), anyString());
             then(memberFcmTokenRepository).should(never()).save(any(MemberFcmToken.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("updateLastUsedAt")
+    class UpdateLastUsedAt {
+
+        @Test
+        @DisplayName("토큰이 존재하면 최근 사용 시간을 갱신한다")
+        void updateLastUsedAt_success_tokenExists() {
+            // given
+            String fcmToken = "existing-token";
+            MemberFcmToken memberFcmToken = mock(MemberFcmToken.class);
+            given(memberFcmTokenRepository.findByFcmToken(fcmToken)).willReturn(Optional.of(memberFcmToken));
+
+            // when
+            memberFcmTokenService.updateLastUsedAt(fcmToken);
+
+            // then
+            then(memberFcmTokenRepository).should(times(1)).findByFcmToken(fcmToken);
+            then(memberFcmToken).should(times(1)).updateLastUsedAt(any(LocalDateTime.class));
+        }
+
+        @Test
+        @DisplayName("토큰이 없으면 예외를 던진다")
+        void updateLastUsedAt_fail_tokenNotFound() {
+            // given
+            String fcmToken = "missing-token";
+            given(memberFcmTokenRepository.findByFcmToken(fcmToken)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> memberFcmTokenService.updateLastUsedAt(fcmToken))
+                    .isInstanceOf(GlobalException.class)
+                    .hasMessage(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND.getMessage());
+
+            then(memberFcmTokenRepository).should(times(1)).findByFcmToken(fcmToken);
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteToken")
+    class DeleteToken {
+
+        @Test
+        @DisplayName("토큰이 존재하면 삭제한다")
+        void deleteToken_success_tokenExists() {
+            // given
+            String fcmToken = "removable-token";
+            MemberFcmToken memberFcmToken = mock(MemberFcmToken.class);
+            given(memberFcmTokenRepository.findByFcmToken(fcmToken)).willReturn(Optional.of(memberFcmToken));
+
+            // when
+            memberFcmTokenService.deleteToken(fcmToken);
+
+            // then
+            then(memberFcmTokenRepository).should(times(1)).findByFcmToken(fcmToken);
+            then(memberFcmTokenRepository).should(times(1)).delete(memberFcmToken);
+        }
+
+        @Test
+        @DisplayName("토큰이 없으면 예외를 던진다")
+        void deleteToken_fail_tokenNotFound() {
+            // given
+            String fcmToken = "invalid-token";
+            given(memberFcmTokenRepository.findByFcmToken(fcmToken)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> memberFcmTokenService.deleteToken(fcmToken))
+                    .isInstanceOf(GlobalException.class)
+                    .hasMessage(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND.getMessage());
+
+            then(memberFcmTokenRepository).should(times(1)).findByFcmToken(fcmToken);
+            then(memberFcmTokenRepository).should(never()).delete(any(MemberFcmToken.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("updateTokensAfterSend")
+    class UpdateTokensAfterSend {
+
+        @Test
+        @DisplayName("성공 토큰은 최근 사용 시간을 갱신하고 실패 토큰은 삭제한다")
+        void updateTokensAfterSend_success_updatesAndDeletes() {
+            // given
+            Set<String> successTokens = Set.of("success-1", "success-2");
+            Set<String> failureTokens = Set.of("failure-1");
+            given(memberFcmTokenRepository.updateLastUsedAtByFcmTokenIn(anySet(), any(LocalDateTime.class))).willReturn(successTokens.size());
+            given(memberFcmTokenRepository.deleteByFcmTokenIn(failureTokens)).willReturn(failureTokens.size());
+
+            // when
+            memberFcmTokenService.updateTokensAfterSend(successTokens, failureTokens);
+
+            // then
+            then(memberFcmTokenRepository).should(times(1)).updateLastUsedAtByFcmTokenIn(eq(successTokens), any(LocalDateTime.class));
+            then(memberFcmTokenRepository).should(times(1)).deleteByFcmTokenIn(eq(failureTokens));
+        }
+
+        @Test
+        @DisplayName("전달된 토큰이 없으면 아무 작업도 수행하지 않는다")
+        void updateTokensAfterSend_skip_whenTokensEmpty() {
+            // given
+            Set<String> successTokens = Set.of();
+            Set<String> failureTokens = Set.of();
+
+            // when
+            memberFcmTokenService.updateTokensAfterSend(successTokens, failureTokens);
+
+            // then
+            then(memberFcmTokenRepository).should(never()).updateLastUsedAtByFcmTokenIn(anySet(), any(LocalDateTime.class));
+            then(memberFcmTokenRepository).should(never()).deleteByFcmTokenIn(anySet());
         }
     }
 }
