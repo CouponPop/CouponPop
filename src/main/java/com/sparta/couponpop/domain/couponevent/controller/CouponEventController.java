@@ -56,7 +56,8 @@ public class CouponEventController {
             @CurrentMember AuthMember authMember
     ) {
         StoreCouponEventsCursor cursor = StoreCouponEventsCursor.ofNullable(lastStartAt, lastEndAt, lastEventId);
-        StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(authMember.id(), storeId, status, cursor, size);
+        LocalDateTime now = LocalDateTime.now();
+        StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(authMember.id(), storeId, status, now, cursor, size);
         return ApiResponse.success(response);
     }
 

@@ -3,6 +3,7 @@ package com.sparta.couponpop.domain.couponevent.service;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
+import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
@@ -12,7 +13,6 @@ import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
 import com.sparta.couponpop.domain.couponevent.repository.dto.CouponEventWithUsedCountProjection;
-import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
@@ -87,9 +87,9 @@ class CouponEventServiceTest {
 
             // then
             assertThat(response)
-                    .extracting("eventId", "name", "eventStartAt", "eventEndAt", "eventStatus")
+                    .extracting("eventId", "name", "eventStartAt", "eventEndAt")
                     .contains(
-                            1L, "아이스 아메리카노 1+1", eventStartAt, eventEndAt, CouponEventStatus.SCHEDULED
+                            1L, "아이스 아메리카노 1+1", eventStartAt, eventEndAt
                     );
         }
 
@@ -191,8 +191,8 @@ class CouponEventServiceTest {
                     .containsExactly(30, 20, 10, 5, 5);
 
             assertThat(response)
-                    .extracting("eventName", "eventStatus", "eventPeriod.start", "eventPeriod.end")
-                    .containsExactly("아이스 아메리카노 1+1", CouponEventStatus.IN_PROGRESS, eventStartAt, eventEndAt);
+                    .extracting("eventName", "eventPeriod.start", "eventPeriod.end")
+                    .containsExactly("아이스 아메리카노 1+1", eventStartAt, eventEndAt);
         }
 
         @Test
@@ -234,7 +234,6 @@ class CouponEventServiceTest {
                     name,
                     start,
                     end,
-                    CouponEventStatus.IN_PROGRESS,
                     100,
                     50,
                     25,
@@ -263,11 +262,11 @@ class CouponEventServiceTest {
             ));
 
             given(storeRepository.findById(store.getId())).willReturn(Optional.of(store));
-            given(couponEventRepository.fetchCouponEventsByStoreAndStatus(any(Store.class), any(CouponEventStatus.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
+            given(couponEventRepository.fetchCouponEventsByStore(any(Store.class), any(CouponEventStatus.class), any(LocalDateTime.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
                     .willReturn(mockedProjections);
 
             // when
-            StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, cursor, pageSize);
+            StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, now, cursor, pageSize);
 
             // then
             assertThat(response).isNotNull();
@@ -302,11 +301,11 @@ class CouponEventServiceTest {
             ));
 
             given(storeRepository.findById(store.getId())).willReturn(Optional.of(store));
-            given(couponEventRepository.fetchCouponEventsByStoreAndStatus(any(Store.class), any(CouponEventStatus.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
+            given(couponEventRepository.fetchCouponEventsByStore(any(Store.class), any(CouponEventStatus.class), any(LocalDateTime.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
                     .willReturn(mockedProjections);
 
             // when
-            StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, cursor, pageSize);
+            StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, now, cursor, pageSize);
 
             // then
             assertThat(response).isNotNull();
@@ -335,12 +334,12 @@ class CouponEventServiceTest {
             ));
 
             given(storeRepository.findById(store.getId())).willReturn(Optional.of(store));
-            given(couponEventRepository.fetchCouponEventsByStoreAndStatus(any(Store.class), any(CouponEventStatus.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
+            given(couponEventRepository.fetchCouponEventsByStore(any(Store.class), any(CouponEventStatus.class), any(LocalDateTime.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
                     .willReturn(mockedProjections);
 
             // when
             StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(
-                    member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, cursor, pageSize
+                    member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, now, cursor, pageSize
             );
 
             // then

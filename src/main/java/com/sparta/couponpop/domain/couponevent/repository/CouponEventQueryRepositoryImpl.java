@@ -8,10 +8,13 @@ import com.sparta.couponpop.domain.coupon.entity.QCoupon;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsStatisticsCursor;
+import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.couponevent.entity.QCouponEvent;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.repository.dto.*;
 import com.sparta.couponpop.domain.store.entity.QStore;
+import com.sparta.couponpop.domain.couponevent.repository.dto.CouponEventWithUsedCountProjection;
+import com.sparta.couponpop.domain.couponevent.repository.dto.QCouponEventWithUsedCountProjection;
 import com.sparta.couponpop.domain.store.entity.Store;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +30,10 @@ public class CouponEventQueryRepositoryImpl implements CouponEventQueryRepositor
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public List<CouponEventWithUsedCountProjection> fetchCouponEventsByStoreAndStatus(
+    public List<CouponEventWithUsedCountProjection> fetchCouponEventsByStore(
             Store store,
             CouponEventStatus eventStatus,
+            LocalDateTime now,
             StoreCouponEventsCursor cursor,
             int limit
     ) {
@@ -44,7 +48,6 @@ public class CouponEventQueryRepositoryImpl implements CouponEventQueryRepositor
                                 couponEvent.name,
                                 couponEvent.eventStartAt,
                                 couponEvent.eventEndAt,
-                                couponEvent.couponEventStatus,
                                 couponEvent.totalCount,
                                 couponEvent.issuedCount,
                                 coupon.count().intValue(),
@@ -59,7 +62,7 @@ public class CouponEventQueryRepositoryImpl implements CouponEventQueryRepositor
                 )
                 .where(
                         storeEq(couponEvent, store),
-                        eventStatusEq(couponEvent, eventStatus),
+                        eventPeriodCondition(couponEvent, now, eventStatus),
                         nextEventCondition(couponEvent, cursor.lastStartAt(), cursor.lastEndAt(), cursor.lastEventId())
                 )
                 .groupBy(couponEvent.id)
@@ -111,6 +114,18 @@ public class CouponEventQueryRepositoryImpl implements CouponEventQueryRepositor
             return null;
         }
         return couponEvent.store.eq(store);
+    }
+
+    private BooleanExpression eventPeriodCondition(QCouponEvent event, LocalDateTime now, CouponEventStatus eventStatus) {
+        if (eventStatus == null) {
+            return null;
+        }
+
+        return switch (eventStatus) {
+            case IN_PROGRESS -> event.eventStartAt.loe(now).and(event.eventEndAt.goe(now));
+            case COMPLETED -> event.eventEndAt.lt(now);
+            default -> throw new IllegalStateException("Unexpected value: " + eventStatus);
+        };
     }
 
     private BooleanExpression eventStatusEq(QCouponEvent couponEvent, CouponEventStatus eventStatus) {
