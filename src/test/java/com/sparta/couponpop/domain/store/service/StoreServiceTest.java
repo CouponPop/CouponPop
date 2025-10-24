@@ -73,6 +73,7 @@ class StoreServiceTest {
         assertThat(result.description()).isEqualTo(request.description());
         assertThat(result.businessNumber()).isEqualTo(request.businessNumber());
         assertThat(result.address()).isEqualTo(request.address());
+        assertThat(result.dong()).isEqualTo(request.dong());
         assertThat(result.latitude()).isEqualTo(request.latitude());
         assertThat(result.longitude()).isEqualTo(request.longitude());
         assertThat(result.imageUrl()).isEqualTo(request.imageUrl());
@@ -148,6 +149,7 @@ class StoreServiceTest {
                 "", // description이 빈 문자열
                 "1234567890",
                 "서울시 테스트구 테스트로 123",
+                "테스트동",
                 37.5665,
                 126.9780,
                 "https://example.com/test-image.jpg",
@@ -166,6 +168,7 @@ class StoreServiceTest {
                 "",
                 "1234567890",
                 "서울시 테스트구 테스트로 123",
+                "테스트동",
                 37.5665,
                 126.9780,
                 "https://example.com/test-image.jpg",
@@ -390,6 +393,7 @@ class StoreServiceTest {
                 store1.getId(),
                 store1.getName(),
                 store1.getAddress(),
+                store1.getDong(),
                 store1.getStoreCategory(),
                 store1.getLatitude(),
                 store1.getLongitude(),
@@ -400,6 +404,7 @@ class StoreServiceTest {
                 store2.getId(),
                 store2.getName(),
                 store2.getAddress(),
+                store2.getDong(),
                 store2.getStoreCategory(),
                 store2.getLatitude(),
                 store2.getLongitude(),
@@ -474,6 +479,7 @@ class StoreServiceTest {
                 cafeStore.getId(),
                 cafeStore.getName(),
                 cafeStore.getAddress(),
+                cafeStore.getDong(),
                 cafeStore.getStoreCategory(),
                 cafeStore.getLatitude(),
                 cafeStore.getLongitude(),
@@ -484,6 +490,7 @@ class StoreServiceTest {
                 foodStore.getId(),
                 foodStore.getName(),
                 foodStore.getAddress(),
+                foodStore.getDong(),
                 foodStore.getStoreCategory(),
                 foodStore.getLatitude(),
                 foodStore.getLongitude(),
@@ -536,6 +543,7 @@ class StoreServiceTest {
                 nearStore.getId(),
                 nearStore.getName(),
                 nearStore.getAddress(),
+                nearStore.getDong(),
                 nearStore.getStoreCategory(),
                 nearStore.getLatitude(),
                 nearStore.getLongitude(),
@@ -546,6 +554,7 @@ class StoreServiceTest {
                 middleStore.getId(),
                 middleStore.getName(),
                 middleStore.getAddress(),
+                middleStore.getDong(),
                 middleStore.getStoreCategory(),
                 middleStore.getLatitude(),
                 middleStore.getLongitude(),
@@ -556,6 +565,7 @@ class StoreServiceTest {
                 farStore.getId(),
                 farStore.getName(),
                 farStore.getAddress(),
+                farStore.getDong(),
                 farStore.getStoreCategory(),
                 farStore.getLatitude(),
                 farStore.getLongitude(),
@@ -588,6 +598,7 @@ class StoreServiceTest {
                 "홍대 중심가에 위치한 스타벅스입니다.",
                 "1234567890",
                 "서울시 마포구 홍익로 123",
+                "홍대동",
                 37.5665,
                 126.9780,
                 "https://example.com/store-image.jpg",
@@ -606,6 +617,7 @@ class StoreServiceTest {
                 "정말 맛있는 음식을 제공하는 식당입니다.",
                 "9876543210",
                 "서울시 강남구 테헤란로 456",
+                "역삼동",
                 37.5665,
                 126.9780,
                 "https://example.com/food-store-image.jpg",
@@ -638,6 +650,7 @@ class StoreServiceTest {
         fieldValues.put("description", "홍대 중심가에 위치한 스타벅스입니다.");
         fieldValues.put("businessNumber", "1234567890");
         fieldValues.put("address", "서울시 마포구 홍익로 123");
+        fieldValues.put("dong", "홍대동");
         fieldValues.put("latitude", 37.5665);
         fieldValues.put("longitude", 126.9780);
         fieldValues.put("imageUrl", "https://example.com/store-image.jpg");
@@ -659,6 +672,7 @@ class StoreServiceTest {
         fieldValues.put("description", "정말 맛있는 음식을 제공하는 식당입니다.");
         fieldValues.put("businessNumber", "9876543210");
         fieldValues.put("address", "서울시 강남구 테헤란로 456");
+        fieldValues.put("dong", "역삼동");
         fieldValues.put("latitude", 37.5665);
         fieldValues.put("longitude", 126.9780);
         fieldValues.put("imageUrl", "https://example.com/food-store-image.jpg");
@@ -678,6 +692,7 @@ class StoreServiceTest {
                 "홍대 중심가에 위치한 스타벅스입니다. (수정됨)",
                 "1234567891",
                 "서울시 마포구 홍익로 124",
+                "홍대동",
                 37.5666,
                 126.9781,
                 "https://example.com/store-image-updated.jpg",
@@ -696,6 +711,7 @@ class StoreServiceTest {
                 "정말 맛있는 음식을 제공하는 식당입니다.",
                 "9876543210",
                 "서울시 강남구 테헤란로 456",
+                "역삼동",
                 37.5665,
                 126.9780,
                 "https://example.com/food-store-image.jpg",
@@ -716,6 +732,7 @@ class StoreServiceTest {
         fieldValues.put("description", "가까운 위치의 카페입니다.");
         fieldValues.put("businessNumber", "1234567890");
         fieldValues.put("address", "서울시 중구 세종대로 110");
+        fieldValues.put("dong", "중림동");
         fieldValues.put("latitude", 37.5665);
         fieldValues.put("longitude", 126.9780);
         fieldValues.put("imageUrl", "https://example.com/near-cafe.jpg");
@@ -737,6 +754,7 @@ class StoreServiceTest {
         fieldValues.put("description", "먼 위치의 카페입니다.");
         fieldValues.put("businessNumber", "1234567891");
         fieldValues.put("address", "서울시 강남구 테헤란로 123");
+        fieldValues.put("dong", "역삼동");
         fieldValues.put("latitude", 37.5000);
         fieldValues.put("longitude", 127.0000);
         fieldValues.put("imageUrl", "https://example.com/far-cafe.jpg");
@@ -758,6 +776,7 @@ class StoreServiceTest {
         fieldValues.put("description", "강남에 위치한 스타벅스입니다.");
         fieldValues.put("businessNumber", "1234567890");
         fieldValues.put("address", "서울시 강남구 테헤란로 123");
+        fieldValues.put("dong", "역삼동");
         fieldValues.put("latitude", 37.5000);
         fieldValues.put("longitude", 127.0000);
         fieldValues.put("imageUrl", "https://example.com/starbucks-gangnam.jpg");
@@ -773,6 +792,7 @@ class StoreServiceTest {
     private StoreLocationProjection projection(Long id,
                                                String name,
                                                String address,
+                                               String dong,
                                                StoreCategory category,
                                                Double latitude,
                                                Double longitude,
@@ -782,6 +802,7 @@ class StoreServiceTest {
             @Override public Long getId() { return id; }
             @Override public String getName() { return name; }
             @Override public String getAddress() { return address; }
+            @Override public String getDong() { return dong; }
             @Override public String getStoreCategory() { return category.name(); }
             @Override public Double getLatitude() { return latitude; }
             @Override public Double getLongitude() { return longitude; }
@@ -811,6 +832,7 @@ class StoreServiceTest {
         assertThat(result.description()).isEqualTo(store.getDescription());
         assertThat(result.storeCategory()).isEqualTo(store.getStoreCategory());
         assertThat(result.address()).isEqualTo(store.getAddress());
+        assertThat(result.dong()).isEqualTo(store.getDong());
         assertThat(result.weekdayOpenTime()).isEqualTo(store.getWeekdayOpenTime());
         assertThat(result.weekdayCloseTime()).isEqualTo(store.getWeekdayCloseTime());
         assertThat(result.weekendOpenTime()).isEqualTo(store.getWeekendOpenTime());

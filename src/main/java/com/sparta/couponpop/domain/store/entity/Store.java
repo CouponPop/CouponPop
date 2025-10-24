@@ -48,6 +48,9 @@ public class Store extends BaseEntity {
     @Column(nullable = false, length = 255)
     private String address;
 
+    @Column(nullable = false, length = 50)
+    private String dong;
+
     @Column(nullable = false)
     private double latitude;
 
@@ -82,6 +85,7 @@ public class Store extends BaseEntity {
                 String description, 
                 String businessNumber,
                 String address, 
+                String dong,
                 double latitude, 
                 double longitude, 
                 String imageUrl,
@@ -96,6 +100,7 @@ public class Store extends BaseEntity {
         this.description = description;
         this.businessNumber = businessNumber;
         this.address = address;
+        this.dong = dong;
         this.latitude = latitude;
         this.longitude = longitude;
         this.imageUrl = imageUrl;
@@ -112,6 +117,7 @@ public class Store extends BaseEntity {
                                   String description,
                                   String businessNumber,
                                   String address,
+                                  String dong,
                                   double latitude,
                                   double longitude,
                                   String imageUrl,
@@ -128,6 +134,7 @@ public class Store extends BaseEntity {
                 .description(description)
                 .businessNumber(businessNumber)
                 .address(address)
+                .dong(dong)
                 .latitude(latitude)
                 .longitude(longitude)
                 .imageUrl(imageUrl)
@@ -144,6 +151,7 @@ public class Store extends BaseEntity {
                                 String description, 
                                 String businessNumber,
                                 String address, 
+                                String dong,
                                 double latitude, 
                                 double longitude, 
                                 String imageUrl,
@@ -157,6 +165,7 @@ public class Store extends BaseEntity {
         this.description = description;
         this.businessNumber = businessNumber;
         this.address = address;
+        this.dong = dong;
         this.latitude = latitude;
         this.longitude = longitude;
         this.imageUrl = imageUrl;

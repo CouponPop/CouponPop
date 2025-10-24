@@ -29,6 +29,10 @@ public record CreateStoreRequest(
         @Size(max = 255, message = "주소는 255자를 초과할 수 없습니다")
         String address,
 
+        @NotBlank(message = "동은 필수입니다")
+        @Size(max = 50, message = "동은 50자를 초과할 수 없습니다")
+        String dong,
+
         @NotNull(message = "위도는 필수입니다")
         Double latitude,
 
