@@ -1,6 +1,7 @@
 package com.sparta.couponpop.domain.notification.service;
 
 import com.google.firebase.messaging.*;
+import com.sparta.couponpop.domain.member.service.MemberFcmTokenService;
 import com.sparta.couponpop.domain.notification.factory.FcmMessageFactory;
 import com.sparta.couponpop.domain.notificationhistory.dto.payload.NotificationHistoryPayload;
 import com.sparta.couponpop.domain.notificationhistory.enums.NotificationHistoryStatus;
@@ -16,16 +17,14 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.BDDMockito.willAnswer;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,206 +36,257 @@ class FcmSendServiceTest {
     @Mock
     private NotificationHistoryService notificationHistoryService;
 
+    @Mock
+    private MemberFcmTokenService memberFcmTokenService;
+
     @InjectMocks
     private FcmSendService fcmSendService;
 
     @Nested
-    @DisplayName("FCM 알림 발송")
-    class SendNotification {
+    @DisplayName("단일 기기 푸시 알림 전송")
+    class SendNotificationWithSingleToken {
+
         @Test
-        @DisplayName("단일 토큰 전송 시 메시지를 생성한다")
-        void sendNotification_success_singleToken() throws FirebaseMessagingException {
+        @DisplayName("전송 성공 시 토큰을 갱신하고 히스토리를 성공으로 저장한다")
+        void sendNotification_success() throws FirebaseMessagingException {
             // given
             Long memberId = 1L;
-            String token = "test-token";
-            String title = "알림 제목";
-            String body = "알림 내용";
-            given(fcmMessageFactory.createMessage(anyString(), anyString(), anyString()))
-                    .willAnswer(invocation -> {
-                        String requestToken = invocation.getArgument(0, String.class);
-                        String requestTitle = invocation.getArgument(1, String.class);
-                        String requestBody = invocation.getArgument(2, String.class);
-                        return Message.builder()
-                                .setToken(requestToken)
-                                .setNotification(Notification.builder()
-                                        .setTitle(requestTitle)
-                                        .setBody(requestBody)
-                                        .build())
-                                .putData("title", requestTitle)
-                                .putData("body", requestBody)
-                                .build();
-                    });
+            String token = "success-token";
+            String title = "제목";
+            String body = "본문";
+
+            Message message = Message.builder().setToken(token).build();
+            when(fcmMessageFactory.createMessage(token, title, body)).thenReturn(message);
 
             FirebaseMessaging firebaseMessaging = mock(FirebaseMessaging.class);
-            given(firebaseMessaging.send(any(Message.class))).willReturn("mock-message-id");
-            NotificationHistoryPayload expectedPayload = NotificationHistoryPayload.of(
-                    memberId,
-                    NotificationHistoryType.FCM,
-                    title,
-                    body,
-                    NotificationHistoryStatus.SUCCESS,
-                    null
-            );
 
-            try (MockedStatic<FirebaseMessaging> mockedStatic = mockStatic(FirebaseMessaging.class)) {
-                mockedStatic.when(FirebaseMessaging::getInstance).thenReturn(firebaseMessaging);
+            try (MockedStatic<FirebaseMessaging> mockedFirebaseMessaging = mockStatic(FirebaseMessaging.class)) {
+                mockedFirebaseMessaging.when(FirebaseMessaging::getInstance).thenReturn(firebaseMessaging);
 
                 // when
                 fcmSendService.sendNotification(memberId, token, title, body);
 
                 // then
-                ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
-                then(firebaseMessaging).should(times(1)).send(messageCaptor.capture());
-                Message sentMessage = messageCaptor.getValue();
-
-                assertThat(extractToken(sentMessage)).isEqualTo(token);
-                Notification notification = extractNotification(sentMessage);
-                assertThat(extractNotificationValue(notification, "title")).isEqualTo(title);
-                assertThat(extractNotificationValue(notification, "body")).isEqualTo(body);
-                then(notificationHistoryService).should().createNotificationHistory(expectedPayload);
+                verify(firebaseMessaging).send(message);
+                verify(memberFcmTokenService).updateLastUsedAt(token);
+                verify(notificationHistoryService).createNotificationHistory(NotificationHistoryPayload.of(
+                        memberId,
+                        NotificationHistoryType.FCM,
+                        title,
+                        body,
+                        NotificationHistoryStatus.SUCCESS,
+                        null
+                ));
             }
         }
 
         @Test
-        @DisplayName("토큰이 비어 있으면 FCM 전송을 수행하지 않는다")
-        void sendNotification_skipSend_tokensEmpty() throws FirebaseMessagingException {
+        @DisplayName("FCM 예외가 발생하면 토큰을 삭제하고 실패 히스토리를 저장한다")
+        void sendNotification_failure() throws FirebaseMessagingException {
             // given
-                Long memberId = 1L;
-                List<String> emptyTokens = Collections.emptyList();
+            Long memberId = 1L;
+            String token = "failure-token";
+            String title = "제목";
+            String body = "본문";
 
-            try (MockedStatic<FirebaseMessaging> mockedStatic = mockStatic(FirebaseMessaging.class)) {
+            Message message = Message.builder().setToken(token).build();
+            when(fcmMessageFactory.createMessage(token, title, body)).thenReturn(message);
+
+            FirebaseMessaging firebaseMessaging = mock(FirebaseMessaging.class);
+
+            FirebaseMessagingException messagingException = mock(FirebaseMessagingException.class);
+            when(messagingException.getMessage()).thenReturn("전송 실패");
+            when(firebaseMessaging.send(message)).thenThrow(messagingException);
+
+            try (MockedStatic<FirebaseMessaging> mockedFirebaseMessaging = mockStatic(FirebaseMessaging.class)) {
+                mockedFirebaseMessaging.when(FirebaseMessaging::getInstance).thenReturn(firebaseMessaging);
+
                 // when
-                fcmSendService.sendNotification(memberId, emptyTokens, "제목", "본문");
+                try {
+                    fcmSendService.sendNotification(memberId, token, title, body);
+                } catch (FirebaseMessagingException ignored) {
+                    // 예외는 상위로 전달된다.
+                }
 
                 // then
-                mockedStatic.verifyNoInteractions();
-                verifyNoInteractions(fcmMessageFactory);
+                verify(firebaseMessaging).send(message);
+                verify(memberFcmTokenService).deleteToken(token);
+                verify(notificationHistoryService).createNotificationHistory(NotificationHistoryPayload.of(
+                        memberId,
+                        NotificationHistoryType.FCM,
+                        title,
+                        body,
+                        NotificationHistoryStatus.FAILURE,
+                        "전송 실패"
+                ));
             }
         }
 
         @Test
-        @DisplayName("토큰이 500개 초과 시 500개 단위로 배치 전송한다")
+        @DisplayName("토큰이 비어 있으면 전송을 건너뛴다")
+        void sendNotification_skip_tokenEmpty() throws FirebaseMessagingException {
+            // given
+            Long memberId = 1L;
+            String token = "";
+
+            // when
+            fcmSendService.sendNotification(memberId, token, "제목", "본문");
+
+            // then
+            verifyNoInteractions(fcmMessageFactory, memberFcmTokenService, notificationHistoryService);
+        }
+    }
+
+    @Nested
+    @DisplayName("다중 기기 푸시 알림 전송")
+    class SendNotificationWithMultipleTokens {
+
+        @Test
+        @DisplayName("FCM 응답에 따라 성공 토큰을 갱신하고 실패 토큰을 정리한다")
+        void sendNotification_success() throws FirebaseMessagingException {
+            // given
+            Long memberId = 1L;
+            List<String> tokens = List.of("token-success", "token-failure");
+            String title = "제목";
+            String body = "본문";
+
+            MulticastMessage multicastMessage = MulticastMessage.builder()
+                    .addAllTokens(tokens)
+                    .build();
+            when(fcmMessageFactory.createMulticastMessage(anyList(), eq(title), eq(body))).thenReturn(multicastMessage);
+
+            SendResponse successResponse = mock(SendResponse.class);
+            when(successResponse.isSuccessful()).thenReturn(true);
+
+            SendResponse failureResponse = mock(SendResponse.class);
+            when(failureResponse.isSuccessful()).thenReturn(false);
+
+            FirebaseMessagingException messagingException = mock(FirebaseMessagingException.class);
+            when(messagingException.getMessage()).thenReturn("FCM 실패");
+            when(failureResponse.getException()).thenReturn(messagingException);
+
+            BatchResponse batchResponse = mock(BatchResponse.class);
+            when(batchResponse.getSuccessCount()).thenReturn(1);
+            when(batchResponse.getFailureCount()).thenReturn(1);
+            when(batchResponse.getResponses()).thenReturn(List.of(successResponse, failureResponse));
+
+            FirebaseMessaging firebaseMessaging = mock(FirebaseMessaging.class);
+
+            try (MockedStatic<FirebaseMessaging> mockedFirebaseMessaging = mockStatic(FirebaseMessaging.class)) {
+                mockedFirebaseMessaging.when(FirebaseMessaging::getInstance).thenReturn(firebaseMessaging);
+                when(firebaseMessaging.sendEachForMulticast(multicastMessage)).thenReturn(batchResponse);
+
+                // when
+                fcmSendService.sendNotification(memberId, tokens, title, body);
+
+                // then
+                @SuppressWarnings("unchecked")
+                ArgumentCaptor<Set<String>> successCaptor = ArgumentCaptor.forClass(Set.class);
+                @SuppressWarnings("unchecked")
+                ArgumentCaptor<Set<String>> failureCaptor = ArgumentCaptor.forClass(Set.class);
+                verify(memberFcmTokenService).updateTokensAfterSend(successCaptor.capture(), failureCaptor.capture());
+
+                assertThat(successCaptor.getValue()).containsExactlyInAnyOrder("token-success");
+                assertThat(failureCaptor.getValue()).containsExactlyInAnyOrder("token-failure");
+
+                @SuppressWarnings("unchecked")
+                ArgumentCaptor<List<NotificationHistoryPayload>> historyCaptor = ArgumentCaptor.forClass(List.class);
+                verify(notificationHistoryService).bulkInsertNotificationHistories(historyCaptor.capture());
+
+                List<NotificationHistoryPayload> payloads = historyCaptor.getValue();
+                assertThat(payloads).hasSize(2);
+                assertThat(payloads.get(0).status()).isEqualTo(NotificationHistoryStatus.SUCCESS);
+                assertThat(payloads.get(1).status()).isEqualTo(NotificationHistoryStatus.FAILURE);
+                assertThat(payloads.get(1).failureReason()).isEqualTo("FCM 실패");
+
+                verify(firebaseMessaging).sendEachForMulticast(multicastMessage);
+            }
+        }
+
+        @Test
+        @DisplayName("토큰이 비어 있으면 전송을 건너뛴다")
+        void sendNotification_skip_tokensEmpty() throws FirebaseMessagingException {
+            // given
+            Long memberId = 1L;
+            List<String> tokens = Collections.emptyList();
+
+            // when
+            fcmSendService.sendNotification(memberId, tokens, "제목", "본문");
+
+            // then
+            verifyNoInteractions(fcmMessageFactory, memberFcmTokenService, notificationHistoryService);
+        }
+
+        @Test
+        @DisplayName("토큰 개수가 500개가 초과되면 배치로 나누어 전송한다")
         void sendNotification_success_tokensExceedLimit() throws FirebaseMessagingException {
             // given
-            Long memberId = 2L;
-            List<String> tokens = new ArrayList<>();
-            for (int i = 0; i < 750; i++) {
-                tokens.add("token-" + i);
-            }
-            given(fcmMessageFactory.createMulticastMessage(anyList(), anyString(), anyString()))
-                    .willAnswer(invocation -> {
-                        @SuppressWarnings("unchecked")
-                        List<String> requestTokens = new ArrayList<>((List<String>) invocation.getArgument(0, List.class));
-                        String requestTitle = invocation.getArgument(1, String.class);
-                        String requestBody = invocation.getArgument(2, String.class);
-                        return buildMessage(requestTokens, requestTitle, requestBody);
+            Long memberId = 1L;
+            List<String> tokens = IntStream.range(0, 600)
+                    .mapToObj(i -> "token-" + i)
+                    .toList();
+            String title = "제목";
+            String body = "본문";
+
+            MulticastMessage firstBatchMessage = mock(MulticastMessage.class);
+            MulticastMessage secondBatchMessage = mock(MulticastMessage.class);
+            when(fcmMessageFactory.createMulticastMessage(anyList(), eq(title), eq(body)))
+                    .thenAnswer(invocation -> {
+                        List<String> batchTokens = invocation.getArgument(0);
+                        if (batchTokens.size() == 500) {
+                            return firstBatchMessage;
+                        }
+                        if (batchTokens.size() == 100) {
+                            return secondBatchMessage;
+                        }
+                        throw new IllegalArgumentException("알 수 없는 배치 크기: " + batchTokens.size());
                     });
+
+            SendResponse successResponse = mock(SendResponse.class);
+            when(successResponse.isSuccessful()).thenReturn(true);
+
+            BatchResponse firstBatchResponse = mock(BatchResponse.class);
+            when(firstBatchResponse.getSuccessCount()).thenReturn(500);
+            when(firstBatchResponse.getFailureCount()).thenReturn(0);
+            when(firstBatchResponse.getResponses()).thenReturn(Collections.nCopies(500, successResponse));
+
+            BatchResponse secondBatchResponse = mock(BatchResponse.class);
+            when(secondBatchResponse.getSuccessCount()).thenReturn(100);
+            when(secondBatchResponse.getFailureCount()).thenReturn(0);
+            when(secondBatchResponse.getResponses()).thenReturn(Collections.nCopies(100, successResponse));
+
             FirebaseMessaging firebaseMessaging = mock(FirebaseMessaging.class);
-            willAnswer(invocation -> {
-                MulticastMessage multicastMessage = invocation.getArgument(0, MulticastMessage.class);
-                List<String> requestTokens = extractTokens(multicastMessage);
 
-                BatchResponse dynamicResponse = mock(BatchResponse.class);
-                List<SendResponse> sendResponses = requestTokens.stream()
-                        .map(token -> {
-                            SendResponse sendResponse = mock(SendResponse.class);
-                            given(sendResponse.isSuccessful()).willReturn(true);
-                            return sendResponse;
-                        })
-                        .toList();
-
-                given(dynamicResponse.getSuccessCount()).willReturn(requestTokens.size());
-                given(dynamicResponse.getFailureCount()).willReturn(0);
-                given(dynamicResponse.getResponses()).willReturn(sendResponses);
-                return dynamicResponse;
-            }).given(firebaseMessaging).sendEachForMulticast(any(MulticastMessage.class));
-
-            try (MockedStatic<FirebaseMessaging> mockedStatic = mockStatic(FirebaseMessaging.class)) {
-                mockedStatic.when(FirebaseMessaging::getInstance).thenReturn(firebaseMessaging);
+            try (MockedStatic<FirebaseMessaging> mockedFirebaseMessaging = mockStatic(FirebaseMessaging.class)) {
+                mockedFirebaseMessaging.when(FirebaseMessaging::getInstance).thenReturn(firebaseMessaging);
+                when(firebaseMessaging.sendEachForMulticast(firstBatchMessage)).thenReturn(firstBatchResponse);
+                when(firebaseMessaging.sendEachForMulticast(secondBatchMessage)).thenReturn(secondBatchResponse);
 
                 // when
-                fcmSendService.sendNotification(memberId, tokens, "배치 제목", "배치 본문");
+                fcmSendService.sendNotification(memberId, tokens, title, body);
 
                 // then
-                ArgumentCaptor<MulticastMessage> messageCaptor = ArgumentCaptor.forClass(MulticastMessage.class);
-                then(firebaseMessaging).should(times(2)).sendEachForMulticast(messageCaptor.capture());
-                List<MulticastMessage> capturedMessages = messageCaptor.getAllValues();
+                verify(firebaseMessaging, times(1)).sendEachForMulticast(firstBatchMessage);
+                verify(firebaseMessaging, times(1)).sendEachForMulticast(secondBatchMessage);
 
-                assertThat(capturedMessages).hasSize(2);
-                assertThat(extractTokens(capturedMessages.get(0))).hasSize(500);
-                assertThat(extractTokens(capturedMessages.get(1))).hasSize(250);
-                then(fcmMessageFactory).should(times(2)).createMulticastMessage(anyList(), eq("배치 제목"), eq("배치 본문"));
-                then(notificationHistoryService).should().bulkInsertNotificationHistories(argThat(payloads -> {
-                    assertThat(payloads).hasSize(tokens.size());
-                    assertThat(payloads)
-                            .allMatch(payload -> payload.memberId().equals(memberId)
-                                    && payload.type() == NotificationHistoryType.FCM
-                                    && payload.title().equals("배치 제목")
-                                    && payload.body().equals("배치 본문")
-                                    && payload.status() == NotificationHistoryStatus.SUCCESS);
-                    return true;
-                }));
-            }
-        }
-
-        private MulticastMessage buildMessage(List<String> tokens,
-                                              String title,
-                                              String body) {
-            // 팩토리가 생성하는 메시지를 모사해 빌더 기반 구성을 재현한다.
-            return MulticastMessage.builder()
-                    .addAllTokens(tokens)
-                    .setNotification(Notification.builder()
-                            .setTitle(title)
-                            .setBody(body)
-                            .build())
-                    .putData("title", title)
-                    .putData("body", body)
-                    .build();
-        }
-
-        private List<String> extractTokens(MulticastMessage message) {
-            // MulticastMessage는 Getter를 제공하지 않아 리플렉션으로 토큰 수를 검증한다.
-            try {
-                Field field = MulticastMessage.class.getDeclaredField("tokens");
-                field.setAccessible(true);
                 @SuppressWarnings("unchecked")
-                List<String> tokens = (List<String>) field.get(message);
-                return tokens;
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new IllegalStateException("토큰 정보를 확인할 수 없습니다.", e);
-            }
-        }
+                ArgumentCaptor<Set<String>> successCaptor = ArgumentCaptor.forClass(Set.class);
+                @SuppressWarnings("unchecked")
+                ArgumentCaptor<Set<String>> failureCaptor = ArgumentCaptor.forClass(Set.class);
+                verify(memberFcmTokenService).updateTokensAfterSend(successCaptor.capture(), failureCaptor.capture());
 
-        private String extractToken(Message message) {
-            // Message는 Getter를 제공하지 않아 리플렉션으로 토큰을 검증한다.
-            try {
-                Field field = Message.class.getDeclaredField("token");
-                field.setAccessible(true);
-                return (String) field.get(message);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new IllegalStateException("토큰 정보를 확인할 수 없습니다.", e);
-            }
-        }
+                assertThat(successCaptor.getValue()).containsExactlyInAnyOrderElementsOf(tokens);
+                assertThat(failureCaptor.getValue()).isEmpty();
 
-        private Notification extractNotification(Message message) {
-            // 알림 객체 역시 리플렉션으로 확인한다.
-            try {
-                Field field = Message.class.getDeclaredField("notification");
-                field.setAccessible(true);
-                return (Notification) field.get(message);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new IllegalStateException("알림 정보를 확인할 수 없습니다.", e);
-            }
-        }
+                @SuppressWarnings("unchecked")
+                ArgumentCaptor<List<NotificationHistoryPayload>> historyCaptor = ArgumentCaptor.forClass(List.class);
+                verify(notificationHistoryService).bulkInsertNotificationHistories(historyCaptor.capture());
 
-        private String extractNotificationValue(Notification notification, String fieldName) {
-            // Notification은 비공개 필드만 노출하므로 리플렉션으로 값을 읽는다.
-            try {
-                Field field = Notification.class.getDeclaredField(fieldName);
-                field.setAccessible(true);
-                return (String) field.get(notification);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new IllegalStateException("알림 속성을 확인할 수 없습니다.", e);
+                List<NotificationHistoryPayload> payloads = historyCaptor.getValue();
+                assertThat(payloads).hasSize(tokens.size());
+                assertThat(payloads)
+                        .allMatch(payload -> payload.status() == NotificationHistoryStatus.SUCCESS
+                                && payload.failureReason() == null);
             }
         }
     }

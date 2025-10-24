@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @Table(name = "member_fcm_tokens")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@DynamicUpdate
 public class MemberFcmToken extends BaseEntity {
 
     @Id
@@ -72,6 +74,10 @@ public class MemberFcmToken extends BaseEntity {
     public void updateMemberAndDeviceIdentifier(Member member, String deviceIdentifier, LocalDateTime lastUsedAt) {
         this.member = member;
         this.deviceIdentifier = deviceIdentifier;
+        this.lastUsedAt = lastUsedAt;
+    }
+
+    public void updateLastUsedAt(LocalDateTime lastUsedAt) {
         this.lastUsedAt = lastUsedAt;
     }
 
