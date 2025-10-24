@@ -1,8 +1,8 @@
-package com.sparta.couponpop.domain.notification.service;
+package com.sparta.couponpop.common.fcm.service;
 
 import com.google.firebase.messaging.*;
+import com.sparta.couponpop.common.fcm.factory.FcmMessageFactory;
 import com.sparta.couponpop.domain.member.service.MemberFcmTokenService;
-import com.sparta.couponpop.domain.notification.factory.FcmMessageFactory;
 import com.sparta.couponpop.domain.notificationhistory.dto.payload.NotificationHistoryPayload;
 import com.sparta.couponpop.domain.notificationhistory.enums.NotificationHistoryStatus;
 import com.sparta.couponpop.domain.notificationhistory.enums.NotificationHistoryType;
