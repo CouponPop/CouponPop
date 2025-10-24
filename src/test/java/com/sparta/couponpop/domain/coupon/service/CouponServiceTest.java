@@ -138,31 +138,30 @@ class CouponServiceTest {
         }
 
         @Test
-        @DisplayName("쿠폰 발급 실패 - 진행 중인 이벤트가 아닐 때")
-        void issueCoupon_eventNotInProgress() {
+        @DisplayName("쿠폰 발급 실패 - 이벤트가 아직 시작되지 않았습니다.")
+        void issueCoupon_eventNotStarted() {
             // given
             couponEvent = TestUtils.createEntity(CouponEvent.class, Map.of(
                     "id", 1L,
-                    "name", "이벤트 제목",
-                    "eventStartAt", issuedTime.minusHours(1),
+                    "name", "이벤트 시간 벗어남",
+                    "eventStartAt", issuedTime.plusHours(2),
                     "eventEndAt", issuedTime.plusDays(1),
                     "totalCount", 10,
-                    "couponEventStatus", CouponEventStatus.SCHEDULED,
+                    "couponEventStatus", CouponEventStatus.IN_PROGRESS,
                     "store", store
             ));
-
             given(storeRepository.findById(anyLong())).willReturn(Optional.of(store));
             given(couponEventRepository.findEventForUpdate(anyLong())).willReturn(Optional.of(couponEvent));
 
             // when & then
             assertThatThrownBy(() -> couponService.issueEventCoupon(member.getId(), store.getId(), couponEvent.getId(), issuedTime))
                     .isInstanceOf(GlobalException.class)
-                    .hasMessage(CouponEventErrorCode.EVENT_NOT_IN_PROGRESS.getMessage());
+                    .hasMessage(CouponEventErrorCode.EVENT_NOT_STARTED.getMessage());
         }
 
         @Test
-        @DisplayName("쿠폰 발급 실패 - 이벤트 시간 벗어남 (이벤트 시간을 현재 시간보다 이전으로 설정)")
-        void issueCoupon_eventNotInProgressTime() {
+        @DisplayName("쿠폰 발급 실패 - 이벤트가 종료되었습니다.")
+        void issueCoupon_eventEnded() {
             // given
             couponEvent = TestUtils.createEntity(CouponEvent.class, Map.of(
                     "id", 1L,
@@ -173,13 +172,13 @@ class CouponServiceTest {
                     "couponEventStatus", CouponEventStatus.IN_PROGRESS,
                     "store", store
             ));
-            BDDMockito.given(storeRepository.findById(anyLong())).willReturn(Optional.of(store));
-            BDDMockito.given(couponEventRepository.findEventForUpdate(anyLong())).willReturn(Optional.of(couponEvent));
+            given(storeRepository.findById(anyLong())).willReturn(Optional.of(store));
+            given(couponEventRepository.findEventForUpdate(anyLong())).willReturn(Optional.of(couponEvent));
 
             // when & then
             assertThatThrownBy(() -> couponService.issueEventCoupon(member.getId(), store.getId(), couponEvent.getId(), issuedTime))
                     .isInstanceOf(GlobalException.class)
-                    .hasMessage(CouponEventErrorCode.EVENT_NOT_IN_PROGRESS_TIME.getMessage());
+                    .hasMessage(CouponEventErrorCode.EVENT_ENDED.getMessage());
         }
 
         @Test
@@ -197,8 +196,8 @@ class CouponServiceTest {
                     "store", store
             ));
 
-            BDDMockito.given(storeRepository.findById(anyLong())).willReturn(Optional.of(store));
-            BDDMockito.given(couponEventRepository.findEventForUpdate(anyLong())).willReturn(Optional.of(couponEvent));
+            given(storeRepository.findById(anyLong())).willReturn(Optional.of(store));
+            given(couponEventRepository.findEventForUpdate(anyLong())).willReturn(Optional.of(couponEvent));
 
             // when & then
             assertThatThrownBy(() -> couponService.issueEventCoupon(member.getId(), store.getId(), couponEvent.getId(), issuedTime))

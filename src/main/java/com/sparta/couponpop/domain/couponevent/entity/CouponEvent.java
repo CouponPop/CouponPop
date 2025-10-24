@@ -95,14 +95,11 @@ public class CouponEvent extends BaseEntity {
         }
     }
 
+    // TODO : 발급 여부 시간 기준으로만 측정
     // 발급 가능 여부 검증
     public void validateIssuable(LocalDateTime now) {
-        if (couponEventStatus != CouponEventStatus.IN_PROGRESS) {
-            throw new GlobalException(CouponEventErrorCode.EVENT_NOT_IN_PROGRESS);
-        }
-        if (now.isBefore(eventStartAt) || now.isAfter(eventEndAt)) {
-            throw new GlobalException(CouponEventErrorCode.EVENT_NOT_IN_PROGRESS_TIME);
-        }
+        validateInProgress(now);
+
         if (issuedCount >= totalCount) {
             throw new GlobalException(CouponEventErrorCode.EVENT_COUPON_SOLD_OUT);
         }
@@ -118,9 +115,6 @@ public class CouponEvent extends BaseEntity {
         }
         if (now.isAfter(eventEndAt)) {
             throw new GlobalException(CouponEventErrorCode.EVENT_ENDED);
-        }
-        if (couponEventStatus != CouponEventStatus.IN_PROGRESS) {
-            throw new GlobalException(CouponEventErrorCode.EVENT_NOT_IN_PROGRESS);
         }
     }
 }
