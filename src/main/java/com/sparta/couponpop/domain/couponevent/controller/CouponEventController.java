@@ -3,12 +3,14 @@ package com.sparta.couponpop.domain.couponevent.controller;
 import com.sparta.couponpop.common.response.ApiResponse;
 import com.sparta.couponpop.common.security.annotation.CurrentMember;
 import com.sparta.couponpop.common.security.dto.AuthMember;
+import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
+import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsStatisticsCursor;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.StoreCouponEventListResponse;
+import com.sparta.couponpop.domain.couponevent.dto.response.StoreCouponEventStatisticsResponse;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
-import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.couponevent.service.CouponEventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -58,5 +60,15 @@ public class CouponEventController {
         return ApiResponse.success(response);
     }
 
+    @GetMapping("/owner/stores/events/statistics")
+    public ResponseEntity<ApiResponse<StoreCouponEventStatisticsResponse>> getStoreCouponEventStatistics(
+            @RequestParam(required = false) Long lastStoreId,
+            @RequestParam(defaultValue = "10") int size,
+            @CurrentMember AuthMember authMember
+    ) {
+        var cursor = StoreCouponEventsStatisticsCursor.ofNullable(lastStoreId);
+        StoreCouponEventStatisticsResponse responses = couponEventService.getStoreCouponEventStatistics(authMember.id(), cursor, size);
+        return ApiResponse.success(responses);
+    }
 
 }
