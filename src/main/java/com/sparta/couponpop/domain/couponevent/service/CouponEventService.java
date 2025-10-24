@@ -3,15 +3,18 @@ package com.sparta.couponpop.domain.couponevent.service;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
+import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
+import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsStatisticsCursor;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.StoreCouponEventListResponse;
+import com.sparta.couponpop.domain.couponevent.dto.response.StoreCouponEventStatisticsResponse;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
-import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
+import com.sparta.couponpop.domain.couponevent.repository.dto.StoreCouponEventStatisticsProjection;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.exception.StoreErrorCode;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
@@ -92,6 +95,29 @@ public class CouponEventService {
         return StoreCouponEventListResponse.of(store.getId(), store.getName(), couponEventDetailResponses, pageSize);
     }
 
+    /**
+     * 매장별 쿠폰 이벤트 통계 정보를 조회합니다.
+     *
+     * <p>커서 기반 페이지네이션을 지원하며, 주어진 memberId에 해당하는 점주의
+     * 매장 통계를 pageSize 단위로 조회합니다.</p>
+     *
+     * <p>조회 로직:
+     * <ol>
+     *     <li>Repository에서 pageSize + 1 만큼 데이터를 조회하여 다음 페이지 존재 여부 판단</li>
+     *     <li>조회 결과를 {@link StoreCouponEventStatisticsResponse}로 변환</li>
+     * </ol>
+     * </p>
+     *
+     * @param memberId 조회할 점주의 회원 ID
+     * @param cursor 다음 페이지 조회를 위한 커서 정보 (마지막 조회된 storeId 기준)
+     * @param pageSize 한 페이지에 조회할 매장 수
+     * @return {@link StoreCouponEventStatisticsResponse} - 매장별 통계 데이터와 다음 페이지 커서 포함
+     */
+    public StoreCouponEventStatisticsResponse getStoreCouponEventStatistics(Long memberId, StoreCouponEventsStatisticsCursor cursor, int pageSize) {
+        List<StoreCouponEventStatisticsProjection> statistics = couponEventRepository.fetchStoreCouponEventStatistics(memberId, cursor, pageSize + 1);
+        return StoreCouponEventStatisticsResponse.of(statistics, pageSize);
+    }
+
     private void validateEventDuration(LocalDateTime start, LocalDateTime end) {
         // "이벤트 종료 시간은 시작 시간보다 이후여야 합니다."
         if (end.isBefore(start)) {
@@ -105,4 +131,6 @@ public class CouponEventService {
         }
 
     }
+
+
 }

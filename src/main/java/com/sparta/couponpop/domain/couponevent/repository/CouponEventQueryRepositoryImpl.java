@@ -1,14 +1,17 @@
 package com.sparta.couponpop.domain.couponevent.repository;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sparta.couponpop.domain.coupon.entity.QCoupon;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
+import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
+import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsStatisticsCursor;
 import com.sparta.couponpop.domain.couponevent.entity.QCouponEvent;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
-import com.sparta.couponpop.domain.couponevent.repository.dto.CouponEventWithUsedCountProjection;
-import com.sparta.couponpop.domain.couponevent.repository.dto.QCouponEventWithUsedCountProjection;
-import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
+import com.sparta.couponpop.domain.couponevent.repository.dto.*;
+import com.sparta.couponpop.domain.store.entity.QStore;
 import com.sparta.couponpop.domain.store.entity.Store;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +72,40 @@ public class CouponEventQueryRepositoryImpl implements CouponEventQueryRepositor
                 .fetch();
     }
 
+    @Override
+    public List<StoreCouponEventStatisticsProjection> fetchStoreCouponEventStatistics(Long memberId, StoreCouponEventsStatisticsCursor cursor, int limit) {
+        QStore store = QStore.store;
+        QCouponEvent couponEvent = QCouponEvent.couponEvent;
+        QCoupon coupon = QCoupon.coupon;
+
+        NumberExpression<Integer> usedCount = Expressions.numberTemplate(Integer.class,
+                "sum(case when {0}.usedAt is not null then 1 else 0 end)", coupon);
+        return jpaQueryFactory
+                .select(
+                        new QStoreCouponEventStatisticsProjection(
+                                store.id,
+                                store.name,
+                                new QStoreCouponEventStatisticsProjection_CouponStats(
+                                        couponEvent.totalCount.sum().coalesce(0),
+                                        couponEvent.issuedCount.sum().coalesce(0),
+                                        usedCount.coalesce(0)
+                                ),
+                                couponEvent.eventEndAt.max()
+                        )
+                )
+                .from(store)
+                .leftJoin(couponEvent).on(couponEvent.store.eq(store))
+                .leftJoin(coupon).on(coupon.couponEvent.eq(couponEvent))
+                .where(
+                        store.member.id.eq(memberId),
+                        nextStatisticCondition(store, cursor.lastStoreId())
+                )
+                .groupBy(store.id)
+                .orderBy(store.id.desc())
+                .limit(limit)
+                .fetch();
+    }
+
     private BooleanExpression storeEq(QCouponEvent couponEvent, Store store) {
         if (ObjectUtils.isEmpty(store)) {
             return null;
@@ -104,5 +141,12 @@ public class CouponEventQueryRepositoryImpl implements CouponEventQueryRepositor
                                 .and(couponEvent.eventEndAt.eq(lastEndAt))
                                 .and(couponEvent.id.gt(lastEventId))
                 );
+    }
+
+    private BooleanExpression nextStatisticCondition(QStore store, Long lastStoreId) {
+        if (lastStoreId == null) {
+            return null;
+        }
+        return store.id.lt(lastStoreId);
     }
 }
