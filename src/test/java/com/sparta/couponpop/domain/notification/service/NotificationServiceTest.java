@@ -2,7 +2,6 @@ package com.sparta.couponpop.domain.notification.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.notification.dto.command.CouponIssuedNotificationCommand;
-import com.sparta.couponpop.domain.notification.dto.command.LocationBasedCouponEventNotificationCommand;
 import com.sparta.couponpop.domain.notification.dto.command.NotificationCommand;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponIssuedNotificationPayload;
 import com.sparta.couponpop.domain.notification.enums.NotificationType;
@@ -30,9 +29,6 @@ class NotificationServiceTest {
 
     @Mock
     private NotificationSender<CouponIssuedNotificationCommand> couponIssuedNotificationSender;
-
-    @Mock
-    private NotificationSender<LocationBasedCouponEventNotificationCommand> locationBasedCouponEventNotificationSender;
 
     @Nested
     @DisplayName("손님 쿠폰 수령 알림")

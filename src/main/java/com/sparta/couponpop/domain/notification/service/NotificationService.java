@@ -2,7 +2,6 @@ package com.sparta.couponpop.domain.notification.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.notification.dto.command.CouponIssuedNotificationCommand;
-import com.sparta.couponpop.domain.notification.dto.command.LocationBasedCouponEventNotificationCommand;
 import com.sparta.couponpop.domain.notification.dto.command.NotificationCommand;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponIssuedNotificationPayload;
 import com.sparta.couponpop.domain.notification.enums.NotificationType;
@@ -27,11 +26,6 @@ public class NotificationService {
     public void notifyCustomerCouponIssued(Long memberId, @Valid CouponIssuedNotificationPayload payload) {
         CouponIssuedNotificationCommand command = CouponIssuedNotificationCommand.of(memberId, payload);
         execute(NotificationType.COUPON_ISSUED, command);
-    }
-
-    public void notifyLocationBasedCouponEvent() {
-        LocationBasedCouponEventNotificationCommand command = LocationBasedCouponEventNotificationCommand.of();
-        execute(NotificationType.LOCATION_BASED_EVENT, command);
     }
 
     private <C extends NotificationCommand> void execute(NotificationType type, C command) {
