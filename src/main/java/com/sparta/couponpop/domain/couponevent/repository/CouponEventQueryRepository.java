@@ -5,13 +5,15 @@ import com.sparta.couponpop.domain.couponevent.repository.dto.CouponEventWithUse
 import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.store.entity.Store;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface CouponEventQueryRepository {
 
-    List<CouponEventWithUsedCountProjection> fetchCouponEventsByStoreAndStatus(
+    List<CouponEventWithUsedCountProjection> fetchCouponEventsByStore(
             Store store,
             CouponEventStatus eventStatus,
+            LocalDateTime now,
             StoreCouponEventsCursor cursor,
             int limit
     );

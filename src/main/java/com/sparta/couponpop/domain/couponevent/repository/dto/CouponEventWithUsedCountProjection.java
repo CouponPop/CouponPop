@@ -10,7 +10,6 @@ public record CouponEventWithUsedCountProjection(
         String eventName,
         LocalDateTime start,
         LocalDateTime end,
-        CouponEventStatus eventStatus,
         int totalCount,
         int issuedCount,
         int usedCouponCount,

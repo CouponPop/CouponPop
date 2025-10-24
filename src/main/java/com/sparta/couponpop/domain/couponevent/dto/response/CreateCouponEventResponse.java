@@ -12,7 +12,6 @@ public record CreateCouponEventResponse(
         String name,
         LocalDateTime eventStartAt,
         LocalDateTime eventEndAt,
-        CouponEventStatus eventStatus,
         int totalCount,
         LocalDateTime createdAt
 ) {
@@ -22,7 +21,6 @@ public record CreateCouponEventResponse(
                 .name(couponEvent.getName())
                 .eventStartAt(couponEvent.getEventStartAt())
                 .eventEndAt(couponEvent.getEventEndAt())
-                .eventStatus(couponEvent.getCouponEventStatus())
                 .totalCount(couponEvent.getTotalCount())
                 .createdAt(couponEvent.getCreatedAt())
                 .build();

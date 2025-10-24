@@ -3,6 +3,7 @@ package com.sparta.couponpop.domain.couponevent.service;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
+import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
@@ -11,7 +12,6 @@ import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
-import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.exception.StoreErrorCode;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
@@ -75,7 +75,7 @@ public class CouponEventService {
      * @return StoreCouponEventListResponse 페이징된 이벤트 목록 및 다음 커서 정보
      * @throws GlobalException 매장을 찾을 수 없거나, 회원이 매장 소유자가 아닌 경우 발생
      */
-    public StoreCouponEventListResponse getCouponEventsByStore(Long memberId, Long storeId, CouponEventStatus eventStatus, StoreCouponEventsCursor cursor, int pageSize) {
+    public StoreCouponEventListResponse getCouponEventsByStore(Long memberId, Long storeId, CouponEventStatus eventStatus, LocalDateTime now, StoreCouponEventsCursor cursor, int pageSize) {
         // 매장 조회 및 소유자 검증
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
@@ -85,7 +85,7 @@ public class CouponEventService {
         }
 
         // Store 의 eventStatus 이벤트 목록 조회
-        List<CouponEventDetailResponse> couponEventDetailResponses = couponEventRepository.fetchCouponEventsByStoreAndStatus(store, eventStatus, cursor, pageSize + 1).stream()
+        List<CouponEventDetailResponse> couponEventDetailResponses = couponEventRepository.fetchCouponEventsByStore(store, eventStatus, now, cursor, pageSize + 1).stream()
                 .map(CouponEventDetailResponse::of)
                 .toList();
 

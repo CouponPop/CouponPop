@@ -86,7 +86,6 @@ class CouponEventControllerTest {
                 .name("아이스 아메리카노 1+1")
                 .eventStartAt(eventStartAt)
                 .eventEndAt(eventEndAt)
-                .eventStatus(CouponEventStatus.SCHEDULED)
                 .totalCount(30)
                 .createdAt(LocalDateTime.of(2025, 10, 14, 15, 0))
                 .build();
@@ -104,7 +103,6 @@ class CouponEventControllerTest {
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.name").value("아이스 아메리카노 1+1"))
-                .andExpect(jsonPath("$.data.eventStatus").value(CouponEventStatus.SCHEDULED.name()))
         ;
     }
 
@@ -122,7 +120,6 @@ class CouponEventControllerTest {
                 eventId,
                 "아이스 아메리카노 1+1",
                 EventPeriod.of(eventStartAt, eventEndAt),
-                CouponEventStatus.SCHEDULED,
                 new EventStatisticSummary(30, 30, 0, 0, 0),
                 LocalDateTime.of(2025, 10, 14, 15, 0),
                 LocalDateTime.of(2025, 10, 14, 15, 0)
@@ -139,7 +136,6 @@ class CouponEventControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.eventName").value("아이스 아메리카노 1+1"))
-                .andExpect(jsonPath("$.data.eventStatus").value(CouponEventStatus.SCHEDULED.name()))
         ;
     }
 
@@ -156,10 +152,9 @@ class CouponEventControllerTest {
                     (long) i,
                     "이벤트 " + i,
                     new EventPeriod(
-                            LocalDateTime.of(2025, 10, 22,4 + i, 0),
+                            LocalDateTime.of(2025, 10, 22, 4 + i, 0),
                             LocalDateTime.of(2025, 10, 22, 5 + i, 0)
                     ),
-                    CouponEventStatus.IN_PROGRESS,
                     new EventStatisticSummary(100, 50, 50, 25, 25),
                     LocalDateTime.now(),
                     LocalDateTime.now()
@@ -183,7 +178,7 @@ class CouponEventControllerTest {
                 10
         );
 
-        BDDMockito.given(couponEventService.getCouponEventsByStore(anyLong(), anyLong(), any(CouponEventStatus.class), any(), any(Integer.class)))
+        BDDMockito.given(couponEventService.getCouponEventsByStore(anyLong(), anyLong(), any(CouponEventStatus.class), any(LocalDateTime.class), any(), any(Integer.class)))
                 .willReturn(page1)
                 .willReturn(page2);
 
