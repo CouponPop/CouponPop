@@ -8,6 +8,7 @@ import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.*;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
+import com.sparta.couponpop.domain.couponevent.repository.dto.StoreCouponEventStatisticsProjection;
 import com.sparta.couponpop.domain.couponevent.service.CouponEventService;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,8 +29,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -205,5 +205,43 @@ class CouponEventControllerTest {
                 .andExpect(jsonPath("$.data.events.length()").value(5))
                 .andExpect(jsonPath("$.data.hasNext").value(false))
                 .andExpect(jsonPath("$.data.nextCursor").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("매장 별 대시보드 조회 - 성공")
+    void getStoreCouponEventStatistics_withCursor() throws Exception {
+        // given
+        Long lastStoreId = 100L;
+        int size = 2;
+
+        var couponStats = new StoreCouponEventStatisticsProjection.CouponStats(2300, 1840, 1000);
+        var storeStat = new StoreCouponEventStatisticsProjection(
+                101L, "서울 강남점",
+                couponStats,
+                LocalDateTime.of(2025, 10, 21, 23, 59, 59)
+        );
+
+        var responseDto = StoreCouponEventStatisticsResponse.of(
+                List.of(storeStat),
+                size
+        );
+
+        given(couponEventService.getStoreCouponEventStatistics(anyLong(), any(), anyInt()))
+                .willReturn(responseDto);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/owner/stores/events/statistics")
+                        .param("lastStoreId", lastStoreId.toString())
+                        .param("size", String.valueOf(size))
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.statistics[0].storeId").value(101))
+                .andExpect(jsonPath("$.data.statistics[0].storeName").value("서울 강남점"))
+                .andExpect(jsonPath("$.data.statistics[0].couponStats.total").value(2300))
+                .andExpect(jsonPath("$.data.statistics[0].couponStats.unclaimed").value(460))
+                .andExpect(jsonPath("$.data.statistics[0].couponStats.used").value(1000))
+                .andExpect(jsonPath("$.data.statistics[0].couponStats.unused").value(840))
+                .andExpect(jsonPath("$.data.nextCursor").isEmpty())
+                .andExpect(jsonPath("$.data.hasNext").value(false));
     }
 }

@@ -1,10 +1,10 @@
-package com.sparta.couponpop.domain.notification.controller;
+package com.sparta.couponpop.common.fcm.controller;
 
 import com.google.firebase.messaging.FirebaseMessagingException;
+import com.sparta.couponpop.common.fcm.request.FcmRequest;
+import com.sparta.couponpop.common.fcm.service.FcmSendService;
 import com.sparta.couponpop.common.response.ApiResponse;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponIssuedNotificationPayload;
-import com.sparta.couponpop.domain.notification.dto.request.FcmRequest;
-import com.sparta.couponpop.domain.notification.service.FcmSendService;
 import com.sparta.couponpop.domain.notification.service.NotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
