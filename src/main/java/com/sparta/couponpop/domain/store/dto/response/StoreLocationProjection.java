@@ -10,6 +10,7 @@ public interface StoreLocationProjection {
 	Long getId();
 	String getName();
 	String getAddress();
+	String getDong();
 	String getStoreCategory(); // Enum이 아닌 String으로 받음
 	Double getLatitude();
 	Double getLongitude();
@@ -24,6 +25,7 @@ public interface StoreLocationProjection {
 			getId(),
 			getName(),
 			getAddress(),
+			getDong(),
 			StoreCategory.valueOf(getStoreCategory()), // String을 Enum으로 변환
 			getLatitude(),
 			getLongitude(),
