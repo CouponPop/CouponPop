@@ -6,16 +6,14 @@ import com.sparta.couponpop.common.security.JwtAuthenticationToken;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
-import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
-import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;
-import com.sparta.couponpop.domain.couponevent.dto.response.EventPeriod;
-import com.sparta.couponpop.domain.couponevent.dto.response.EventStatisticSummary;
+import com.sparta.couponpop.domain.couponevent.dto.response.*;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.service.CouponEventService;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.BDDMockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -27,6 +25,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -141,5 +141,74 @@ class CouponEventControllerTest {
                 .andExpect(jsonPath("$.data.eventName").value("아이스 아메리카노 1+1"))
                 .andExpect(jsonPath("$.data.eventStatus").value(CouponEventStatus.SCHEDULED.name()))
         ;
+    }
+
+    @Test
+    @DisplayName("Cursor 기반 페이지 조회 - 성공")
+    void getCouponEventsByStore_withCursor() throws Exception {
+        // given
+        Long storeId = 1L;
+
+        // Mock 15개의 이벤트
+        List<CouponEventDetailResponse> allEvents = new ArrayList<>();
+        for (int i = 1; i <= 15; i++) {
+            CouponEventDetailResponse event = new CouponEventDetailResponse(
+                    (long) i,
+                    "이벤트 " + i,
+                    new EventPeriod(
+                            LocalDateTime.of(2025, 10, 22,4 + i, 0),
+                            LocalDateTime.of(2025, 10, 22, 5 + i, 0)
+                    ),
+                    CouponEventStatus.IN_PROGRESS,
+                    new EventStatisticSummary(100, 50, 50, 25, 25),
+                    LocalDateTime.now(),
+                    LocalDateTime.now()
+            );
+            allEvents.add(event);
+        }
+
+        // 페이지 1
+        StoreCouponEventListResponse page1 = StoreCouponEventListResponse.of(
+                storeId,
+                "테스트 매장",
+                allEvents.subList(0, 11),
+                10
+        );
+
+        // 페이지 2
+        StoreCouponEventListResponse page2 = StoreCouponEventListResponse.of(
+                storeId,
+                "테스트 매장",
+                allEvents.subList(10, 15),
+                10
+        );
+
+        BDDMockito.given(couponEventService.getCouponEventsByStore(anyLong(), anyLong(), any(CouponEventStatus.class), any(), any(Integer.class)))
+                .willReturn(page1)
+                .willReturn(page2);
+
+        // when & then
+        // 첫 페이지 호출
+        mockMvc.perform(
+                        get("/api/v1/owner/stores/{storeId}/coupons/events", storeId)
+                                .param("size", "10")
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.events.length()").value(10))
+                .andExpect(jsonPath("$.data.hasNext").value(true))
+                .andExpect(jsonPath("$.data.nextCursor.lastEventId").value(10));
+
+        // 두 번째 페이지 호출
+        mockMvc.perform(
+                        get("/api/v1/owner/stores/{storeId}/coupons/events", storeId)
+                                .param("size", "10")
+                                .param("lastStartAt", page1.nextCursor().lastStartAt().toString())
+                                .param("lastEndAt", page1.nextCursor().lastEndAt().toString())
+                                .param("lastEventId", page1.nextCursor().lastEventId().toString())
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.events.length()").value(5))
+                .andExpect(jsonPath("$.data.hasNext").value(false))
+                .andExpect(jsonPath("$.data.nextCursor").doesNotExist());
     }
 }
