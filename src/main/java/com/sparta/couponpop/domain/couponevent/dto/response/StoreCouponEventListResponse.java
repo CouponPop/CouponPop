@@ -23,7 +23,7 @@ public record StoreCouponEventListResponse(
         List<CouponEventDetailResponse> events = trimToPageSize(originalEvents, pageSize);
         StoreCouponEventsCursor cursor = hasNext ? buildNextCursor(events) : null;
 
-        return new StoreCouponEventListResponse(storeId, storeName, events, cursor, pageSize, hasNext);
+        return new StoreCouponEventListResponse(storeId, storeName, events, cursor, events.size(), hasNext);
     }
 
     private static List<CouponEventDetailResponse> trimToPageSize(List<CouponEventDetailResponse> events, int pageSize) {

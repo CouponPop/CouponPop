@@ -41,8 +41,6 @@ public class CouponEvent extends BaseEntity {
     private int issuedCount;
 
     @Enumerated(EnumType.STRING)
-    @ColumnDefault("'SCHEDULED'")
-    @Column(nullable = false)
     private CouponEventStatus couponEventStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -55,7 +53,6 @@ public class CouponEvent extends BaseEntity {
         this.eventStartAt = eventStartAt;
         this.eventEndAt = eventEndAt;
         this.totalCount = totalCount;
-        this.couponEventStatus = CouponEventStatus.SCHEDULED;
         this.store = store;
     }
 
@@ -67,26 +64,6 @@ public class CouponEvent extends BaseEntity {
                 .totalCount(totalCount)
                 .store(store)
                 .build();
-    }
-
-    /**
-     * 현재 시간 기준의 동적 상태 계산
-     * 단, CANCELED 상태는 그대로 유지
-     *
-     * @param now
-     */
-    public CouponEventStatus getCurrentStatus(LocalDateTime now) {
-        if (CouponEventStatus.CANCELED.equals(this.couponEventStatus)) {
-            return CouponEventStatus.CANCELED;
-        }
-
-        if (now.isBefore(eventStartAt)) {
-            return CouponEventStatus.SCHEDULED;
-        }
-        if (now.isAfter(eventEndAt)) {
-            return CouponEventStatus.COMPLETED;
-        }
-        return CouponEventStatus.IN_PROGRESS;
     }
 
     public void validateOwner(Long userId) {

@@ -78,7 +78,7 @@ public class CouponEventService {
      * @return StoreCouponEventListResponse 페이징된 이벤트 목록 및 다음 커서 정보
      * @throws GlobalException 매장을 찾을 수 없거나, 회원이 매장 소유자가 아닌 경우 발생
      */
-    public StoreCouponEventListResponse getCouponEventsByStore(Long memberId, Long storeId, CouponEventStatus eventStatus, StoreCouponEventsCursor cursor, int pageSize) {
+    public StoreCouponEventListResponse getCouponEventsByStore(Long memberId, Long storeId, CouponEventStatus eventStatus, LocalDateTime now, StoreCouponEventsCursor cursor, int pageSize) {
         // 매장 조회 및 소유자 검증
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
@@ -88,7 +88,7 @@ public class CouponEventService {
         }
 
         // Store 의 eventStatus 이벤트 목록 조회
-        List<CouponEventDetailResponse> couponEventDetailResponses = couponEventRepository.fetchCouponEventsByStoreAndStatus(store, eventStatus, cursor, pageSize + 1).stream()
+        List<CouponEventDetailResponse> couponEventDetailResponses = couponEventRepository.fetchCouponEventsByStore(store, eventStatus, now, cursor, pageSize + 1).stream()
                 .map(CouponEventDetailResponse::of)
                 .toList();
 
@@ -109,7 +109,7 @@ public class CouponEventService {
      * </p>
      *
      * @param memberId 조회할 점주의 회원 ID
-     * @param cursor 다음 페이지 조회를 위한 커서 정보 (마지막 조회된 storeId 기준)
+     * @param cursor   다음 페이지 조회를 위한 커서 정보 (마지막 조회된 storeId 기준)
      * @param pageSize 한 페이지에 조회할 매장 수
      * @return {@link StoreCouponEventStatisticsResponse} - 매장별 통계 데이터와 다음 페이지 커서 포함
      */
