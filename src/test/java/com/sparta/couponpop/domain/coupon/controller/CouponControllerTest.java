@@ -14,7 +14,7 @@ import com.sparta.couponpop.domain.coupon.dto.response.IssuedCouponListResponse;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
 import com.sparta.couponpop.domain.coupon.repository.dto.CouponSummaryInfoProjection;
-import com.sparta.couponpop.domain.coupon.service.CouponIssueService;
+import com.sparta.couponpop.domain.coupon.service.coupon_issue.CouponIssueService;
 import com.sparta.couponpop.domain.coupon.service.CouponService;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.member.enums.MemberType;

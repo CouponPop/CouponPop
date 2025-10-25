@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.coupon.service;
+package com.sparta.couponpop.domain.coupon.service.coupon_issue;
 
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.entity.Coupon;

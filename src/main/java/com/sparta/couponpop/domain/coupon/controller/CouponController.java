@@ -9,7 +9,7 @@ import com.sparta.couponpop.domain.coupon.dto.request.UseCouponRequest;
 import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
 import com.sparta.couponpop.domain.coupon.dto.response.IssuedCouponListResponse;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
-import com.sparta.couponpop.domain.coupon.service.CouponIssueService;
+import com.sparta.couponpop.domain.coupon.service.coupon_issue.CouponIssueService;
 import com.sparta.couponpop.domain.coupon.service.CouponService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
