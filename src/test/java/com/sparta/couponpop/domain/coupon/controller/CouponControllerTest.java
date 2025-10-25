@@ -84,7 +84,7 @@ class CouponControllerTest {
         @DisplayName("쿠폰 발급 정상 요청 - 204 반환")
         void issueCoupon_success() throws Exception {
             // given
-            CouponIssueRequest request = new CouponIssueRequest(1L, 2L);
+            CouponIssueRequest request = new CouponIssueRequest(2L);
 
             // when
             mockMvc.perform(
@@ -104,7 +104,7 @@ class CouponControllerTest {
         @DisplayName("쿠폰 발급 요청 실패 - 이벤트 없는 경우 예외")
         void issueCoupon_EventNotFound() throws Exception {
             // given
-            CouponIssueRequest request = new CouponIssueRequest(1L, 999L);
+            CouponIssueRequest request = new CouponIssueRequest(999L);
 
             willThrow(new GlobalException(CouponEventErrorCode.EVENT_NOT_FOUND))
                     .given(couponService)
@@ -125,7 +125,7 @@ class CouponControllerTest {
         @DisplayName("쿠폰 발급 요청 실패 - 중복 발급 예외")
         void issueCoupon_AlreadyIssued() throws Exception {
             // given
-            CouponIssueRequest request = new CouponIssueRequest(1L, 10L);
+            CouponIssueRequest request = new CouponIssueRequest( 10L);
 
             willThrow(new GlobalException(CouponErrorCode.COUPON_ALREADY_ISSUED))
                     .given(couponService)
@@ -146,7 +146,7 @@ class CouponControllerTest {
         @DisplayName("쿠폰 발급 요청 실패 - 이벤트 기간 외 예외")
         void issueCoupon_EventNotInProgressTime() throws Exception {
             // given
-            CouponIssueRequest request = new CouponIssueRequest(1L, 10L);
+            CouponIssueRequest request = new CouponIssueRequest( 10L);
 
             willThrow(new GlobalException(CouponEventErrorCode.EVENT_NOT_IN_PROGRESS_TIME))
                     .given(couponService)
@@ -167,7 +167,7 @@ class CouponControllerTest {
         @DisplayName("쿠폰 발급 요청 실패 - 이벤트 쿠폰 모두 소진")
         void issueCoupon_CouponSoldOut() throws Exception {
             // given
-            CouponIssueRequest request = new CouponIssueRequest(999L, 10L);
+            CouponIssueRequest request = new CouponIssueRequest( 10L);
 
             willThrow(new GlobalException(CouponEventErrorCode.EVENT_COUPON_SOLD_OUT))
                     .given(couponService)
