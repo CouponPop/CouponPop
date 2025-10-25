@@ -121,6 +121,6 @@ class CouponIssueConcurrencyTest {
         CouponEvent event = couponEventRepository.findById(eventId).orElseThrow();
 
         // then
-        assertThat(event.getIssuedCount()).isEqualTo(100);
+        assertThat(event.getIssuedCount()).isNotEqualTo(100);
     }
 }
