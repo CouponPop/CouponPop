@@ -57,7 +57,7 @@ class CouponIssueConcurrencyTest {
     void setUp() {
         member = TestUtils.createEntity(Member.class, Map.of(
                 "username", "기존이름",
-                "email", "test2@example.com",
+                "email", "no-lock@test.com",
                 "password", "기존비밀번호",
                 "phoneNumber", "01099999999",
                 "memberType", MemberType.CUSTOMER));

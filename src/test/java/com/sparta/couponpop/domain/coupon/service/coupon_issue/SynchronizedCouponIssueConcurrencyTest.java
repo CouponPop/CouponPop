@@ -22,6 +22,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -57,6 +59,8 @@ class SynchronizedCouponIssueConcurrencyTest {
     private static final LocalDateTime eventStartAt = issuedTime.minusHours(1);
     private static final LocalDateTime eventEndAt = issuedTime.plusDays(1);
 
+    private List<Member> members = new ArrayList<>();
+
     @BeforeEach
     void setUp() {
         for (int i = 0; i < THREAD_COUNT; i++) {
@@ -66,7 +70,7 @@ class SynchronizedCouponIssueConcurrencyTest {
                     "password", "기존비밀번호",
                     "phoneNumber", "01099999999",
                     "memberType", MemberType.CUSTOMER));
-            memberRepository.save(member);
+            members.add(memberRepository.save(member));
         }
 
         store = TestUtils.createEntity(Store.class, Map.ofEntries(
@@ -115,7 +119,7 @@ class SynchronizedCouponIssueConcurrencyTest {
         CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
 
         for (int i = 0; i < THREAD_COUNT; i++) {
-            final long currentMemberId = i + 1;
+            final long currentMemberId = members.get(i).getId();
             executorService.submit(() -> {
                 try {
                     couponIssueFacade.issueCoupon(currentMemberId, eventId, issuedTime);
