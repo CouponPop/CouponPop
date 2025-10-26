@@ -121,6 +121,7 @@ class SynchronizedCouponIssueConcurrencyTest {
                     couponIssueFacade.issueCoupon(currentMemberId, eventId, issuedTime);
                 } catch (Exception e) {
                     log.error("에러", e);
+                    throw e;
                 } finally {
                     latch.countDown();
                 }
