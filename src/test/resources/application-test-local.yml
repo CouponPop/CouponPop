@@ -22,6 +22,8 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
 
+  flyway:
+    enabled: false
 jwt:
   secret:
     key: ${JWT_SECRET_KEY}
