@@ -1,8 +1,4 @@
 spring:
-  application:
-    name: CouponPop
-  config:
-    import: optional:file:.env[.properties]
   datasource:
     url: jdbc:tc:mysql:8.0.36:///testdb
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver # Spring Boot 2.3 버전 이후부터 생략 가능
@@ -22,14 +18,7 @@ spring:
 
   flyway:
     enabled: true
+
 jwt:
   secret:
-    key: ${JWT_SECRET_KEY}
-    white-list:
-      - /api/v1/auth/signup
-      - /api/v1/auth/login
-      - /actuator/health
-      - /error
-
-fcm:
-  firebase-config-path: "classpath:firebase/serviceAccountKey.json"
+    key: Y291cG9ucG9wLXRlc3QtanVuaW9yLWJhY2tlbmQtZGV2ZWxvcGVyLXNlY3JldC1rZXktZm9yLWNpLWNkCg==
