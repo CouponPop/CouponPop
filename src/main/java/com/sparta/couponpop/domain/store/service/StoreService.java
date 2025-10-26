@@ -12,17 +12,26 @@ import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.exception.StoreErrorCode;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
+import com.sparta.couponpop.domain.store.document.StoreDocument;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StoreService {
 
     private final StoreRepository storeRepository;
+    private final ElasticsearchOperations elasticsearchOperations;
     private final MemberRepository memberRepository;
 
     @Transactional
@@ -139,11 +148,79 @@ public class StoreService {
     @Transactional(readOnly = true)
     public List<StoreResponse> searchStoresByName(String keyword) {
 
-        List<Store> stores = storeRepository.findByNameContainingIgnoreCase(keyword);
+        try {
+            // Elasticsearch에서 검색
+            String queryJson = String.format(
+                    """
+                    {
+                      "query": {
+                        "bool": {
+                          "must": [
+                            {
+                              "multi_match": {
+                                "query": "%s",
+                                "fields": ["name^3", "description", "address"],
+                                "type": "best_fields",
+                                "operator": "and",
+                                "minimum_should_match": "75%%"
+                              }
+                            }
+                          ],
+                          "filter": [
+                            {
+                              "term": {
+                                "deleted_at": null
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                    """,
+                    escapeJson(keyword)
+            );
 
-        return stores.stream()
-                .map(StoreResponse::from)
-                .toList();
+            StringQuery query = new StringQuery(queryJson);
+            SearchHits<StoreDocument> searchHits = elasticsearchOperations.search(query, StoreDocument.class);
+
+            // Elasticsearch 결과에서 ID 추출
+            List<Long> storeIds = searchHits.getSearchHits().stream()
+                    .map(SearchHit::getId)
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+
+            if (storeIds.isEmpty()) {
+                log.debug("[Elasticsearch] 검색 결과 없음: keyword={}", keyword);
+                return List.of();
+            }
+
+            // MySQL에서 실제 데이터 조회
+            List<Store> stores = storeRepository.findAllById(storeIds);
+
+            log.debug("[Elasticsearch] 검색 완료: keyword={}, count={}", keyword, stores.size());
+
+            return stores.stream()
+                    .map(StoreResponse::from)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("[Elasticsearch] 검색 실패, MySQL 폴백: keyword={}, error={}", keyword, e.getMessage());
+            
+            // Elasticsearch 실패 시 MySQL 폴백
+            List<Store> stores = storeRepository.findByNameContainingIgnoreCase(keyword);
+
+            return stores.stream()
+                    .map(StoreResponse::from)
+                    .toList();
+        }
+    }
+
+    private String escapeJson(String input) {
+        return input.replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("\n", "\\n")
+                    .replace("\r", "\\r")
+                    .replace("\t", "\\t");
     }
 
     @Transactional(readOnly = true)
