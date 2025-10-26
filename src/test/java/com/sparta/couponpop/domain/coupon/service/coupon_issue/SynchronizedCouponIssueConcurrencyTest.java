@@ -118,7 +118,7 @@ class SynchronizedCouponIssueConcurrencyTest {
             final long currentMemberId = i + 1;
             executorService.submit(() -> {
                 try {
-                    couponIssueFacade.issueRequestV1(currentMemberId, eventId, issuedTime);
+                    couponIssueFacade.issueCoupon(currentMemberId, eventId, issuedTime);
                 } catch (Exception e) {
                     log.error("에러", e);
                 } finally {

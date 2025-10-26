@@ -13,7 +13,7 @@ public class CouponIssueFacade {
 
     private final CouponIssueService couponIssueService;
 
-    public void issueRequestV1(Long memberId, Long eventId, LocalDateTime currentDateTime) {
+    public void issueCoupon(Long memberId, Long eventId, LocalDateTime currentDateTime) {
         log.info("락 획득");
         synchronized (this) {
             couponIssueService.issueCoupon(memberId, eventId, currentDateTime);

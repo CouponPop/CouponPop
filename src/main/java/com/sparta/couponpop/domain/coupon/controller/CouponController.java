@@ -9,9 +9,8 @@ import com.sparta.couponpop.domain.coupon.dto.request.UseCouponRequest;
 import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
 import com.sparta.couponpop.domain.coupon.dto.response.IssuedCouponListResponse;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
-import com.sparta.couponpop.domain.coupon.service.coupon_issue.CouponIssueFacade;
-import com.sparta.couponpop.domain.coupon.service.coupon_issue.CouponIssueService;
 import com.sparta.couponpop.domain.coupon.service.CouponService;
+import com.sparta.couponpop.domain.coupon.service.coupon_issue.CouponIssueFacade;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -26,13 +25,12 @@ import java.time.LocalDateTime;
 public class CouponController {
 
     private final CouponService couponService;
-    private final CouponIssueService couponIssueService;
     private final CouponIssueFacade couponIssueFacade;
 
     @PostMapping("/coupons/issue")
     public ResponseEntity<ApiResponse<Void>> issueCoupon(@Valid @RequestBody CouponIssueRequest request, @CurrentMember AuthMember authMember) {
         LocalDateTime issuedTime = LocalDateTime.now();
-        couponIssueFacade.issueRequestV1(authMember.id(), request.eventId(), issuedTime);
+        couponIssueFacade.issueCoupon(authMember.id(), request.eventId(), issuedTime);
         return ApiResponse.noContent();
     }
 

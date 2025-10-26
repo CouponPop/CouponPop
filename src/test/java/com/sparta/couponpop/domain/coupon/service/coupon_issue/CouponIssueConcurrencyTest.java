@@ -14,8 +14,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -28,6 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @ActiveProfiles("test-local")
 @SpringBootTest
+@Testcontainers
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class CouponIssueConcurrencyTest {
 
     @Autowired
@@ -69,10 +73,10 @@ class CouponIssueConcurrencyTest {
                 Map.entry("latitude", 32.1235),
                 Map.entry("longitude", 45.1634),
                 Map.entry("imageUrl", "test"),
-                Map.entry("weekdayOpenTime", LocalTime.of(9,0)),
-                Map.entry("weekdayCloseTime", LocalTime.of(21,0)),
-                Map.entry("weekendOpenTime", LocalTime.of(9,0)),
-                Map.entry("weekendCloseTime", LocalTime.of(21,0)),
+                Map.entry("weekdayOpenTime", LocalTime.of(9, 0)),
+                Map.entry("weekdayCloseTime", LocalTime.of(21, 0)),
+                Map.entry("weekendOpenTime", LocalTime.of(9, 0)),
+                Map.entry("weekendCloseTime", LocalTime.of(21, 0)),
                 Map.entry("member", member)
         ));
         storeRepository.save(store);
@@ -94,16 +98,17 @@ class CouponIssueConcurrencyTest {
         memberRepository.deleteAllInBatch();
     }
 
+    private static final int THREAD_COUNT = 100;
+
     @Test
     void 동시에_100개_요청_실패() throws InterruptedException {
         // given
         final Long eventId = couponEvent.getId();
 
-        final int threadCount = 100;
         ExecutorService executorService = Executors.newFixedThreadPool(32);
-        CountDownLatch latch = new CountDownLatch(threadCount);
+        CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
 
-        for (int i = 0; i < threadCount; i++) {
+        for (int i = 0; i < THREAD_COUNT; i++) {
             final long currentMemberId = i + 1;
             executorService.submit(() -> {
                 try {
@@ -119,6 +124,6 @@ class CouponIssueConcurrencyTest {
         CouponEvent event = couponEventRepository.findById(eventId).orElseThrow();
 
         // then
-        assertThat(event.getIssuedCount()).isEqualTo(100);
+        assertThat(event.getIssuedCount()).isNotEqualTo(100);
     }
 }
