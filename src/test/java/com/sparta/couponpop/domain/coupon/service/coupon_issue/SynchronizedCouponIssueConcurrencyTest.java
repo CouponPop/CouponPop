@@ -1,6 +1,5 @@
 package com.sparta.couponpop.domain.coupon.service.coupon_issue;
 
-import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
@@ -16,8 +15,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -31,6 +32,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 @ActiveProfiles("test-local")
 @SpringBootTest
+@Testcontainers
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class SynchronizedCouponIssueConcurrencyTest {
 
     @Autowired
@@ -58,7 +61,6 @@ class SynchronizedCouponIssueConcurrencyTest {
     void setUp() {
         for (int i = 0; i < THREAD_COUNT; i++) {
             member = TestUtils.createEntity(Member.class, Map.of(
-                    "id", i + 1,
                     "username", "기존이름",
                     "email", "test" + (i + 1) + "@example.com",
                     "password", "기존비밀번호",

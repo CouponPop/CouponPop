@@ -4,10 +4,8 @@ spring:
   config:
     import: optional:file:.env[.properties]
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:tc:mysql:8.0.36:///testdb
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver # Spring Boot 2.3 버전 이후부터 생략 가능
   jpa:
     hibernate:
       ddl-auto: none
@@ -23,7 +21,7 @@ spring:
       port: ${REDIS_PORT}
 
   flyway:
-    enabled: false
+    enabled: true
 jwt:
   secret:
     key: ${JWT_SECRET_KEY}
