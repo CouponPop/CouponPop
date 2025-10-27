@@ -1,0 +1,99 @@
+---
+## Kibana 기본 이미지의 기본 Kibana 설정
+## https://github.com/elastic/kibana/blob/main/src/dev/build/tasks/os_packages/docker_generator/templates/kibana_yml.template.ts
+#
+server.name: kibana
+server.host: 0.0.0.0
+elasticsearch.hosts: [ http://elasticsearch:9200 ]
+
+monitoring.ui.container.elasticsearch.enabled: true
+monitoring.ui.container.logstash.enabled: true
+
+## 보안 자격 증명
+#
+elasticsearch.username: kibana_system
+elasticsearch.password: ${KIBANA_SYSTEM_PASSWORD}
+
+## 암호화 키 (선택사항이지만 강력히 권장됨)
+##
+## 다음 중 하나로 생성:
+##  $ docker compose up kibana-genkeys
+##  $ openssl rand -hex 32
+##
+## https://www.elastic.co/docs/deploy-manage/security/self-setup
+## https://www.elastic.co/docs/reference/kibana/commands/kibana-encryption-keys
+#
+#xpack.security.encryptionKey:
+#xpack.encryptedSavedObjects.encryptionKey:
+#xpack.reporting.encryptionKey:
+
+## Fleet
+## https://www.elastic.co/docs/reference/kibana/configuration-reference/fleet-settings
+#
+xpack.fleet.agents.fleet_server.hosts: [ http://fleet-server:8220 ]
+
+xpack.fleet.outputs:
+  - id: fleet-default-output
+    name: default
+    type: elasticsearch
+    hosts: [ http://elasticsearch:9200 ]
+    is_default: true
+    is_default_monitoring: true
+
+xpack.fleet.packages:
+  - name: fleet_server
+    version: latest
+  - name: system
+    version: latest
+  - name: elastic_agent
+    version: latest
+  - name: docker
+    version: latest
+  - name: apm
+    version: latest
+
+xpack.fleet.agentPolicies:
+  - name: Fleet Server Policy
+    id: fleet-server-policy
+    description: Static agent policy for Fleet Server
+    monitoring_enabled:
+      - logs
+      - metrics
+    package_policies:
+      - name: fleet_server-1
+        package:
+          name: fleet_server
+      - name: system-1
+        package:
+          name: system
+      - name: elastic_agent-1
+        package:
+          name: elastic_agent
+      - name: docker-1
+        package:
+          name: docker
+  - name: Agent Policy APM Server
+    id: agent-policy-apm-server
+    description: Static agent policy for the APM Server integration
+    monitoring_enabled:
+      - logs
+      - metrics
+    package_policies:
+      - name: system-1
+        package:
+          name: system
+      - name: elastic_agent-1
+        package:
+          name: elastic_agent
+      - name: apm-1
+        package:
+          name: apm
+        # 가능한 입력 목록은 APM 패키지 매니페스트를 참조하세요.
+        # https://github.com/elastic/integrations/blob/d62b684/packages/apm/manifest.yml#L44-L174
+        inputs:
+          - type: apm
+            vars:
+              - name: host
+                value: 0.0.0.0:8200
+              - name: url
+                value: http://apm-server:8200
