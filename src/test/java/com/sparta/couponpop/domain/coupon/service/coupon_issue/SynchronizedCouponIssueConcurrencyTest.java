@@ -47,7 +47,7 @@ class SynchronizedCouponIssueConcurrencyTest {
     @Autowired
     private CouponRepository couponRepository;
     @Autowired
-    private CouponIssueFacade couponIssueFacade;
+    private SynchronizedCouponIssueService couponIssueFacade;
 
     private Member member;
     private Store store;

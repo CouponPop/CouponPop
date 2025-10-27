@@ -43,7 +43,7 @@ class CouponIssueConcurrencyTest {
     @Autowired
     private CouponRepository couponRepository;
     @Autowired
-    private CouponIssueService couponIssueService;
+    private DefaultCouponIssueService defaultCouponIssueService;
 
     private Member member;
     private Store store;
@@ -112,7 +112,7 @@ class CouponIssueConcurrencyTest {
             final long currentMemberId = i + 1;
             executorService.submit(() -> {
                 try {
-                    couponIssueService.issueCoupon(currentMemberId, eventId, issuedTime);
+                    defaultCouponIssueService.issueCoupon(currentMemberId, eventId, issuedTime);
                 } finally {
                     latch.countDown();
                 }

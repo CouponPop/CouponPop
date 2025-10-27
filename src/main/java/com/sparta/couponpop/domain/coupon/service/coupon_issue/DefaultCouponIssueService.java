@@ -12,20 +12,20 @@ import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-public class CouponIssueService {
+public class DefaultCouponIssueService implements CouponIssueFacade {
 
     private final MemberRepository memberRepository;
     private final CouponEventRepository couponEventRepository;
     private final CouponRepository couponRepository;
 
     @Transactional
+    @Override
     public void issueCoupon(Long memberId, Long eventId, LocalDateTime currentDateTime) {
         // 이벤트 기간 검증
         CouponEvent event = validateEventPeriodAndTime(eventId, currentDateTime);
@@ -35,7 +35,7 @@ public class CouponIssueService {
         saveCouponIssue(memberId, currentDateTime, event);
     }
 
-    private CouponEvent validateEventPeriodAndTime(Long eventId, LocalDateTime currentDateTime) {
+    public CouponEvent validateEventPeriodAndTime(Long eventId, LocalDateTime currentDateTime) {
         CouponEvent event = couponEventRepository.findById(eventId)
                 .orElseThrow(() -> new GlobalException(CouponEventErrorCode.EVENT_NOT_FOUND));
 
@@ -43,13 +43,13 @@ public class CouponIssueService {
         return event;
     }
 
-    private void validateCouponDuplication(Long memberId, Long eventId) {
+    public void validateCouponDuplication(Long memberId, Long eventId) {
         if (couponRepository.existsByMemberIdAndCouponEventId(memberId, eventId)) {
             throw new GlobalException(CouponErrorCode.COUPON_ALREADY_ISSUED);
         }
     }
 
-    private void saveCouponIssue(Long memberId, LocalDateTime currentDateTime, CouponEvent event) {
+    public void saveCouponIssue(Long memberId, LocalDateTime currentDateTime, CouponEvent event) {
         event.issueCoupon();
 
         Member member = memberRepository.findById(memberId)
