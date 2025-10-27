@@ -189,6 +189,7 @@ tasks.register('copyOpenApiSpec', Copy) {
 tasks.named('build') {
     dependsOn jacocoTestCoverageVerification
     dependsOn 'copyOpenApiSpec'
+    dependsOn 'openapi3'
     doLast {
         println "Build completed with coverage verification & API spec generation."
     }

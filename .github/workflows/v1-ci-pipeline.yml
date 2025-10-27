@@ -58,12 +58,7 @@ jobs:
           TZ: Asia/Seoul
           REDIS_HOST: localhost
           REDIS_PORT: 6379
-        #        run: ./gradlew clean build --no-daemon
-        run: |
-          ./gradlew clean test
-          mkdir -p src/main/resources/static/docs
-          cp build/api-spec/openapi3.json src/main/resources/static/docs/openapi3.json
-          ./gradlew build
+        run: ./gradlew clean build --no-daemon
 
       - name: Upload JaCoCo Coverage Report
         if: always()
