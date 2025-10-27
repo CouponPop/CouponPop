@@ -102,11 +102,11 @@ dependencies {
     // [Restdocs]
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
-    testImplementation('com.epages:restdocs-api-spec-mockmvc:0.19.4')
+    testImplementation 'com.epages:restdocs-api-spec-mockmvc:0.19.4'
 }
 
 openapi3 {
-    server = 'http://localhost:8080'
+    server = '/'
     title = 'CouponPop API'
     description = 'CouponPop 서비스의 REST API 명세서'
     outputDirectory = file('build/api-spec')
@@ -161,6 +161,28 @@ afterEvaluate {
     }
     tasks.named('jacocoTestReport', JacocoReport).configure(configureExclusions)
     tasks.named('jacocoTestCoverageVerification', JacocoCoverageVerification).configure(configureExclusions)
+
+    tasks.findByName('openapi3')?.doLast {
+        def file = file('build/api-spec/openapi3.json')
+        if (!file.exists()) {
+            println "⚠openapi3.json not found."
+            return
+        }
+
+        def json = new groovy.json.JsonSlurper().parse(file)
+        if (!json.components) json.components = [:]
+        if (!json.components.securitySchemes) json.components.securitySchemes = [:]
+
+        json.components.securitySchemes["Bearer Authentication"] = [
+                type        : "http",
+                scheme      : "bearer",
+                bearerFormat: "JWT"
+        ]
+        json.security = [["Bearer Authentication": []]]
+
+        file.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json))
+        println "JWT SecurityScheme into openapi3.json 주입 완료"
+    }
 }
 
 tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification) {
