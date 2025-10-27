@@ -37,6 +37,21 @@ jwt:
       - /api/v1/auth/login
       - /actuator/health
       - /error
+      - /swagger-ui/**
+      - /swagger-ui.html
+      - /v3/api-docs/**
+      - /v3/api-docs.yaml
+      - /v3/api-docs.json
+      - /api-docs/**
+      - /swagger-resources/**
+      - /webjars/**
+      - /docs/**
 
 fcm:
   firebase-config-path: "classpath:firebase/serviceAccountKey.json"
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    url: /docs/openapi3.json
+    display-request-duration: true

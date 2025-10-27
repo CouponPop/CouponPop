@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.auth.controller;
 
+import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.couponpop.common.security.JwtAuthFilter;
 import com.sparta.couponpop.common.security.JwtProvider;
@@ -16,6 +17,7 @@ import com.sparta.couponpop.domain.member.enums.MemberType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -24,16 +26,21 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@AutoConfigureRestDocs
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
@@ -89,6 +96,33 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.data.email").value("test@example.com"))
                 .andExpect(jsonPath("$.data.username").value("테스트이름"))
                 .andDo(print());
+
+        // docs
+        resultActions.andDo(document("auth-signUp",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                resource(
+                        ResourceSnippetParameters.builder()
+                                .description("회원가입 API")
+                                .summary("사용자가 회원가입을 수행합니다.")
+                                .tag("auth")
+                                .requestFields(
+                                        fieldWithPath("email").description("사용자 이메일 (형식: user@example.com)"),
+                                        fieldWithPath("username").description("사용자 이름 (2자 이상 50자 이하)"),
+                                        fieldWithPath("password").description("비밀번호 (8~15자, 영문+숫자+특수문자 조합)"),
+                                        fieldWithPath("confirmPassword").description("비밀번호 확인"),
+                                        fieldWithPath("phoneNumber").description("전화번호 (예: 01012345678)"),
+                                        fieldWithPath("memberType").description("회원 유형 (CUSTOMER 또는 OWNER)")
+                                )
+                                .responseFields(
+                                        fieldWithPath("data.memberId").description("생성된 회원 고유 식별자"),
+                                        fieldWithPath("data.email").description("가입된 이메일"),
+                                        fieldWithPath("data.username").description("사용자 이름"),
+                                        fieldWithPath("data.phoneNumber").description("전화번호"),
+                                        fieldWithPath("data.memberType").description("회원 유형 (CUSTOMER/OWNER)")
+                                )
+                                .build()
+                )));
     }
 
     @Test
