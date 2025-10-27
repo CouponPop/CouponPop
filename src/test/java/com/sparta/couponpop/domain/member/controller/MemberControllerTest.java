@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.member.controller;
 
+import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.security.JwtAuthFilter;
@@ -16,8 +17,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -26,14 +29,20 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@AutoConfigureRestDocs
 @WebMvcTest(MemberController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class MemberControllerTest {
@@ -75,11 +84,13 @@ class MemberControllerTest {
                 "01012345678",
                 MemberType.CUSTOMER
         );
+        String mockJwtToken = "Bearer mockedJwtToken";
 
         given(memberService.getMemberProfile(mockMemberId)).willReturn(mockResponse);
 
         // when
         ResultActions resultActions = mockMvc.perform(get("/api/v1/members/me")
+                .header(HttpHeaders.AUTHORIZATION, mockJwtToken)
                 .contentType(MediaType.APPLICATION_JSON));
 
         // then
@@ -88,6 +99,29 @@ class MemberControllerTest {
                 .andExpect(jsonPath("$.data.email").value("test@example.com"))
                 .andExpect(jsonPath("$.data.memberType").value("CUSTOMER"))
                 .andDo(print());
+
+        // docs
+        resultActions.andDo(document("member-getMyProfile",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                resource(
+                        ResourceSnippetParameters.builder()
+                                .description("내 프로필 조회 API")
+                                .summary("사용자가 자신의 프로필 조회를 수행합니다.")
+                                .tag("member")
+                                .requestHeaders(
+                                        headerWithName(HttpHeaders.AUTHORIZATION).description("JWT 액세스 토큰 (예: `Bearer 64K07J2867Cw7JuA7Lqg7ZSE7L+g7Y+w7Yyd7JeR7IS47Iqk7Yag7YGw7Iuc7YGs66a/7YKk`)")
+                                )
+                                .responseFields(
+                                        fieldWithPath("data.id").description("회원 ID"),
+                                        fieldWithPath("data.username").description("사용자 이름"),
+                                        fieldWithPath("data.email").description("이메일"),
+                                        fieldWithPath("data.phoneNumber").description("전화번호"),
+                                        fieldWithPath("data.memberType").description("회원 유형 (CUSTOMER, OWNER 등)")
+                                )
+                                .build()
+                )
+        ));
     }
 
     @Test

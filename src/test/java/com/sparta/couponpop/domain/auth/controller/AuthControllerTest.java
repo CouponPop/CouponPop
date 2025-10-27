@@ -235,6 +235,27 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").value(accessToken))
                 .andDo(print());
+
+        // docs
+        resultActions.andDo(document("auth-login",
+                resource(ResourceSnippetParameters.builder()
+                        .tag("auth")
+                        .summary("로그인")
+                        .description("""
+                                사용자가 이메일과 비밀번호를 이용해 로그인합니다.  
+                                로그인 성공 시 JWT AccessToken을 반환합니다.
+                                """)
+                        .requestFields(
+                                fieldWithPath("email").description("사용자 이메일 (형식: test@example.com)"),
+                                fieldWithPath("password").description("비밀번호 (8~15자의 영문, 숫자, 특수문자 조합)")
+                        )
+                        .responseFields(
+                                fieldWithPath("data.accessToken").description("JWT Access Token")
+                        )
+                        .build()
+                )
+        ));
+
     }
 
     @Test
