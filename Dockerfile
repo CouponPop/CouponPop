@@ -4,7 +4,6 @@ FROM amazoncorretto:17-alpine-jdk
 WORKDIR /app
 
 COPY build/libs/*.jar app.jar
-COPY src/main/resources/static /app/resources/static
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
