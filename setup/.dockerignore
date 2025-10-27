@@ -1,0 +1,9 @@
+# Docker 빌드 파일 무시
+Dockerfile
+.dockerignore
+
+# OS 아티팩트 무시
+**/.DS_Store
+
+# Git 파일 무시
+.gitignore
