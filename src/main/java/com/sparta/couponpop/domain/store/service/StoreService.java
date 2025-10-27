@@ -18,7 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.query.StringQuery;
+import org.springframework.data.elasticsearch.core.query.Criteria;
+import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -149,38 +151,14 @@ public class StoreService {
     public List<StoreResponse> searchStoresByName(String keyword) {
 
         try {
-            // Elasticsearch에서 검색
-            String queryJson = String.format(
-                    """
-                    {
-                      "query": {
-                        "bool": {
-                          "must": [
-                            {
-                              "multi_match": {
-                                "query": "%s",
-                                "fields": ["name^3", "description", "address"],
-                                "type": "best_fields",
-                                "operator": "and",
-                                "minimum_should_match": "75%%"
-                              }
-                            }
-                          ],
-                          "filter": [
-                            {
-                              "term": {
-                                "deleted_at": null
-                              }
-                            }
-                          ]
-                        }
-                      }
-                    }
-                    """,
-                    escapeJson(keyword)
-            );
-
-            StringQuery query = new StringQuery(queryJson);
+            // Criteria를 사용하여 안전한 쿼리 생성 (JSON Injection 방지)
+            Criteria criteria = new Criteria("name").contains(keyword)
+                    .or(new Criteria("description").contains(keyword))
+                    .or(new Criteria("address").contains(keyword))
+                    .and(new Criteria("deleted_at").is(null)); // 삭제되지 않은 매장만
+            
+            Query query = new CriteriaQuery(criteria);
+            
             SearchHits<StoreDocument> searchHits = elasticsearchOperations.search(query, StoreDocument.class);
 
             // Elasticsearch 결과에서 ID 추출
@@ -213,14 +191,6 @@ public class StoreService {
                     .map(StoreResponse::from)
                     .toList();
         }
-    }
-
-    private String escapeJson(String input) {
-        return input.replace("\\", "\\\\")
-                    .replace("\"", "\\\"")
-                    .replace("\n", "\\n")
-                    .replace("\r", "\\r")
-                    .replace("\t", "\\t");
     }
 
     @Transactional(readOnly = true)
