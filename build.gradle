@@ -135,6 +135,9 @@ def jacocoExcludes = [
 
         // --- Flyway 관련 ---
         '**/db/migration/**',
+
+        // --- Swagger 관련 ---
+        '**/static/docs/**',
 ]
 tasks.named('test') {
     useJUnitPlatform()
@@ -202,15 +205,26 @@ tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification) {
 tasks.register('copyOpenApiSpec', Copy) {
     dependsOn 'openapi3'
     from 'build/api-spec/openapi3.json'
-    into 'src/main/resources/static/docs'
+    into 'build/resources/main/static/docs'
     doFirst {
         println "Copying OpenAPI spec from build/api-spec/ to static/docs..."
     }
 }
 
+tasks.named('jar') {
+    dependsOn 'copyOpenApiSpec'
+}
+
+tasks.named('bootJar') {
+    dependsOn 'copyOpenApiSpec'
+}
+
+tasks.named('resolveMainClassName') {
+    dependsOn 'copyOpenApiSpec'
+}
+
 tasks.named('build') {
     dependsOn jacocoTestCoverageVerification
-    finalizedBy 'copyOpenApiSpec'
     doLast {
         println "Build completed with coverage verification & API spec generation."
     }
