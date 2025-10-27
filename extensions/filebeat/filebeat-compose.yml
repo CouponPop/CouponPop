@@ -1,0 +1,32 @@
+services:
+  filebeat:
+    build:
+      context: extensions/filebeat/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    # Docker 소켓과 호스트 파일시스템을 읽기 위해 'filebeat' (uid 1000) 대신 'root'로 실행합니다.
+    user: root
+    command:
+      # 로그를 stderr로 출력합니다.
+      - -e
+      # 설정 파일 권한 체크를 비활성화합니다. root 소유가 아닌 경우에도
+      # 'config/filebeat.yml' 마운트를 허용합니다.
+      # 참고: https://www.elastic.co/docs/reference/beats/libbeat/config-file-permissions
+      - --strict.perms=false
+    volumes:
+      - ./extensions/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro,Z
+      - type: bind
+        source: /var/lib/docker/containers
+        target: /var/lib/docker/containers
+        read_only: true
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+    environment:
+      FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
+      BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
