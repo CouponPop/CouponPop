@@ -23,7 +23,7 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
   data:
     elasticsearch:
-      uris: ${ELASTICSEARCH_URI}
+      uris: http://localhost:9200
   flyway:
     enabled: false
 
