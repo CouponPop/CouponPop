@@ -29,6 +29,8 @@ import java.util.List;
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
+    private final static String LOCAL_HOST_DOMAIN = "http://localhost:8080";
+    private final static String LOCAL_HOST_IP = "http://127.0.0.1:8080";
     private final JwtAuthFilter jwtAuthFilter;
     private final JwtProperties jwtProperties;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
@@ -65,7 +67,6 @@ public class SecurityConfig {
                         .requestMatchers(jwtProperties.getSecret().getWhiteList().toArray(new String[0])).permitAll()
                         .anyRequest().authenticated())
 
-//                .addFilterBefore(jwtAuthFilter, SecurityContextHolderAwareRequestFilter.class)
                 .addFilterAfter(jwtAuthFilter, CorsFilter.class)
                 .build();
     }
@@ -73,11 +74,11 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOrigins(List.of(
-                "http://localhost:8080",  // Swagger UI
-                "http://127.0.0.1:8080"
+                LOCAL_HOST_DOMAIN, LOCAL_HOST_IP // Swagger UI
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
