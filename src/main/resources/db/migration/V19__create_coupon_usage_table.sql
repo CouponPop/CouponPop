@@ -13,4 +13,4 @@ CREATE TABLE coupon_usage
     INDEX idx_used_at_member (used_at, member_id)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci COMMENT ='쿠폰 사용 통계 테이블'
+  COLLATE = utf8mb4_unicode_ci COMMENT ='쿠폰 사용 이력 테이블'
