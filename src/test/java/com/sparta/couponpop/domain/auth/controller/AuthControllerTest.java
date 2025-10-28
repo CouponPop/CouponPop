@@ -1,6 +1,7 @@
 package com.sparta.couponpop.domain.auth.controller;
 
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
+import com.epages.restdocs.apispec.Schema;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.couponpop.common.security.JwtAuthFilter;
 import com.sparta.couponpop.common.security.JwtProvider;
@@ -103,9 +104,11 @@ class AuthControllerTest {
                 preprocessResponse(prettyPrint()),
                 resource(
                         ResourceSnippetParameters.builder()
-                                .description("회원가입 API")
-                                .summary("사용자가 회원가입을 수행합니다.")
-                                .tag("auth")
+                                .summary("회원가입 API")
+                                .description("새로운 사용자가 입력한 정보를 이용하여 회원가입을 수행합니다. 회원가입 성공 시 저장된 정보를 반환합니다.")
+                                .tag("Auth")
+                                .requestSchema(Schema.schema("Auth.SignUpRequest"))
+                                .responseSchema(Schema.schema("Auth.SignUpResponse"))
                                 .requestFields(
                                         fieldWithPath("email").description("사용자 이메일 (형식: user@example.com)"),
                                         fieldWithPath("username").description("사용자 이름 (2자 이상 50자 이하)"),
@@ -121,6 +124,7 @@ class AuthControllerTest {
                                         fieldWithPath("data.phoneNumber").description("전화번호"),
                                         fieldWithPath("data.memberType").description("회원 유형 (CUSTOMER/OWNER)")
                                 )
+
                                 .build()
                 )));
     }
@@ -238,13 +242,14 @@ class AuthControllerTest {
 
         // docs
         resultActions.andDo(document("auth-login",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
                 resource(ResourceSnippetParameters.builder()
-                        .tag("auth")
-                        .summary("로그인")
-                        .description("""
-                                사용자가 이메일과 비밀번호를 이용해 로그인합니다.  
-                                로그인 성공 시 JWT AccessToken을 반환합니다.
-                                """)
+                        .summary("로그인 API")
+                        .description("사용자가 이메일/비밀번호를 이용하여 로그인을 수행합니다. 로그인 성공 시 JWT AccessToken을 반환합니다.")
+                        .tag("Auth")
+                        .requestSchema(Schema.schema("Auth.LoginRequest"))
+                        .responseSchema(Schema.schema("Auth.LoginResponse"))
                         .requestFields(
                                 fieldWithPath("email").description("사용자 이메일 (형식: test@example.com)"),
                                 fieldWithPath("password").description("비밀번호 (8~15자의 영문, 숫자, 특수문자 조합)")
@@ -255,7 +260,6 @@ class AuthControllerTest {
                         .build()
                 )
         ));
-
     }
 
     @Test
@@ -303,6 +307,22 @@ class AuthControllerTest {
         resultActions
                 .andExpect(status().isNoContent())
                 .andDo(print());
+
+        // docs
+        resultActions.andDo(document("auth-logout",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                resource(ResourceSnippetParameters.builder()
+                        .summary("로그아웃 API")
+                        .description("사용자가 로그아웃을 수행합니다. 내부적으로 JWT Token과 FcmToken을 만료처리합니다.")
+                        .tag("Auth")
+                        .requestSchema(Schema.schema("Auth.LogoutRequest"))
+                        .requestFields(
+                                fieldWithPath("fcmToken").description("사용자의 FcmToken")
+                        )
+                        .build()
+                )
+        ));
     }
 
     @Test
@@ -328,5 +348,21 @@ class AuthControllerTest {
         resultActions
                 .andExpect(status().isNoContent())
                 .andDo(print());
+
+        // docs
+        resultActions.andDo(document("auth-withdraw",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                resource(ResourceSnippetParameters.builder()
+                        .summary("회원 탈퇴 API")
+                        .description("사용자가 회원 탈퇴를 수행합니다. 사용자의 정보를 Soft Delete하고, JWT Token과 FcmToken을 만료처리합니다.")
+                        .tag("Auth")
+                        .requestSchema(Schema.schema("Auth.WithdrawRequest"))
+                        .requestFields(
+                                fieldWithPath("fcmToken").description("사용자의 FcmToken")
+                        )
+                        .build()
+                )
+        ));
     }
 }
