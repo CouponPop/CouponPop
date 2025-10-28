@@ -98,6 +98,11 @@ dependencies {
 
     // [Jackson]
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    // [Elasticsearch Low, High]
+    implementation 'co.elastic.clients:elasticsearch-java'
+    implementation 'org.elasticsearch.client:elasticsearch-rest-client'
 
     // [Restdocs]
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
