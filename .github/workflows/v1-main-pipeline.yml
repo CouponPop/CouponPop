@@ -3,7 +3,6 @@ name: CouponPop Main CI/CD
 on:
   push:
     branches:
-      - chore/api-docs-with-test
       - dev
       - main
     paths-ignore:
@@ -37,7 +36,7 @@ jobs:
       pull-requests: write
     with:
       # 현재 브랜치 이름('dev' 또는 'main')을 전달
-      branch_name: main
+      branch_name: ${{ github.ref_name }}
     secrets: inherit
 
   # =================================================================
@@ -45,8 +44,7 @@ jobs:
   # =================================================================
   call-cd:
     name: CD - Deploy to Production
-    #if: github.ref_name == 'main' && github.event_name == 'push' && needs.call-ci.result == 'success'
-    if: github.event_name == 'push' && needs.call-ci.result == 'success'
+    if: github.ref_name == 'main' && github.event_name == 'push' && needs.call-ci.result == 'success'
     needs: call-ci
     uses: ./.github/workflows/v1-cd-blue-green.yml
     permissions:
