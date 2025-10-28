@@ -5,6 +5,8 @@ import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
@@ -38,8 +40,11 @@ public class ElasticsearchConfig {
      */
     @Bean
     public ElasticsearchClient elasticsearchClient(RestClient restClient) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
+        ObjectMapper objectMapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule()) // Java 8 날짜 및 시간 API 지원
+                .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE) // 변수명은 카멜케이스, 매핑되는 JSON은 스네이크케이스
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // 타임스탬프 비활성화
+                .disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS); // 타임스탬프 나노초 단위 비활성화
 
         ElasticsearchTransport transport = new RestClientTransport(
                 restClient,
