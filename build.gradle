@@ -52,6 +52,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
 
     // [DB]
     runtimeOnly 'com.mysql:mysql-connector-j'
@@ -98,9 +99,8 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-    // [Elasticsearch Low, High]
-    implementation 'co.elastic.clients:elasticsearch-java'
-    implementation 'org.elasticsearch.client:elasticsearch-rest-client'
+    // [Elasticsearch]
+    implementation 'co.elastic.clients:elasticsearch-java' // For Java Client
 }
 
 def jacocoExcludes = [
