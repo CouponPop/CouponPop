@@ -819,4 +819,134 @@ class StoreServiceTest {
 
         then(storeSearchService).should(times(1)).searchStoresByName(keyword);
     }
+
+    @Test
+    @DisplayName("소유자의 매장 목록 조회 성공")
+    void getStoresByOwner_Success() {
+
+        // given
+        Long memberId = 1L;
+        Member member = createMember(memberId);
+        List<Store> stores = Arrays.asList(
+                createStore(member),
+                createFoodStore(member)
+        );
+
+        given(storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId))
+                .willReturn(stores);
+
+        // when
+        List<StoreResponse> result = storeService.getStoresByOwner(memberId);
+
+        // then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).name()).isEqualTo("스타벅스 홍대점");
+        assertThat(result.get(1).name()).isEqualTo("맛있는 식당");
+
+        then(storeRepository).should(times(1)).findByMemberIdOrderByCreatedAtDesc(memberId);
+    }
+
+    @Test
+    @DisplayName("소유자의 매장 목록 조회 - 매장이 없는 경우")
+    void getStoresByOwner_NoStores_ReturnsEmptyList() {
+
+        // given
+        Long memberId = 1L;
+
+        given(storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId))
+                .willReturn(Arrays.asList());
+
+        // when
+        List<StoreResponse> result = storeService.getStoresByOwner(memberId);
+
+        // then
+        assertThat(result).isEmpty();
+
+        then(storeRepository).should(times(1)).findByMemberIdOrderByCreatedAtDesc(memberId);
+    }
+
+    @Test
+    @DisplayName("소유자의 매장 상세 조회 성공")
+    void getStoreDetail_Success() {
+
+        // given
+        Long storeId = 1L;
+        Long memberId = 1L;
+        Member member = createMember(memberId);
+        Store store = createStore(member);
+
+        given(storeRepository.findByIdWithMember(storeId))
+                .willReturn(Optional.of(store));
+
+        // when
+        var result = storeService.getStoreDetail(storeId, memberId);
+
+        // then
+        assertThat(result.name()).isEqualTo(store.getName());
+        assertThat(result.description()).isEqualTo(store.getDescription());
+        assertThat(result.storeCategory()).isEqualTo(store.getStoreCategory());
+
+        then(storeRepository).should(times(1)).findByIdWithMember(storeId);
+    }
+
+    @Test
+    @DisplayName("소유자의 매장 상세 조회 - 존재하지 않는 매장")
+    void getStoreDetail_NotFound_ThrowsException() {
+
+        // given
+        Long storeId = 999L;
+        Long memberId = 1L;
+
+        given(storeRepository.findByIdWithMember(storeId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> storeService.getStoreDetail(storeId, memberId))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장을 찾을 수 없습니다.");
+
+        then(storeRepository).should(times(1)).findByIdWithMember(storeId);
+    }
+
+    @Test
+    @DisplayName("소유자의 매장 상세 조회 - 다른 소유자의 매장 접근")
+    void getStoreDetail_DifferentOwner_ThrowsException() {
+
+        // given
+        Long storeId = 1L;
+        Long memberId = 1L;
+        Long otherMemberId = 2L;
+        Member otherMember = createMember(otherMemberId);
+        Store store = createStore(otherMember);
+
+        given(storeRepository.findByIdWithMember(storeId))
+                .willReturn(Optional.of(store));
+
+        // when & then
+        assertThatThrownBy(() -> storeService.getStoreDetail(storeId, memberId))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장 접근 권한이 없습니다.");
+
+        then(storeRepository).should(times(1)).findByIdWithMember(storeId);
+    }
+
+    @Test
+    @DisplayName("매장 등록 시 존재하지 않는 회원이면 예외 발생")
+    void createStore_WithNonExistentMember_ThrowsException() {
+
+        // given
+        Long memberId = 999L;
+        CreateStoreRequest request = createStoreRequest();
+
+        given(memberRepository.findById(memberId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> storeService.createStore(memberId, request))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("존재하지 않는 회원입니다.");
+
+        then(memberRepository).should(times(1)).findById(memberId);
+        then(storeRepository).should(times(0)).save(any(Store.class));
+    }
 }
