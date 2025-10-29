@@ -7,6 +7,7 @@ import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreDetailResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
+import com.sparta.couponpop.domain.store.service.StoreIndexInitService;
 import com.sparta.couponpop.domain.store.service.StoreService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.List;
 public class StoreController {
 
     private final StoreService storeService;
+    private final StoreIndexInitService storeIndexInitService;
 
     @GetMapping("/owner/stores")
     public ResponseEntity<ApiResponse<List<StoreResponse>>> getStores(@CurrentMember AuthMember authMember) {
@@ -87,5 +89,15 @@ public class StoreController {
         List<StoreResponse> stores = storeService.searchStoresByName(keyword);
 
         return ApiResponse.success(stores);
+    }
+
+    /**
+     * Elasticsearch 재색인 (관리자 전용 - 실제로는 권한 체크 필요)
+     * 개발/배포 시 기존 데이터를 ES에 동기화할 때 사용
+     */
+    @PostMapping("/admin/stores/reindex")
+    public ResponseEntity<ApiResponse<String>> reindexStores() {
+        storeIndexInitService.fullReindex();
+        return ApiResponse.success("Store reindexing completed successfully");
     }
 }
