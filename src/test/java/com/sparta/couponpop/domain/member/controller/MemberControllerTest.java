@@ -13,6 +13,7 @@ import com.sparta.couponpop.domain.member.dto.request.MemberProfileUpdateRequest
 import com.sparta.couponpop.domain.member.dto.response.MemberProfileResponse;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.service.MemberService;
+import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -61,6 +62,9 @@ class MemberControllerTest {
 
     @MockitoBean
     private JwtAuthFilter jwtAuthFilter;
+
+    @MockitoBean
+    private StoreSearchRepository storeSearchRepository;
 
     @BeforeEach
     void setUp() {

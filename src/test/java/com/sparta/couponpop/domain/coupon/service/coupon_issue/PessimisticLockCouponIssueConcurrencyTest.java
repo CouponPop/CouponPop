@@ -9,6 +9,7 @@ import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
+import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import com.sparta.couponpop.utils.TestUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
@@ -48,6 +50,9 @@ class PessimisticLockCouponIssueConcurrencyTest {
     private CouponRepository couponRepository;
     @Autowired
     private PessimisticLockCouponIssueService couponIssueFacade;
+
+    @MockitoBean
+    private StoreSearchRepository storeSearchRepository;
 
     private Member member;
     private Store store;
