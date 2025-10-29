@@ -22,6 +22,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -34,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class CouponIssueConcurrencyTest {
+class PessimisticLockCouponIssueConcurrencyTest {
 
     @Autowired
     private MemberRepository memberRepository;
@@ -45,27 +47,32 @@ class CouponIssueConcurrencyTest {
     @Autowired
     private CouponRepository couponRepository;
     @Autowired
-    private DefaultCouponIssueService defaultCouponIssueService;
+    private PessimisticLockCouponIssueService couponIssueFacade;
 
     private Member member;
     private Store store;
     private CouponEvent couponEvent;
 
-    private static final int THREAD_COUNT = 100;
+    private static final int THREAD_COUNT = 1000;
 
     private static final LocalDateTime issuedTime = LocalDateTime.of(2025, 10, 25, 12, 0);
     private static final LocalDateTime eventStartAt = issuedTime.minusHours(1);
     private static final LocalDateTime eventEndAt = issuedTime.plusDays(1);
 
+    private List<Member> members = new ArrayList<>();
+
     @BeforeEach
     void setUp() {
-        member = TestUtils.createEntity(Member.class, Map.of(
-                "username", "기존이름",
-                "email", "test2@example.com",
-                "password", "기존비밀번호",
-                "phoneNumber", "01099999999",
-                "memberType", MemberType.CUSTOMER));
-        memberRepository.save(member);
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            member = TestUtils.createEntity(Member.class, Map.of(
+                    "username", "기존이름",
+                    "email", "test" + (i + 1) + "@example.com",
+                    "password", "기존비밀번호",
+                    "phoneNumber", "01099999999",
+                    "memberType", MemberType.CUSTOMER));
+            members.add(memberRepository.save(member));
+        }
+
         store = TestUtils.createEntity(Store.class, Map.ofEntries(
                 Map.entry("storeCategory", StoreCategory.FOOD),
                 Map.entry("name", "storeTest"),
@@ -88,7 +95,7 @@ class CouponIssueConcurrencyTest {
                 "name", "이벤트 제목",
                 "eventStartAt", eventStartAt,
                 "eventEndAt", eventEndAt,
-                "totalCount", 100,
+                "totalCount", THREAD_COUNT,
                 "store", store
         ));
         couponEventRepository.save(couponEvent);
@@ -102,8 +109,9 @@ class CouponIssueConcurrencyTest {
         memberRepository.deleteAllInBatch();
     }
 
+
     @Test
-    void 동시에_100개_요청_실패() throws InterruptedException {
+    void 동시에_1000개_요청() throws InterruptedException {
         // given
         final Long eventId = couponEvent.getId();
 
@@ -111,10 +119,13 @@ class CouponIssueConcurrencyTest {
         CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
 
         for (int i = 0; i < THREAD_COUNT; i++) {
-            final long currentMemberId = i + 1;
+            final long currentMemberId = members.get(i).getId();
             executorService.submit(() -> {
                 try {
-                    defaultCouponIssueService.issueCoupon(currentMemberId, eventId, issuedTime);
+                    couponIssueFacade.issueCoupon(currentMemberId, eventId, issuedTime);
+                } catch (Exception e) {
+                    log.error("에러", e);
+                    throw e;
                 } finally {
                     latch.countDown();
                 }
@@ -126,6 +137,7 @@ class CouponIssueConcurrencyTest {
         CouponEvent event = couponEventRepository.findById(eventId).orElseThrow();
 
         // then
-        assertThat(event.getIssuedCount()).isNotEqualTo(100);
+        assertThat(event.getIssuedCount()).isEqualTo(1000);
     }
+
 }
