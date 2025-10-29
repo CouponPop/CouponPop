@@ -13,6 +13,7 @@ import com.sparta.couponpop.domain.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +42,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     @PreAuthorize("isAuthenticated()") // auth는 모두 접근가능하므로, 로그아웃은 인증된 사용자만 접근 가능
-    public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authorizationHeader,
+    public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
                                                     @CurrentMember AuthMember authMember,
                                                     @Valid @RequestBody LogoutRequest logoutRequest) {
 
@@ -51,7 +52,7 @@ public class AuthController {
 
     @DeleteMapping("/withdraw")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<Void>> withdraw(@RequestHeader("Authorization") String authorizationHeader,
+    public ResponseEntity<ApiResponse<Void>> withdraw(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
                                                       @CurrentMember AuthMember authMember,
                                                       @Valid @RequestBody WithdrawRequest withdrawRequest) {
 

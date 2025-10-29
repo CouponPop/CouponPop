@@ -10,6 +10,7 @@ import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
 import com.sparta.couponpop.utils.TestUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Slf4j
 @ActiveProfiles("test-concurrency")
 @SpringBootTest
 @Testcontainers
@@ -49,6 +51,8 @@ class CouponIssueConcurrencyTest {
     private Store store;
     private CouponEvent couponEvent;
 
+    private static final int THREAD_COUNT = 100;
+
     private static final LocalDateTime issuedTime = LocalDateTime.of(2025, 10, 25, 12, 0);
     private static final LocalDateTime eventStartAt = issuedTime.minusHours(1);
     private static final LocalDateTime eventEndAt = issuedTime.plusDays(1);
@@ -57,7 +61,7 @@ class CouponIssueConcurrencyTest {
     void setUp() {
         member = TestUtils.createEntity(Member.class, Map.of(
                 "username", "기존이름",
-                "email", "no-lock@test.com",
+                "email", "test2@example.com",
                 "password", "기존비밀번호",
                 "phoneNumber", "01099999999",
                 "memberType", MemberType.CUSTOMER));
@@ -97,8 +101,6 @@ class CouponIssueConcurrencyTest {
         storeRepository.deleteAllInBatch();
         memberRepository.deleteAllInBatch();
     }
-
-    private static final int THREAD_COUNT = 100;
 
     @Test
     void 동시에_100개_요청_실패() throws InterruptedException {
