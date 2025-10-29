@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.coupon.service;
+package com.sparta.couponpop.domain.coupon.service.coupon_issue;
 
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.entity.Coupon;
@@ -12,6 +12,7 @@ import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -49,13 +50,11 @@ public class CouponIssueService {
     }
 
     private void saveCouponIssue(Long memberId, LocalDateTime currentDateTime, CouponEvent event) {
-        // 쿠폰 발급 처리 (issued_count 증가)
         event.issueCoupon();
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        // 쿠폰 생성 및 저장
         Coupon issuedCoupon = Coupon.createIssuedCoupon(member, event, currentDateTime);
         couponRepository.save(issuedCoupon);
     }

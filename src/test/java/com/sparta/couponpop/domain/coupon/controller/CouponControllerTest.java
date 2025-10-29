@@ -14,7 +14,8 @@ import com.sparta.couponpop.domain.coupon.dto.response.IssuedCouponListResponse;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
 import com.sparta.couponpop.domain.coupon.repository.dto.CouponSummaryInfoProjection;
-import com.sparta.couponpop.domain.coupon.service.CouponIssueService;
+import com.sparta.couponpop.domain.coupon.service.coupon_issue.CouponIssueFacade;
+import com.sparta.couponpop.domain.coupon.service.coupon_issue.CouponIssueService;
 import com.sparta.couponpop.domain.coupon.service.CouponService;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.member.enums.MemberType;
@@ -67,9 +68,7 @@ class CouponControllerTest {
     private CouponService couponService;
 
     @MockitoBean
-    private CouponIssueService CouponIssueService;
-    @Autowired
-    private CouponIssueService couponIssueService;
+    private CouponIssueFacade couponIssueFacade;
 
     @BeforeEach
     void setUp() {
@@ -99,7 +98,7 @@ class CouponControllerTest {
                     .andExpect(status().isNoContent());
 
             // then
-            verify(CouponIssueService, times(1))
+            verify(couponIssueFacade, times(1))
                     .issueCoupon(anyLong(), anyLong(), any(LocalDateTime.class));
         }
 
@@ -110,7 +109,7 @@ class CouponControllerTest {
             CouponIssueRequest request = new CouponIssueRequest(999L);
 
             willThrow(new GlobalException(CouponEventErrorCode.EVENT_NOT_FOUND))
-                    .given(couponIssueService)
+                    .given(couponIssueFacade)
                     .issueCoupon(anyLong(), anyLong(), any(LocalDateTime.class));
 
             // when & then
@@ -131,7 +130,7 @@ class CouponControllerTest {
             CouponIssueRequest request = new CouponIssueRequest(10L);
 
             willThrow(new GlobalException(CouponErrorCode.COUPON_ALREADY_ISSUED))
-                    .given(couponIssueService)
+                    .given(couponIssueFacade)
                     .issueCoupon(anyLong(), anyLong(), any(LocalDateTime.class));
 
             // when & then
@@ -152,7 +151,7 @@ class CouponControllerTest {
             CouponIssueRequest request = new CouponIssueRequest(10L);
 
             willThrow(new GlobalException(CouponEventErrorCode.EVENT_NOT_IN_PROGRESS_TIME))
-                    .given(couponIssueService)
+                    .given(couponIssueFacade)
                     .issueCoupon(anyLong(), anyLong(), any(LocalDateTime.class));
 
             // when & then
@@ -173,7 +172,7 @@ class CouponControllerTest {
             CouponIssueRequest request = new CouponIssueRequest(10L);
 
             willThrow(new GlobalException(CouponEventErrorCode.EVENT_COUPON_SOLD_OUT))
-                    .given(couponIssueService)
+                    .given(couponIssueFacade)
                     .issueCoupon(anyLong(), anyLong(), any(LocalDateTime.class));
 
             // when & then

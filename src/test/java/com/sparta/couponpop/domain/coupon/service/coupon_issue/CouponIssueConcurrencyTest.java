@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.coupon.service;
+package com.sparta.couponpop.domain.coupon.service.coupon_issue;
 
 import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
@@ -11,11 +11,9 @@ import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
 import com.sparta.couponpop.utils.TestUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -53,6 +51,8 @@ class CouponIssueConcurrencyTest {
     private Store store;
     private CouponEvent couponEvent;
 
+    private static final int THREAD_COUNT = 100;
+
     private static final LocalDateTime issuedTime = LocalDateTime.of(2025, 10, 25, 12, 0);
     private static final LocalDateTime eventStartAt = issuedTime.minusHours(1);
     private static final LocalDateTime eventEndAt = issuedTime.plusDays(1);
@@ -77,10 +77,10 @@ class CouponIssueConcurrencyTest {
                 Map.entry("latitude", 32.1235),
                 Map.entry("longitude", 45.1634),
                 Map.entry("imageUrl", "test"),
-                Map.entry("weekdayOpenTime", LocalTime.of(9,0)),
-                Map.entry("weekdayCloseTime", LocalTime.of(21,0)),
-                Map.entry("weekendOpenTime", LocalTime.of(9,0)),
-                Map.entry("weekendCloseTime", LocalTime.of(21,0)),
+                Map.entry("weekdayOpenTime", LocalTime.of(9, 0)),
+                Map.entry("weekdayCloseTime", LocalTime.of(21, 0)),
+                Map.entry("weekendOpenTime", LocalTime.of(9, 0)),
+                Map.entry("weekendCloseTime", LocalTime.of(21, 0)),
                 Map.entry("member", member)
         ));
         storeRepository.save(store);
@@ -107,11 +107,10 @@ class CouponIssueConcurrencyTest {
         // given
         final Long eventId = couponEvent.getId();
 
-        final int threadCount = 100;
         ExecutorService executorService = Executors.newFixedThreadPool(32);
-        CountDownLatch latch = new CountDownLatch(threadCount);
+        CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
 
-        for (int i = 0; i < threadCount; i++) {
+        for (int i = 0; i < THREAD_COUNT; i++) {
             final long currentMemberId = i + 1;
             executorService.submit(() -> {
                 try {
