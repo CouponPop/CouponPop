@@ -10,14 +10,17 @@ import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
 import com.sparta.couponpop.utils.TestUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -28,8 +31,11 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ActiveProfiles("test-local")
+@Slf4j
+@ActiveProfiles("test-concurrency")
 @SpringBootTest
+@Testcontainers
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class CouponIssueConcurrencyTest {
 
     @Autowired
