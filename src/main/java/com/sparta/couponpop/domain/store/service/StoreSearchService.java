@@ -139,7 +139,7 @@ public class StoreSearchService {
         StoreDocument document = hit.getContent();
         
         // Elasticsearch의 sort 값에서 거리 추출 (km)
-        double distance = 0.0;
+        Double distance = null;
         if (!hit.getSortValues().isEmpty()) {
             Object sortValue = hit.getSortValues().get(0);
             if (sortValue instanceof Number) {
@@ -148,7 +148,7 @@ public class StoreSearchService {
         }
         
         // sort 값이 없으면 Haversine 공식으로 직접 계산
-        if (distance == 0.0) {
+        if (distance == null) {
             distance = calculateDistance(userLat, userLon, 
                     document.getLocation().getLat(), 
                     document.getLocation().getLon());
