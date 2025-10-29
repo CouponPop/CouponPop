@@ -1,17 +1,21 @@
 package com.sparta.couponpop.domain.auth.repository;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.sparta.couponpop.domain.auth.constants.AuthTemplates.FORMATTER_YYYY_MM_DD_HH_MM_SS;
+
+
 @Slf4j
 @Repository
+@Profile("test") // 테스트 환경에서만 사용
 public class InMemoryTokenBlacklistRepository implements TokenBlacklistRepository {
 
     private final Map<String, Long> blacklist = new ConcurrentHashMap<>();
@@ -21,10 +25,8 @@ public class InMemoryTokenBlacklistRepository implements TokenBlacklistRepositor
 
         blacklist.put(token, expirationMillis);
 
-        Instant instant = Instant.ofEpochMilli(expirationMillis);
-        LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.of("Asia/Seoul"));
-        String formatted = dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        log.info("[Blacklist Repository] Blacklist 추가 | token: {}, 만료 시각: {}", token, formatted);
+        LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(expirationMillis), ZoneId.of("Asia/Seoul"));
+        log.info("[Blacklist Repository] Blacklist 추가 | token: {}, 만료 시각: {}", token, dateTime.format(FORMATTER_YYYY_MM_DD_HH_MM_SS));
     }
 
     @Override
@@ -44,13 +46,11 @@ public class InMemoryTokenBlacklistRepository implements TokenBlacklistRepositor
         return true;
     }
 
-    @Override
     public void deleteAllExpired(long now) {
 
         blacklist.entrySet().removeIf(entry -> entry.getValue() < now);
     }
 
-    @Override
     public int count() {
 
         return blacklist.size();

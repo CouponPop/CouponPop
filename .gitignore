@@ -42,3 +42,5 @@ conf/*.conf
 
 ### firebase ###
 **/firebase/serviceAccountKey.json
+
+/scripts/jmeter

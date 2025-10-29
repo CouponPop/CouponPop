@@ -59,7 +59,7 @@ public class CouponService {
         }
 
         // 발급 처리
-        event.issue();
+        event.issueCoupon();
 
         // TODO : 쿠폰 생성 시 만료 시간 누락
         Member member = memberRepository.findById(memberId)
