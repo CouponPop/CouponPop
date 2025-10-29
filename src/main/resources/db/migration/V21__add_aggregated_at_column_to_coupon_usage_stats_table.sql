@@ -4,7 +4,7 @@ ALTER TABLE coupon_usage_stats
 
 -- 기존 데이터에 대해 aggregated_at 컬럼을 생성일 -1일로 채우기
 UPDATE coupon_usage_stats
-SET aggregated_at = DATE_SUB(created_at, INTERVAL 1 DAY)
+SET aggregated_at = DATE(created_at) - INTERVAL 1 DAY
 WHERE aggregated_at IS NULL;
 
 -- 컬럼을 NOT NULL로 변경
