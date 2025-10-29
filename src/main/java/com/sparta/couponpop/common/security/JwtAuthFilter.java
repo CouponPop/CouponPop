@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -31,8 +32,6 @@ import java.io.IOException;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-
     private final JwtProvider jwtProvider;
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final TokenBlacklistService tokenBlacklistService;
@@ -42,7 +41,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain) throws ServletException, IOException {
 
-        String bearerToken = jwtProvider.resolveToken(request.getHeader(AUTHORIZATION_HEADER));
+        String bearerToken = jwtProvider.resolveToken(request.getHeader(HttpHeaders.AUTHORIZATION));
 
         try {
 
