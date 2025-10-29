@@ -5,8 +5,4 @@ public interface TokenBlacklistRepository {
     void save(String token, long expirationMillis);
 
     boolean exists(String token);
-
-    void deleteAllExpired(long currentTimeMillis);
-
-    int count();
 }
