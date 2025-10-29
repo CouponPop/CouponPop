@@ -10,6 +10,8 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.flywaydb.flyway' version '11.14.0'
     id 'jacoco'
+    id 'com.epages.restdocs-api-spec' version '0.19.4'
+    id 'org.asciidoctor.jvm.convert' version '4.0.5'
 }
 
 flyway {
@@ -101,6 +103,20 @@ dependencies {
     // [Elasticsearch Low, High]
     implementation 'co.elastic.clients:elasticsearch-java'
     implementation 'org.elasticsearch.client:elasticsearch-rest-client'
+
+    // [Restdocs]
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
+    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+    testImplementation 'com.epages:restdocs-api-spec-mockmvc:0.19.4'
+}
+
+openapi3 {
+    server = '/'
+    title = 'CouponPop API'
+    description = 'CouponPop 서비스의 REST API 명세서'
+    outputDirectory = file('build/api-spec')
+    version = "0.0.1-SNAPSHOT"
+    format = 'json'
 }
 
 def jacocoExcludes = [
@@ -124,6 +140,9 @@ def jacocoExcludes = [
 
         // --- Flyway 관련 ---
         '**/db/migration/**',
+
+        // --- Swagger 관련 ---
+        '**/static/docs/**',
 ]
 tasks.named('test') {
     useJUnitPlatform()
@@ -150,6 +169,28 @@ afterEvaluate {
     }
     tasks.named('jacocoTestReport', JacocoReport).configure(configureExclusions)
     tasks.named('jacocoTestCoverageVerification', JacocoCoverageVerification).configure(configureExclusions)
+
+    tasks.findByName('openapi3')?.doLast {
+        def file = file('build/api-spec/openapi3.json')
+        if (!file.exists()) {
+            println "⚠openapi3.json not found."
+            return
+        }
+
+        def json = new groovy.json.JsonSlurper().parse(file)
+        if (!json.components) json.components = [:]
+        if (!json.components.securitySchemes) json.components.securitySchemes = [:]
+
+        json.components.securitySchemes["Bearer Authentication"] = [
+                type        : "http",
+                scheme      : "bearer",
+                bearerFormat: "JWT"
+        ]
+        json.security = [["Bearer Authentication": []]]
+
+        file.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json))
+        println "JWT SecurityScheme into openapi3.json 주입 완료"
+    }
 }
 
 tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification) {
@@ -166,8 +207,32 @@ tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification) {
     }
 }
 
+tasks.register('copyOpenApiSpec', Copy) {
+    dependsOn 'openapi3'
+    from 'build/api-spec/openapi3.json'
+    into 'build/resources/main/static/docs'
+    doFirst {
+        println "Copying OpenAPI spec from build/api-spec/ to static/docs..."
+    }
+}
+
+tasks.named('jar') {
+    dependsOn 'copyOpenApiSpec'
+}
+
+tasks.named('bootJar') {
+    dependsOn 'copyOpenApiSpec'
+}
+
+tasks.named('resolveMainClassName') {
+    dependsOn 'copyOpenApiSpec'
+}
+
 tasks.named('build') {
-    dependsOn jacocoTestCoverageVerification
+    dependsOn 'jacocoTestCoverageVerification', 'openapi3'
+    doLast {
+        println "Build completed with coverage verification & API spec generation."
+    }
 }
 
 clean {

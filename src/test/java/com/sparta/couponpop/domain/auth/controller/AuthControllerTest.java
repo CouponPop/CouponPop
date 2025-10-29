@@ -1,5 +1,7 @@
 package com.sparta.couponpop.domain.auth.controller;
 
+import com.epages.restdocs.apispec.ResourceSnippetParameters;
+import com.epages.restdocs.apispec.Schema;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.couponpop.common.security.JwtAuthFilter;
 import com.sparta.couponpop.common.security.JwtProvider;
@@ -16,6 +18,7 @@ import com.sparta.couponpop.domain.member.enums.MemberType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -24,16 +27,21 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@AutoConfigureRestDocs
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
@@ -89,6 +97,36 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.data.email").value("test@example.com"))
                 .andExpect(jsonPath("$.data.username").value("테스트이름"))
                 .andDo(print());
+
+        // docs
+        resultActions.andDo(document("auth-signUp",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                resource(
+                        ResourceSnippetParameters.builder()
+                                .summary("회원가입 API")
+                                .description("새로운 사용자가 입력한 정보를 이용하여 회원가입을 수행합니다. 회원가입 성공 시 저장된 정보를 반환합니다.")
+                                .tag("Auth")
+                                .requestSchema(Schema.schema("Auth.SignUpRequest"))
+                                .responseSchema(Schema.schema("Auth.SignUpResponse"))
+                                .requestFields(
+                                        fieldWithPath("email").description("사용자 이메일 (형식: user@example.com)"),
+                                        fieldWithPath("username").description("사용자 이름 (2자 이상 50자 이하)"),
+                                        fieldWithPath("password").description("비밀번호 (8~15자, 영문+숫자+특수문자 조합)"),
+                                        fieldWithPath("confirmPassword").description("비밀번호 확인"),
+                                        fieldWithPath("phoneNumber").description("전화번호 (예: 01012345678)"),
+                                        fieldWithPath("memberType").description("회원 유형 (CUSTOMER 또는 OWNER)")
+                                )
+                                .responseFields(
+                                        fieldWithPath("data.memberId").description("생성된 회원 고유 식별자"),
+                                        fieldWithPath("data.email").description("가입된 이메일"),
+                                        fieldWithPath("data.username").description("사용자 이름"),
+                                        fieldWithPath("data.phoneNumber").description("전화번호"),
+                                        fieldWithPath("data.memberType").description("회원 유형 (CUSTOMER/OWNER)")
+                                )
+
+                                .build()
+                )));
     }
 
     @Test
@@ -201,6 +239,27 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").value(accessToken))
                 .andDo(print());
+
+        // docs
+        resultActions.andDo(document("auth-login",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                resource(ResourceSnippetParameters.builder()
+                        .summary("로그인 API")
+                        .description("사용자가 이메일/비밀번호를 이용하여 로그인을 수행합니다. 로그인 성공 시 JWT AccessToken을 반환합니다.")
+                        .tag("Auth")
+                        .requestSchema(Schema.schema("Auth.LoginRequest"))
+                        .responseSchema(Schema.schema("Auth.LoginResponse"))
+                        .requestFields(
+                                fieldWithPath("email").description("사용자 이메일 (형식: test@example.com)"),
+                                fieldWithPath("password").description("비밀번호 (8~15자의 영문, 숫자, 특수문자 조합)")
+                        )
+                        .responseFields(
+                                fieldWithPath("data.accessToken").description("JWT Access Token")
+                        )
+                        .build()
+                )
+        ));
     }
 
     @Test
@@ -248,6 +307,22 @@ class AuthControllerTest {
         resultActions
                 .andExpect(status().isNoContent())
                 .andDo(print());
+
+        // docs
+        resultActions.andDo(document("auth-logout",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                resource(ResourceSnippetParameters.builder()
+                        .summary("로그아웃 API")
+                        .description("사용자가 로그아웃을 수행합니다. 내부적으로 JWT Token과 FcmToken을 만료처리합니다.")
+                        .tag("Auth")
+                        .requestSchema(Schema.schema("Auth.LogoutRequest"))
+                        .requestFields(
+                                fieldWithPath("fcmToken").description("사용자의 FcmToken")
+                        )
+                        .build()
+                )
+        ));
     }
 
     @Test
@@ -273,5 +348,21 @@ class AuthControllerTest {
         resultActions
                 .andExpect(status().isNoContent())
                 .andDo(print());
+
+        // docs
+        resultActions.andDo(document("auth-withdraw",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                resource(ResourceSnippetParameters.builder()
+                        .summary("회원 탈퇴 API")
+                        .description("사용자가 회원 탈퇴를 수행합니다. 사용자의 정보를 Soft Delete하고, JWT Token과 FcmToken을 만료처리합니다.")
+                        .tag("Auth")
+                        .requestSchema(Schema.schema("Auth.WithdrawRequest"))
+                        .requestFields(
+                                fieldWithPath("fcmToken").description("사용자의 FcmToken")
+                        )
+                        .build()
+                )
+        ));
     }
 }

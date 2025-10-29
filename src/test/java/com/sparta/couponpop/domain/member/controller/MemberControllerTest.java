@@ -1,5 +1,7 @@
 package com.sparta.couponpop.domain.member.controller;
 
+import com.epages.restdocs.apispec.ResourceSnippetParameters;
+import com.epages.restdocs.apispec.Schema;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.security.JwtAuthFilter;
@@ -16,9 +18,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,14 +30,19 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@AutoConfigureRestDocs
 @WebMvcTest(MemberController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class MemberControllerTest {
@@ -75,6 +84,7 @@ class MemberControllerTest {
                 "01012345678",
                 MemberType.CUSTOMER
         );
+        String mockJwtToken = "Bearer mockedJwtToken";
 
         given(memberService.getMemberProfile(mockMemberId)).willReturn(mockResponse);
 
@@ -88,6 +98,32 @@ class MemberControllerTest {
                 .andExpect(jsonPath("$.data.email").value("test@example.com"))
                 .andExpect(jsonPath("$.data.memberType").value("CUSTOMER"))
                 .andDo(print());
+
+        // docs
+        resultActions.andDo(document("member-getMyProfile",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                resource(
+                        ResourceSnippetParameters.builder()
+                                .summary("내 프로필 조회 API")
+                                .description("사용자가 자신의 프로필 조회를 수행합니다. 프로필 정보를 반환받습니다.")
+                                .tag("Member")
+                                .responseSchema(Schema.schema("Auth.MemberProfileResponse"))
+                                .responseFields(
+                                        fieldWithPath("data.id").type(JsonFieldType.NUMBER)
+                                                .description("회원 고유 ID"),
+                                        fieldWithPath("data.username").type(JsonFieldType.STRING)
+                                                .description("사용자 이름"),
+                                        fieldWithPath("data.email").type(JsonFieldType.STRING)
+                                                .description("사용자 이메일"),
+                                        fieldWithPath("data.phoneNumber").type(JsonFieldType.STRING)
+                                                .description("전화번호"),
+                                        fieldWithPath("data.memberType").type(JsonFieldType.STRING)
+                                                .description("회원 유형 (CUSTOMER / OWNER)")
+                                )
+                                .build()
+                )
+        ));
     }
 
     @Test
@@ -109,13 +145,50 @@ class MemberControllerTest {
         Authentication authentication = new JwtAuthenticationToken(authMember);
 
         // when & then
-        mockMvc.perform(put("/api/v1/members/me")
+        ResultActions resultActions = mockMvc.perform(put("/api/v1/members/me")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.username").value("테스트이름"))
                 .andExpect(jsonPath("$.data.phoneNumber").value("01012345678"))
                 .andDo(print());
+
+        // docs
+        resultActions.andDo(document("member-updateProfile",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                resource(
+                        ResourceSnippetParameters.builder()
+                                .summary("내 프로필 수정 API")
+                                .description("사용자가 자신의 프로필 수정을 수행합니다. 수정된 프로필 정보를 반환받습니다.")
+                                .tag("Member")
+                                .requestSchema(Schema.schema("Auth.MemberProfileUpdateRequest"))
+                                .responseSchema(Schema.schema("Auth.MemberProfileResponse"))
+                                .requestFields(
+                                        fieldWithPath("username").optional()
+                                                .description("사용자 이름 (2~50자, 한글/영문/숫자 가능)"),
+                                        fieldWithPath("password").optional()
+                                                .description("새 비밀번호 (8~15자, 영문+숫자+특수문자 조합)"),
+                                        fieldWithPath("passwordConfirm").optional()
+                                                .description("비밀번호 확인"),
+                                        fieldWithPath("phoneNumber").optional()
+                                                .description("전화번호 (예: 01012345678)")
+                                )
+                                .responseFields(
+                                        fieldWithPath("data.id").type(JsonFieldType.NUMBER)
+                                                .description("회원 고유 ID"),
+                                        fieldWithPath("data.username").type(JsonFieldType.STRING)
+                                                .description("사용자 이름"),
+                                        fieldWithPath("data.email").type(JsonFieldType.STRING)
+                                                .description("사용자 이메일"),
+                                        fieldWithPath("data.phoneNumber").type(JsonFieldType.STRING)
+                                                .description("전화번호"),
+                                        fieldWithPath("data.memberType").type(JsonFieldType.STRING)
+                                                .description("회원 유형 (CUSTOMER / OWNER)")
+                                )
+                                .build()
+                )
+        ));
     }
 
     @Test
