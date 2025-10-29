@@ -26,6 +26,7 @@ public class StoreSearchService {
 
     /**
      * 매장명으로 검색 (name 필드만 검색)
+     * Fuzzy 검색: 최대 2자까지 오타 허용, 첫 1자는 정확히 일치해야 함
      */
     public List<StoreResponse> searchStoresByName(String keyword) {
         try {
@@ -35,6 +36,8 @@ public class StoreSearchService {
                                     .field("name")
                                     .query(keyword)
                                     .fuzziness("AUTO")
+                                    .prefixLength(1)  // 첫 1자는 정확히 일치
+                                    .maxExpansions(50)  // 성능 최적화
                             )
                     )
                     .build();
