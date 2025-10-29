@@ -4,8 +4,6 @@ import com.sparta.couponpop.domain.auth.repository.TokenBlacklistRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-
 @Service
 @RequiredArgsConstructor
 public class TokenBlacklistService {
@@ -20,15 +18,5 @@ public class TokenBlacklistService {
     public boolean isBlacklisted(String token) {
 
         return tokenBlacklistRepository.exists(token);
-    }
-
-    public void clearExpiredTokens() {
-
-        long now = Instant.now().toEpochMilli();
-        tokenBlacklistRepository.deleteAllExpired(now);
-    }
-
-    public int countBlacklistedTokens() {
-        return tokenBlacklistRepository.count();
     }
 }
