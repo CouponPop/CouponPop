@@ -14,11 +14,10 @@ import com.sparta.couponpop.domain.coupon.dto.response.IssuedCouponListResponse;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
 import com.sparta.couponpop.domain.coupon.repository.dto.CouponSummaryInfoProjection;
+import com.sparta.couponpop.domain.coupon.service.CouponIssueService;
 import com.sparta.couponpop.domain.coupon.service.CouponService;
-import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.member.enums.MemberType;
-import com.sparta.couponpop.utils.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -36,7 +35,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
@@ -68,6 +66,11 @@ class CouponControllerTest {
     @MockitoBean
     private CouponService couponService;
 
+    @MockitoBean
+    private CouponIssueService CouponIssueService;
+    @Autowired
+    private CouponIssueService couponIssueService;
+
     @BeforeEach
     void setUp() {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
@@ -84,7 +87,7 @@ class CouponControllerTest {
         @DisplayName("쿠폰 발급 정상 요청 - 204 반환")
         void issueCoupon_success() throws Exception {
             // given
-            CouponIssueRequest request = new CouponIssueRequest(1L, 2L);
+            CouponIssueRequest request = new CouponIssueRequest(2L);
 
             // when
             mockMvc.perform(
@@ -96,19 +99,19 @@ class CouponControllerTest {
                     .andExpect(status().isNoContent());
 
             // then
-            verify(couponService, times(1))
-                    .issueEventCoupon(anyLong(), anyLong(), anyLong(), any(LocalDateTime.class));
+            verify(CouponIssueService, times(1))
+                    .issueCoupon(anyLong(), anyLong(), any(LocalDateTime.class));
         }
 
         @Test
         @DisplayName("쿠폰 발급 요청 실패 - 이벤트 없는 경우 예외")
         void issueCoupon_EventNotFound() throws Exception {
             // given
-            CouponIssueRequest request = new CouponIssueRequest(1L, 999L);
+            CouponIssueRequest request = new CouponIssueRequest(999L);
 
             willThrow(new GlobalException(CouponEventErrorCode.EVENT_NOT_FOUND))
-                    .given(couponService)
-                    .issueEventCoupon(anyLong(), anyLong(), anyLong(), any(LocalDateTime.class));
+                    .given(couponIssueService)
+                    .issueCoupon(anyLong(), anyLong(), any(LocalDateTime.class));
 
             // when & then
             mockMvc.perform(
@@ -125,11 +128,11 @@ class CouponControllerTest {
         @DisplayName("쿠폰 발급 요청 실패 - 중복 발급 예외")
         void issueCoupon_AlreadyIssued() throws Exception {
             // given
-            CouponIssueRequest request = new CouponIssueRequest(1L, 10L);
+            CouponIssueRequest request = new CouponIssueRequest(10L);
 
             willThrow(new GlobalException(CouponErrorCode.COUPON_ALREADY_ISSUED))
-                    .given(couponService)
-                    .issueEventCoupon(anyLong(), anyLong(), anyLong(), any(LocalDateTime.class));
+                    .given(couponIssueService)
+                    .issueCoupon(anyLong(), anyLong(), any(LocalDateTime.class));
 
             // when & then
             mockMvc.perform(
@@ -146,11 +149,11 @@ class CouponControllerTest {
         @DisplayName("쿠폰 발급 요청 실패 - 이벤트 기간 외 예외")
         void issueCoupon_EventNotInProgressTime() throws Exception {
             // given
-            CouponIssueRequest request = new CouponIssueRequest(1L, 10L);
+            CouponIssueRequest request = new CouponIssueRequest(10L);
 
             willThrow(new GlobalException(CouponEventErrorCode.EVENT_NOT_IN_PROGRESS_TIME))
-                    .given(couponService)
-                    .issueEventCoupon(anyLong(), anyLong(), anyLong(), any(LocalDateTime.class));
+                    .given(couponIssueService)
+                    .issueCoupon(anyLong(), anyLong(), any(LocalDateTime.class));
 
             // when & then
             mockMvc.perform(
@@ -167,11 +170,11 @@ class CouponControllerTest {
         @DisplayName("쿠폰 발급 요청 실패 - 이벤트 쿠폰 모두 소진")
         void issueCoupon_CouponSoldOut() throws Exception {
             // given
-            CouponIssueRequest request = new CouponIssueRequest(999L, 10L);
+            CouponIssueRequest request = new CouponIssueRequest(10L);
 
             willThrow(new GlobalException(CouponEventErrorCode.EVENT_COUPON_SOLD_OUT))
-                    .given(couponService)
-                    .issueEventCoupon(anyLong(), anyLong(), anyLong(), any(LocalDateTime.class));
+                    .given(couponIssueService)
+                    .issueCoupon(anyLong(), anyLong(), any(LocalDateTime.class));
 
             // when & then
             mockMvc.perform(
@@ -182,25 +185,6 @@ class CouponControllerTest {
                     .andDo(print())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.error.message").value(CouponEventErrorCode.EVENT_COUPON_SOLD_OUT.getMessage()));
-        }
-
-        @Test
-        @DisplayName("쿠폰 발급 요청 실패 - storeId 누락")
-        void issueCoupon_fail_missingStoreId() throws Exception {
-            String requestBody = """
-                    {
-                        "eventId": 1
-                    }
-                    """;
-
-            mockMvc.perform(
-                            post("/api/v1/coupons/issue")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(requestBody)
-                    )
-                    .andDo(print())
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.error.message").value("쿠폰 수령을 위한 매장 ID 는 필수입니다."));
         }
 
         @Test
