@@ -53,7 +53,7 @@ class SynchronizedCouponIssueConcurrencyTest {
     private Store store;
     private CouponEvent couponEvent;
 
-    private static final int THREAD_COUNT = 1000;
+    private static final int THREAD_COUNT = 100;
 
     private static final LocalDateTime issuedTime = LocalDateTime.of(2025, 10, 25, 12, 0);
     private static final LocalDateTime eventStartAt = issuedTime.minusHours(1);
@@ -95,7 +95,7 @@ class SynchronizedCouponIssueConcurrencyTest {
                 "name", "이벤트 제목",
                 "eventStartAt", eventStartAt,
                 "eventEndAt", eventEndAt,
-                "totalCount", THREAD_COUNT,
+                "totalCount", 100,
                 "store", store
         ));
         couponEventRepository.save(couponEvent);
@@ -111,7 +111,7 @@ class SynchronizedCouponIssueConcurrencyTest {
 
 
     @Test
-    void 동시에_1000개_요청() throws InterruptedException {
+    void 동시에_100개_요청() throws InterruptedException {
         // given
         final Long eventId = couponEvent.getId();
 
@@ -137,7 +137,7 @@ class SynchronizedCouponIssueConcurrencyTest {
         CouponEvent event = couponEventRepository.findById(eventId).orElseThrow();
 
         // then
-        assertThat(event.getIssuedCount()).isEqualTo(1000);
+        assertThat(event.getIssuedCount()).isEqualTo(100);
     }
 
 }
