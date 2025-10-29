@@ -2,13 +2,11 @@ package com.sparta.couponpop.domain.coupon.service.coupon_issue;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 @Slf4j
-@Primary
 @Service
 @RequiredArgsConstructor
 public class OptimisticLockFacade implements CouponIssueFacade {
