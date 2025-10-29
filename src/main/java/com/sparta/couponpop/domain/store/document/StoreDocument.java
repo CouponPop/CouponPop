@@ -34,22 +34,22 @@ public class StoreDocument {
     @Field(type = FieldType.Keyword, name = "member_username")
     private String memberUsername;
 
-    @Field(type = FieldType.Text, name = "name")
+    @Field(type = FieldType.Text)
     private String name;
 
-    @Field(type = FieldType.Keyword, name = "phone")
+    @Field(type = FieldType.Keyword)
     private String phone;
 
-    @Field(type = FieldType.Text, name = "description")
+    @Field(type = FieldType.Text)
     private String description;
 
     @Field(type = FieldType.Keyword, name = "business_number")
     private String businessNumber;
 
-    @Field(type = FieldType.Text, name = "address")
+    @Field(type = FieldType.Text)
     private String address;
 
-    @Field(type = FieldType.Keyword, name = "dong")
+    @Field(type = FieldType.Keyword)
     private String dong;
 
     @GeoPointField
