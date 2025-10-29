@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 public class RedisTokenBlacklistRepository implements TokenBlacklistRepository {
 
     private static final String BLACKLIST_PREFIX = "token:blacklist:";
+    private static final DateTimeFormatter FORMATTER_YYYY_MM_DD_HH_MM_SS = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final RedisTemplate<String, String> redisTemplate;
 

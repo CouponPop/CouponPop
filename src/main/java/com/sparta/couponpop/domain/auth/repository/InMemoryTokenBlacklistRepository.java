@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Profile("test") // 테스트 환경에서만 사용
 public class InMemoryTokenBlacklistRepository implements TokenBlacklistRepository {
 
+    private static final DateTimeFormatter FORMATTER_YYYY_MM_DD_HH_MM_SS = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private final Map<String, Long> blacklist = new ConcurrentHashMap<>();
 
     @Override
