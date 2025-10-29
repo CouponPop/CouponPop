@@ -16,7 +16,8 @@ import java.time.LocalDateTime;
 @Setting(
     refreshInterval = "1s",
     replicas = 1,
-    shards = 3
+    shards = 3,
+    settingPath = "/elasticsearch/store-analyzer-settings.json"
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -34,19 +35,19 @@ public class StoreDocument {
     @Field(type = FieldType.Keyword, name = "member_username")
     private String memberUsername;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "korean_analyzer")
     private String name;
 
     @Field(type = FieldType.Keyword)
     private String phone;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "korean_analyzer")
     private String description;
 
     @Field(type = FieldType.Keyword, name = "business_number")
     private String businessNumber;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "korean_analyzer")
     private String address;
 
     @Field(type = FieldType.Keyword)
