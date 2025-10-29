@@ -95,7 +95,7 @@ class PessimisticLockCouponIssueConcurrencyTest {
                 "name", "이벤트 제목",
                 "eventStartAt", eventStartAt,
                 "eventEndAt", eventEndAt,
-                "totalCount", THREAD_COUNT,
+                "totalCount", 100,
                 "store", store
         ));
         couponEventRepository.save(couponEvent);
@@ -137,7 +137,7 @@ class PessimisticLockCouponIssueConcurrencyTest {
         CouponEvent event = couponEventRepository.findById(eventId).orElseThrow();
 
         // then
-        assertThat(event.getIssuedCount()).isEqualTo(1000);
+        assertThat(event.getIssuedCount()).isEqualTo(100);
     }
 
 }
