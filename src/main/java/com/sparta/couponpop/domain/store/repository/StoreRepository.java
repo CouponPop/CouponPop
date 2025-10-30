@@ -1,12 +1,15 @@
 package com.sparta.couponpop.domain.store.repository;
 
 import com.sparta.couponpop.domain.store.entity.Store;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface StoreRepository extends JpaRepository<Store, Long> {
 
@@ -36,4 +39,15 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
      * 최신 생성 순으로 정렬하여 반환합니다.
      */
     List<Store> findByMemberIdOrderByCreatedAtDesc(Long memberId);
+
+    /**
+     * 모든 매장을 스트림으로 조회합니다.
+     * 대용량 데이터 처리를 위해 커서 기반으로 동작합니다.
+     */
+    @Query("SELECT s FROM Store s")
+    @QueryHints(value = {
+            @QueryHint(name = "org.hibernate.fetchSize", value = "100"),
+            @QueryHint(name = "org.hibernate.readOnly", value = "true")
+    })
+    Stream<Store> streamAll();
 }
