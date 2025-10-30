@@ -15,6 +15,7 @@ import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.service.AuthService;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
+import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +61,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private JwtAuthFilter jwtAuthFilter;
+
+    @MockitoBean
+    private StoreSearchRepository storeSearchRepository;
 
     @Test
     @DisplayName("회원 가입을 한다.")

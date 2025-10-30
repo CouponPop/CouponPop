@@ -6,7 +6,6 @@ import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreDetailResponse;
-import com.sparta.couponpop.domain.store.dto.response.StoreLocationProjection;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
 import com.sparta.couponpop.domain.store.entity.Store;
@@ -24,6 +23,8 @@ public class StoreService {
 
     private final StoreRepository storeRepository;
     private final MemberRepository memberRepository;
+    private final StoreElasticsearchSyncService elasticsearchSyncService;
+    private final StoreSearchService storeSearchService;
 
     @Transactional
     public StoreResponse createStore(Long memberId, CreateStoreRequest request) {
@@ -50,6 +51,9 @@ public class StoreService {
         );
 
         Store savedStore = storeRepository.save(store);
+        
+        // Elasticsearch에 동기화
+        elasticsearchSyncService.indexStore(savedStore);
 
         return StoreResponse.from(savedStore);
     }
@@ -81,6 +85,9 @@ public class StoreService {
                 request.weekendOpenTime(),
                 request.weekendCloseTime()
         );
+        
+        // Elasticsearch에 동기화
+        elasticsearchSyncService.updateStore(store);
 
         return StoreResponse.from(store);
     }
@@ -112,6 +119,9 @@ public class StoreService {
         }
 
         store.deleteStore();
+        
+        // Elasticsearch에서 삭제
+        elasticsearchSyncService.deleteStore(storeId);
     }
 
     @Transactional(readOnly = true)
@@ -138,20 +148,13 @@ public class StoreService {
 
     @Transactional(readOnly = true)
     public List<StoreResponse> searchStoresByName(String keyword) {
-
-        List<Store> stores = storeRepository.findByNameContainingIgnoreCase(keyword);
-
-        return stores.stream()
-                .map(StoreResponse::from)
-                .toList();
+        // Elasticsearch를 사용한 검색으로 변경
+        return storeSearchService.searchStoresByName(keyword);
     }
 
     @Transactional(readOnly = true)
     public List<StoreMapResponse> getStoresByLocation(double latitude, double longitude, double radiusKm) {
-
-        return storeRepository.findByLocation(latitude, longitude, radiusKm)
-            .stream()
-            .map(StoreLocationProjection::toStoreMapResponse)
-            .toList();
+        // Elasticsearch를 사용한 위치 기반 검색으로 변경
+        return storeSearchService.searchStoresByLocation(latitude, longitude, radiusKm);
     }
 }

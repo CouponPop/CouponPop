@@ -1,5 +1,6 @@
 package com.sparta.couponpop;
 
+import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import com.sparta.couponpop.common.elasticsearch.repository.CouponUsageRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,6 +11,9 @@ class CouponPopApplicationTests {
 
     @MockitoBean
     private CouponUsageRepository couponUsageRepository;
+
+    @MockitoBean
+    private StoreSearchRepository storeSearchRepository;
 
     @Test
     void contextLoads() {

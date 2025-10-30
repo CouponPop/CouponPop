@@ -10,6 +10,7 @@ import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
+import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import com.sparta.couponpop.utils.TestUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
@@ -50,6 +51,9 @@ class CouponIssueConcurrencyTest {
     private CouponRepository couponRepository;
     @Autowired
     private DefaultCouponIssueService defaultCouponIssueService;
+
+    @MockitoBean
+    private StoreSearchRepository storeSearchRepository;
 
     private Member member;
     private Store store;
