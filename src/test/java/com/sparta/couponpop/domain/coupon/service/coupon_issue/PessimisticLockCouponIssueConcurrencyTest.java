@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.coupon.service.coupon_issue;
 
+import com.sparta.couponpop.common.elasticsearch.repository.CouponUsageRepository;
 import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
@@ -38,6 +40,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class PessimisticLockCouponIssueConcurrencyTest {
 
+    @MockitoBean
+    private CouponUsageRepository couponUsageRepository;
     @Autowired
     private MemberRepository memberRepository;
     @Autowired
