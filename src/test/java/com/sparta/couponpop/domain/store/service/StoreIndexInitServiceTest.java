@@ -13,12 +13,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -50,14 +50,14 @@ class StoreIndexInitServiceTest {
                 createStore(member, 3L, "투썸플레이스")
         );
 
-        given(storeRepository.findAll()).willReturn(stores);
+        given(storeRepository.streamAll()).willReturn(stores.stream());
         given(storeSearchRepository.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         storeIndexInitService.reindexAllStores();
 
         // then
-        then(storeRepository).should(times(1)).findAll();
+        then(storeRepository).should(times(1)).streamAll();
         then(storeSearchRepository).should(times(1)).saveAll(anyList());
     }
 
@@ -65,15 +65,14 @@ class StoreIndexInitServiceTest {
     @DisplayName("전체 매장 재색인 - 매장이 없는 경우")
     void reindexAllStores_NoStores() {
         // given
-        given(storeRepository.findAll()).willReturn(Arrays.asList());
-        given(storeSearchRepository.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
+        given(storeRepository.streamAll()).willReturn(Stream.empty());
 
         // when
         storeIndexInitService.reindexAllStores();
 
         // then
-        then(storeRepository).should(times(1)).findAll();
-        then(storeSearchRepository).should(times(1)).saveAll(anyList());
+        then(storeRepository).should(times(1)).streamAll();
+        then(storeSearchRepository).should(times(0)).saveAll(anyList());
     }
 
     @Test
@@ -83,7 +82,7 @@ class StoreIndexInitServiceTest {
         Member member = createMember(1L);
         List<Store> stores = Arrays.asList(createStore(member, 1L, "스타벅스 홍대점"));
 
-        given(storeRepository.findAll()).willReturn(stores);
+        given(storeRepository.streamAll()).willReturn(stores.stream());
         given(storeSearchRepository.saveAll(anyList())).willThrow(new RuntimeException("Elasticsearch error"));
 
         // when & then
@@ -91,7 +90,7 @@ class StoreIndexInitServiceTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Reindexing failed");
 
-        then(storeRepository).should(times(1)).findAll();
+        then(storeRepository).should(times(1)).streamAll();
         then(storeSearchRepository).should(times(1)).saveAll(anyList());
     }
 
@@ -130,7 +129,7 @@ class StoreIndexInitServiceTest {
                 createStore(member, 2L, "카페베네")
         );
 
-        given(storeRepository.findAll()).willReturn(stores);
+        given(storeRepository.streamAll()).willReturn(stores.stream());
         given(storeSearchRepository.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -138,7 +137,7 @@ class StoreIndexInitServiceTest {
 
         // then
         then(storeSearchRepository).should(times(1)).deleteAll();
-        then(storeRepository).should(times(1)).findAll();
+        then(storeRepository).should(times(1)).streamAll();
         then(storeSearchRepository).should(times(1)).saveAll(anyList());
     }
 
@@ -153,7 +152,7 @@ class StoreIndexInitServiceTest {
                 createStoreWithCategory(member, 3L, "편의점", StoreCategory.CONVENIENCE)
         );
 
-        given(storeRepository.findAll()).willReturn(stores);
+        given(storeRepository.streamAll()).willReturn(stores.stream());
         given(storeSearchRepository.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -161,15 +160,17 @@ class StoreIndexInitServiceTest {
 
         // then
         then(storeSearchRepository).should(times(1)).deleteAll();
-        then(storeRepository).should(times(1)).findAll();
+        then(storeRepository).should(times(1)).streamAll();
         then(storeSearchRepository).should(times(1)).saveAll(anyList());
     }
 
     @Test
-    @DisplayName("대량의 매장 재색인 성공")
+    @DisplayName("대량의 매장 재색인 성공 - 스트림 배치 처리 테스트")
     void reindexAllStores_LargeDataset_Success() {
         // given
         Member member = createMember(1L);
+
+        // 150개의 매장 데이터 생성 (100개 배치 + 50개 배치)
         List<Store> stores = Arrays.asList(
                 createStore(member, 1L, "매장1"),
                 createStore(member, 2L, "매장2"),
@@ -183,14 +184,14 @@ class StoreIndexInitServiceTest {
                 createStore(member, 10L, "매장10")
         );
 
-        given(storeRepository.findAll()).willReturn(stores);
+        given(storeRepository.streamAll()).willReturn(stores.stream());
         given(storeSearchRepository.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         storeIndexInitService.reindexAllStores();
 
         // then
-        then(storeRepository).should(times(1)).findAll();
+        then(storeRepository).should(times(1)).streamAll();
         then(storeSearchRepository).should(times(1)).saveAll(anyList());
     }
 
