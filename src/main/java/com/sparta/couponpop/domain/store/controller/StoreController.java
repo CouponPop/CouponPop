@@ -7,7 +7,10 @@ import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreDetailResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
+import com.sparta.couponpop.domain.store.dto.response.StoreSearchResponse;
+import com.sparta.couponpop.domain.store.dto.response.StoreSuggestResponse;
 import com.sparta.couponpop.domain.store.service.StoreIndexInitService;
+import com.sparta.couponpop.domain.store.service.StoreSearchService;
 import com.sparta.couponpop.domain.store.service.StoreService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ import java.util.List;
 public class StoreController {
 
     private final StoreService storeService;
+    private final StoreSearchService storeSearchService;
     private final StoreIndexInitService storeIndexInitService;
 
     @GetMapping("/owner/stores")
@@ -84,11 +88,19 @@ public class StoreController {
     }
 
     @GetMapping("/stores/search")
-    public ResponseEntity<ApiResponse<List<StoreResponse>>> searchStores(@RequestParam String keyword) {
+    public ResponseEntity<ApiResponse<List<StoreSearchResponse>>> searchStores(@RequestParam String keyword) {
 
-        List<StoreResponse> stores = storeService.searchStoresByName(keyword);
+        List<StoreSearchResponse> stores = storeSearchService.searchStoresWithRecommendation(keyword);
 
         return ApiResponse.success(stores);
+    }
+
+    @GetMapping("/stores/search/suggest")
+    public ResponseEntity<ApiResponse<List<StoreSuggestResponse>>> suggestStores(@RequestParam String keyword) {
+
+        List<StoreSuggestResponse> suggestions = storeSearchService.suggestStores(keyword);
+
+        return ApiResponse.success(suggestions);
     }
 
     /**
