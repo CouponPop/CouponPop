@@ -1,10 +1,10 @@
-package com.sparta.couponpop.domain.coupon.repository;
+package com.sparta.couponpop.domain.coupon.repository.db;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sparta.couponpop.domain.coupon.entity.QCoupon;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
-import com.sparta.couponpop.domain.coupon.repository.dto.CouponSummaryInfoProjection;
+import com.sparta.couponpop.domain.coupon.repository.db.dto.CouponSummaryInfoProjection;
 import com.sparta.couponpop.domain.coupon.repository.dto.QCouponSummaryInfoProjection;
 import com.sparta.couponpop.domain.couponevent.entity.QCouponEvent;
 import com.sparta.couponpop.domain.store.entity.QStore;

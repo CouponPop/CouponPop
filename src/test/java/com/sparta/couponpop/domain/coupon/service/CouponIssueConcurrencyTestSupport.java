@@ -1,6 +1,6 @@
 package com.sparta.couponpop.domain.coupon.service;
 
-import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
+import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
 import com.sparta.couponpop.domain.member.entity.Member;
