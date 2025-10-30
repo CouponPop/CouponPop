@@ -19,7 +19,7 @@ flyway {
     locations = ['filesystem:src/main/resources/db/migration']
     baselineOnMigrate = true
     baselineVersion = 1
-    cleanDisabled = true
+    cleanDisabled = false
 }
 
 jacoco {
@@ -99,6 +99,9 @@ dependencies {
 
     // [Redis]
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Redisson
+    implementation 'org.redisson:redisson-spring-boot-starter:3.46.0'
 
     // [Jackson]
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
