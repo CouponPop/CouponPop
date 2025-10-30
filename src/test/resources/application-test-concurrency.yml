@@ -11,10 +11,6 @@ spring:
         format_sql: false
         highlight_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
 
   flyway:
     enabled: true
