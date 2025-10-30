@@ -19,7 +19,7 @@ flyway {
     locations = ['filesystem:src/main/resources/db/migration']
     baselineOnMigrate = true
     baselineVersion = 1
-    cleanDisabled = true
+    cleanDisabled = false
 }
 
 jacoco {
@@ -107,7 +107,6 @@ dependencies {
 
     // [Elasticsearch]
     implementation 'co.elastic.clients:elasticsearch-java'
-    implementation 'org.elasticsearch.client:elasticsearch-rest-client'
 
     // [Restdocs]
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
