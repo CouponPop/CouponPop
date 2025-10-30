@@ -1,8 +1,10 @@
 package com.sparta.couponpop.domain.store.repository;
 
 import com.sparta.couponpop.domain.store.entity.Store;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
@@ -43,5 +45,9 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
      * 대용량 데이터 처리를 위해 커서 기반으로 동작합니다.
      */
     @Query("SELECT s FROM Store s")
+    @QueryHints(value = {
+            @QueryHint(name = "org.hibernate.fetchSize", value = "100"),
+            @QueryHint(name = "org.hibernate.readOnly", value = "true")
+    })
     Stream<Store> streamAll();
 }
