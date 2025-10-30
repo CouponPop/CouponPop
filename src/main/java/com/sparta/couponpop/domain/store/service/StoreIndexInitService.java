@@ -43,31 +43,18 @@ public class StoreIndexInitService {
             // 스트림으로 매장 데이터 조회 및 배치 처리
             try (Stream<Store> storeStream = storeRepository.streamAll()) {
                 storeStream.forEach(store -> {
-                    // StoreDocument로 변환
                     StoreDocument document = StoreDocument.from(store);
                     batch.add(document);
 
                     // 배치 크기에 도달하면 저장
                     if (batch.size() >= BATCH_SIZE) {
-                        storeSearchRepository.saveAll(new ArrayList<>(batch));
-                        totalProcessed.addAndGet(batch.size());
-                        batchCount.incrementAndGet();
-                        
-                        log.debug("Processed batch {} with {} stores (Total: {})", 
-                                batchCount.get(), batch.size(), totalProcessed.get());
-                        
-                        batch.clear();
+                        saveBatch(batch, totalProcessed, batchCount);
                     }
                 });
 
                 // 남은 데이터 저장
                 if (!batch.isEmpty()) {
-                    storeSearchRepository.saveAll(batch);
-                    totalProcessed.addAndGet(batch.size());
-                    batchCount.incrementAndGet();
-                    
-                    log.debug("Processed final batch {} with {} stores (Total: {})", 
-                            batchCount.get(), batch.size(), totalProcessed.get());
+                    saveBatch(batch, totalProcessed, batchCount);
                 }
             }
             
@@ -77,6 +64,25 @@ public class StoreIndexInitService {
             log.error("Failed to reindex stores to Elasticsearch", e);
             throw new RuntimeException("Reindexing failed", e);
         }
+    }
+
+    /**
+     * 배치 단위로 Elasticsearch에 저장
+     */
+    private void saveBatch(List<StoreDocument> batch,
+                           AtomicInteger totalProcessed,
+                           AtomicInteger batchCount) {
+        
+        int batchSize = batch.size();
+        
+        storeSearchRepository.saveAll(new ArrayList<>(batch));
+        totalProcessed.addAndGet(batchSize);
+        batchCount.incrementAndGet();
+
+        log.debug("Processed batch {} with {} stores (Total: {})",
+                batchCount.get(), batchSize, totalProcessed.get());
+
+        batch.clear();
     }
 
     /**
