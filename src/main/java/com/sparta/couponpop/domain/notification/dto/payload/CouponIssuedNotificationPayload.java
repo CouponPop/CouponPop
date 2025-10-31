@@ -17,7 +17,7 @@ public record CouponIssuedNotificationPayload(
         Integer issuedCount
 ) {
 
-    public static CouponIssuedNotificationPayload of(Long memberId, String couponName, Integer totalCount, Integer issuedCount) {
-        return new CouponIssuedNotificationPayload(memberId, couponName, totalCount, issuedCount);
+    public static CouponIssuedNotificationPayload of(Long ownerId, String couponName, Integer totalCount, Integer issuedCount) {
+        return new CouponIssuedNotificationPayload(ownerId, couponName, totalCount, issuedCount);
     }
 }
