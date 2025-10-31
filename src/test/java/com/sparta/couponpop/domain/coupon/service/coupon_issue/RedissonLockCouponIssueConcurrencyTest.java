@@ -2,6 +2,7 @@ package com.sparta.couponpop.domain.coupon.service.coupon_issue;
 
 import com.sparta.couponpop.domain.coupon.service.CouponIssueConcurrencyTestSupport;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -11,13 +12,14 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class CouponIssueConcurrencyTest extends CouponIssueConcurrencyTestSupport {
+@Slf4j
+class RedissonLockCouponIssueConcurrencyTest extends CouponIssueConcurrencyTestSupport {
 
     @Autowired
-    private DefaultCouponIssueService defaultCouponIssueService;
+    private RedissonLockCouponIssueService couponIssueFacade;
 
     @Test
-    void 동시에_100개_요청_실패() throws InterruptedException {
+    void 동시에_100개_요청() throws InterruptedException {
         // given
         final Long eventId = couponEvent.getId();
 
@@ -25,10 +27,12 @@ class CouponIssueConcurrencyTest extends CouponIssueConcurrencyTestSupport {
         CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
 
         for (int i = 0; i < THREAD_COUNT; i++) {
-            final long currentMemberId = i + 1;
+            final long currentMemberId = members.get(i).getId();
             executorService.submit(() -> {
                 try {
-                    defaultCouponIssueService.issueCoupon(currentMemberId, eventId, issuedTime);
+                    couponIssueFacade.issueCoupon(currentMemberId, eventId, issuedTime);
+                } catch (Exception e) {
+                    log.error("에러", e);
                 } finally {
                     latch.countDown();
                 }
@@ -40,6 +44,7 @@ class CouponIssueConcurrencyTest extends CouponIssueConcurrencyTestSupport {
         CouponEvent event = couponEventRepository.findById(eventId).orElseThrow();
 
         // then
-        assertThat(event.getIssuedCount()).isNotEqualTo(100);
+        assertThat(event.getIssuedCount()).isEqualTo(100);
     }
+
 }

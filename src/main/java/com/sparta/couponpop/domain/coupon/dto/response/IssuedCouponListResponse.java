@@ -1,7 +1,7 @@
 package com.sparta.couponpop.domain.coupon.dto.response;
 
 import com.sparta.couponpop.domain.coupon.dto.request.MemberIssuedCouponCursor;
-import com.sparta.couponpop.domain.coupon.repository.dto.CouponSummaryInfoProjection;
+import com.sparta.couponpop.domain.coupon.repository.db.dto.CouponSummaryInfoProjection;
 
 import java.util.ArrayList;
 import java.util.List;
