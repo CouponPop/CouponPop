@@ -18,7 +18,6 @@ import java.io.IOException;
  * - JMeter 등 부하 테스트에서 회원별 JWT 토큰 데이터를 준비하기 위한 용도.
  */
 @Disabled("로컬 전용 테스트 - CI에서는 실행하지 않음")
-@ActiveProfiles("test-local")
 @SpringBootTest
 public class JwtCsvGeneratorTest {
 
