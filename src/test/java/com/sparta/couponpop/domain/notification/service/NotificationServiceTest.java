@@ -122,8 +122,7 @@ class NotificationServiceTest {
             String expectedTitle = NotificationTemplates.COUPON_USED_TITLE.formatted(payload.couponName());
             String expectedBody = NotificationTemplates.COUPON_USED_BODY.formatted(
                     payload.couponName(),
-                    payload.storeName(),
-                    payload.expireAt()
+                    payload.storeName()
             );
 
             // when
