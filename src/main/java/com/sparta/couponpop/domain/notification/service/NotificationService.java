@@ -10,7 +10,6 @@ import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.notification.constants.NotificationTemplates;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponIssuedNotificationPayload;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponUsedNotificationPayload;
-import com.sparta.couponpop.domain.notification.enums.NotificationType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +44,7 @@ public class NotificationService {
         for (String token : tokens) {
             fcmSendService.sendNotification(payload.customerId(), token, title, body)
                     .exceptionally(throwable -> {
-                        log.error("{} 전송 중 오류가 발생했습니다. token={}, message={}", NotificationType.COUPON_ISSUED, token, throwable.getMessage(), throwable);
+                        log.error("쿠폰 사용 알림 전송 중 오류가 발생했습니다. token={}, message={}", token, throwable.getMessage(), throwable);
                         return null;
                     });
         }
@@ -68,7 +67,7 @@ public class NotificationService {
         for (String token : tokens) {
             fcmSendService.sendNotification(payload.ownerId(), token, title, body)
                     .exceptionally(throwable -> {
-                        log.error("{} 전송 중 오류가 발생했습니다. token={}, message={}", NotificationType.COUPON_ISSUED, token, throwable.getMessage(), throwable);
+                        log.error("쿠폰 수령 알림 전송 중 오류가 발생했습니다. token={}, message={}", token, throwable.getMessage(), throwable);
                         return null;
                     });
         }
