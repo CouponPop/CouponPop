@@ -27,9 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -116,6 +114,7 @@ class NotificationServiceTest {
             MemberFcmToken token1 = MemberFcmToken.of(member, "token-1", "ANDROID", "device-1", true, LocalDateTime.now());
             MemberFcmToken token2 = MemberFcmToken.of(member, "token-2", "IOS", "device-2", true, LocalDateTime.now());
             MemberFcmToken token3 = MemberFcmToken.of(member, "token-3", "ANDROID", "device-3", true, LocalDateTime.now());
+            MemberFcmToken duplicateToken = MemberFcmToken.of(member, "token-1", "ANDROID", "device-4", true, LocalDateTime.now()); // 중복 토큰
 
             CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(
                     1L,
@@ -125,7 +124,7 @@ class NotificationServiceTest {
             );
 
             given(memberRepository.findById(payload.memberId())).willReturn(Optional.of(member));
-            given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of(token1, token2, token3));
+            given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of(token1, token2, token3, duplicateToken));
 
             String expectedTitle = NotificationTemplates.COUPON_ISSUED_TITLE;
             String expectedBody = NotificationTemplates.COUPON_ISSUED_BODY.formatted(

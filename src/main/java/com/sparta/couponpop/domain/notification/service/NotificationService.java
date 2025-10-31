@@ -39,6 +39,12 @@ public class NotificationService {
             return;
         }
 
+        // 토큰 중복 제거
+        List<String> tokens = enabledTokens.stream()
+                .map(MemberFcmToken::getFcmToken)
+                .distinct()
+                .toList();
+
         String title = NotificationTemplates.COUPON_ISSUED_TITLE;
         String body = NotificationTemplates.COUPON_ISSUED_BODY.formatted(
                 payload.couponName(),
@@ -46,11 +52,11 @@ public class NotificationService {
                 payload.expireAt()
         );
 
-        for (MemberFcmToken enabledToken : enabledTokens) {
+        for (String token : tokens) {
             try {
-                fcmSendService.sendNotification(member.getId(), enabledToken.getFcmToken(), title, body);
+                fcmSendService.sendNotification(member.getId(), token, title, body);
             } catch (FirebaseMessagingException e) {
-                log.error("{} 전송 중 오류가 발생했습니다. token={}, message={}", NotificationType.COUPON_ISSUED, enabledToken.getFcmToken(), e.getMessage(), e);
+                log.error("{} 전송 중 오류가 발생했습니다. token={}, message={}", NotificationType.COUPON_ISSUED, token, e.getMessage(), e);
             }
         }
     }
