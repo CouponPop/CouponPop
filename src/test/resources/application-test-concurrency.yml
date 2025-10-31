@@ -1,9 +1,4 @@
 spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
-      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
-
   datasource:
     url: jdbc:tc:mysql:8.0.36:///testdb
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver # Spring Boot 2.3 버전 이후부터 생략 가능
@@ -13,13 +8,10 @@ spring:
     properties:
       hibernate:
         show_sql: true
-        format_sql: true
+        format_sql: false
         highlight_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+
   flyway:
     enabled: true
 
@@ -32,14 +24,14 @@ logging:
     # @Transactional AOP 인터셉터: 경계 진입/종료/예외 흐름
     # 예: "Getting transaction for ...", "Completing transaction for ..."
     org.springframework.transaction.interceptor: TRACE
-    #    org.springframework.transaction: TRACE
+#    org.springframework.transaction: TRACE
     # Hibernate가 실제로 실행한 SQL
     # 예: "select ...", "update wallet set ..."
-    #    org.hibernate.SQL: DEBUG
+#    org.hibernate.SQL: DEBUG
 
     # Hibernate 6 파라미터 바인딩 값
-    #    org.hibernate.orm.jdbc.bind: TRACE
-    #    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+#    org.hibernate.orm.jdbc.bind: TRACE
+#    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
     # JPA 트랜잭션 매니저: BEGIN/COMMIT/ROLLBACK, rollback-only, 참여/중단/재개(suspend/resume)
     # 예: "Creating new transaction ...", "Initiating transaction rollback"

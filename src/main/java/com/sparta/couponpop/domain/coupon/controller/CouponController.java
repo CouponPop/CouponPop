@@ -28,7 +28,7 @@ public class CouponController {
     private final CouponIssueFacade couponIssueFacade;
 
     @PostMapping("/coupons/issue")
-    public ResponseEntity<ApiResponse<Void>> issueCoupon(@Valid @RequestBody CouponIssueRequest request, @CurrentMember AuthMember authMember) {
+    public ResponseEntity<ApiResponse<Void>> issueCoupon(@Valid @RequestBody CouponIssueRequest request, @CurrentMember AuthMember authMember) throws InterruptedException {
         LocalDateTime issuedTime = LocalDateTime.now();
         couponIssueFacade.issueCoupon(authMember.id(), request.eventId(), issuedTime);
         return ApiResponse.noContent();

@@ -1,7 +1,7 @@
-package com.sparta.couponpop.domain.coupon.repository;
+package com.sparta.couponpop.domain.coupon.repository.db;
 
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
-import com.sparta.couponpop.domain.coupon.repository.dto.CouponSummaryInfoProjection;
+import com.sparta.couponpop.domain.coupon.repository.db.dto.CouponSummaryInfoProjection;
 
 import java.time.LocalDateTime;
 import java.util.List;

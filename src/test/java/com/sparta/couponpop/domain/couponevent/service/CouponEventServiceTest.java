@@ -2,7 +2,7 @@ package com.sparta.couponpop.domain.couponevent.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
-import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
+import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;

@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.coupon.repository.dto;
+package com.sparta.couponpop.domain.coupon.repository.db.dto;
 
 import com.querydsl.core.annotations.QueryProjection;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;

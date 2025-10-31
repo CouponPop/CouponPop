@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-public class PessimisticLockCouponIssueService implements CouponIssueFacade {
+public class OptimisticLockCouponIssueService implements CouponIssueFacade {
 
     private final CouponEventRepository couponEventRepository;
     private final DefaultCouponIssueService defaultCouponIssueService;
@@ -26,7 +26,7 @@ public class PessimisticLockCouponIssueService implements CouponIssueFacade {
     }
 
     public CouponEvent validateEventPeriodAndTime(Long eventId, LocalDateTime currentDateTime) {
-        CouponEvent event = couponEventRepository.findByEventIdForUpdate(eventId)
+        CouponEvent event = couponEventRepository.findByEventIdWithOptimisticLock(eventId)
                 .orElseThrow(() -> new GlobalException(CouponEventErrorCode.EVENT_NOT_FOUND));
 
         event.validateIssuable(currentDateTime);

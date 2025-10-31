@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.coupon.repository;
+package com.sparta.couponpop.domain.coupon.repository.redis;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;

@@ -40,6 +40,9 @@ public class CouponEvent extends BaseEntity {
     @ColumnDefault("0")
     private int issuedCount;
 
+    @Version
+    private Long version;
+
     @Enumerated(EnumType.STRING)
     private CouponEventStatus couponEventStatus;
 
