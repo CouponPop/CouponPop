@@ -1,6 +1,5 @@
 package com.sparta.couponpop.domain.notification.service;
 
-import com.google.firebase.messaging.FirebaseMessagingException;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.fcm.service.FcmSendService;
 import com.sparta.couponpop.domain.member.entity.Member;
@@ -26,12 +25,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
@@ -109,7 +110,7 @@ class NotificationServiceTest {
 
         @Test
         @DisplayName("활성화된 토큰에 알림을 전송한다")
-        void notifyCustomerCouponIssued_success_sendNotification() throws FirebaseMessagingException {
+        void notifyCustomerCouponIssued_success_sendNotification() {
             // given
             MemberFcmToken token1 = MemberFcmToken.of(member, "token-1", "ANDROID", "device-1", true, LocalDateTime.now());
             MemberFcmToken token2 = MemberFcmToken.of(member, "token-2", "IOS", "device-2", true, LocalDateTime.now());
@@ -125,6 +126,7 @@ class NotificationServiceTest {
 
             given(memberRepository.findById(payload.memberId())).willReturn(Optional.of(member));
             given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of(token1, token2, token3, duplicateToken));
+            given(fcmSendService.sendNotification(anyLong(), anyString(), anyString(), anyString())).willReturn(CompletableFuture.completedFuture(null));
 
             String expectedTitle = NotificationTemplates.COUPON_ISSUED_TITLE;
             String expectedBody = NotificationTemplates.COUPON_ISSUED_BODY.formatted(
@@ -155,7 +157,7 @@ class NotificationServiceTest {
 
         @Test
         @DisplayName("FCM 전송 중 예외가 발생해도 예외를 전파하지 않는다")
-        void notifyCustomerCouponIssued_success_ignoreMessagingException() throws FirebaseMessagingException {
+        void notifyCustomerCouponIssued_success_ignoreMessagingException() {
             // given
             MemberFcmToken token = MemberFcmToken.of(member, "token-1", "ANDROID", "device-1", true, LocalDateTime.now());
             CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(
@@ -168,9 +170,9 @@ class NotificationServiceTest {
             given(memberRepository.findById(payload.memberId())).willReturn(Optional.of(member));
             given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of(token));
 
-            doThrow(mock(FirebaseMessagingException.class))
-                    .when(fcmSendService)
-                    .sendNotification(anyLong(), anyString(), anyString(), anyString());
+            CompletableFuture<Void> failedFuture = new CompletableFuture<>();
+            failedFuture.completeExceptionally(new RuntimeException("전송 실패"));
+            given(fcmSendService.sendNotification(anyLong(), anyString(), anyString(), anyString())).willReturn(failedFuture);
 
             // when & then
             assertThatCode(() -> notificationService.notifyCustomerCouponIssued(payload)).doesNotThrowAnyException();
