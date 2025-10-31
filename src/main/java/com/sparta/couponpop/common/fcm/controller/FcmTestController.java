@@ -1,6 +1,5 @@
 package com.sparta.couponpop.common.fcm.controller;
 
-import com.google.firebase.messaging.FirebaseMessagingException;
 import com.sparta.couponpop.common.fcm.request.FcmRequest;
 import com.sparta.couponpop.common.fcm.service.FcmSendService;
 import com.sparta.couponpop.common.response.ApiResponse;
@@ -26,11 +25,15 @@ public class FcmTestController {
     private final NotificationService notificationService;
 
     @PostMapping("/fcm/test")
-    public ResponseEntity<ApiResponse<Void>> sendTestNotification(@RequestBody @Valid FcmRequest request) throws FirebaseMessagingException {
+    public ResponseEntity<ApiResponse<Void>> sendTestNotification(@RequestBody @Valid FcmRequest request) {
         log.debug("[+] 푸시 메세지 전송");
 
         // 일반 테스트
-        fcmSendService.sendNotification(request.memberId(), request.token(), request.title(), request.body());
+        fcmSendService.sendNotification(request.memberId(), request.token(), request.title(), request.body())
+                .exceptionally(throwable -> {
+                    log.error("테스트 푸시 전송 중 오류가 발생했습니다. token={}, message={}", request.token(), throwable.getMessage(), throwable);
+                    return null;
+                });
 
         return ApiResponse.noContent();
     }

@@ -1,6 +1,5 @@
 package com.sparta.couponpop.domain.notification.service;
 
-import com.google.firebase.messaging.FirebaseMessagingException;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.fcm.service.FcmSendService;
 import com.sparta.couponpop.domain.member.entity.Member;
@@ -53,11 +52,11 @@ public class NotificationService {
         );
 
         for (String token : tokens) {
-            try {
-                fcmSendService.sendNotification(member.getId(), token, title, body);
-            } catch (FirebaseMessagingException e) {
-                log.error("{} 전송 중 오류가 발생했습니다. token={}, message={}", NotificationType.COUPON_ISSUED, token, e.getMessage(), e);
-            }
+            fcmSendService.sendNotification(member.getId(), token, title, body)
+                    .exceptionally(throwable -> {
+                        log.error("{} 전송 중 오류가 발생했습니다. token={}, message={}", NotificationType.COUPON_ISSUED, token, throwable.getMessage(), throwable);
+                        return null;
+                    });
         }
     }
 }
