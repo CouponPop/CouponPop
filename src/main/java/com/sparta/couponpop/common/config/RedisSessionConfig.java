@@ -54,14 +54,14 @@ public class RedisSessionConfig {
      * @see <a href="https://github.com/redisson/redisson"> [redisson 공식문서의 Read Me의 Java부분] </a>
      */
     // TODO : https://strnetwork.tistory.com/67 참고해서 다시
-    @Bean
-    public RedissonClient redissonClient() {
-        Config config = new Config();
-        config.useSingleServer()
-                .setAddress(REDISSON_HOST_PREFIX + redisHost + ":" + Integer.parseInt(redisPort))
-                .setSslEnableEndpointIdentification(false);
-        return Redisson.create(config);
-    }
+//    @Bean
+//    public RedissonClient redissonClient() {
+//        Config config = new Config();
+//        config.useSingleServer()
+//                .setAddress(REDISSON_HOST_PREFIX + redisHost + ":" + Integer.parseInt(redisPort))
+//                .setSslEnableEndpointIdentification(false);
+//        return Redisson.create(config);
+//    }
 
     /**
      * Redis Template
