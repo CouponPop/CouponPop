@@ -18,6 +18,7 @@ import com.sparta.couponpop.domain.coupon.service.CouponService;
 import com.sparta.couponpop.domain.coupon.service.coupon_issue.CouponIssueFacade;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.member.enums.MemberType;
+import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -68,6 +69,9 @@ class CouponControllerTest {
 
     @MockitoBean
     private CouponIssueFacade couponIssueFacade;
+
+    @MockitoBean
+    private StoreSearchRepository storeSearchRepository;
 
     @BeforeEach
     void setUp() {

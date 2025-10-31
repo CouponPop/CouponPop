@@ -11,6 +11,7 @@ import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.repository.dto.StoreCouponEventStatisticsProjection;
 import com.sparta.couponpop.domain.couponevent.service.CouponEventService;
 import com.sparta.couponpop.domain.member.enums.MemberType;
+import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,6 +57,8 @@ class CouponEventControllerTest {
     @MockitoBean
     private CouponEventService couponEventService;
 
+    @MockitoBean
+    private StoreSearchRepository storeSearchRepository;
 
     @BeforeEach
     void setUp() {
