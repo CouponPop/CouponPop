@@ -9,6 +9,11 @@
 #   `application-local-test.yml` 과 같은 별도의 프로파일을 직접 만들어 사용해주세요.
 #   (.gitignore에 추가하는 것을 잊지 마세요.)
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
+
   datasource:
     url: jdbc:h2:mem:couponpop_test_db;DB_CLOSE_DELAY=-1
     username: sa
@@ -21,7 +26,6 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-
   flyway:
     enabled: false
 

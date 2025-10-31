@@ -8,6 +8,7 @@ import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.member.dto.request.MemberFcmTokenRequest;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.service.MemberFcmTokenService;
+import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -44,6 +45,9 @@ class MemberFcmTokenControllerTest {
 
     @MockitoBean
     private MemberFcmTokenService memberFcmTokenService;
+
+    @MockitoBean
+    private StoreSearchRepository storeSearchRepository;
 
     @BeforeEach
     void setUp() {
