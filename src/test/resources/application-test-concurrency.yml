@@ -13,7 +13,7 @@ spring:
     properties:
       hibernate:
         show_sql: true
-        format_sql: true
+        format_sql: false
         highlight_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
   data:
