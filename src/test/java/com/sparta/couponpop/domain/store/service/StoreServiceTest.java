@@ -7,7 +7,6 @@ import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
-import com.sparta.couponpop.domain.store.dto.response.StoreLocationProjection;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
@@ -42,6 +41,12 @@ class StoreServiceTest {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private StoreElasticsearchSyncService elasticsearchSyncService;
+
+    @Mock
+    private StoreSearchService storeSearchService;
 
     @InjectMocks
     private StoreService storeService;
@@ -85,6 +90,7 @@ class StoreServiceTest {
 
         then(memberRepository).should(times(1)).findById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
     }
 
     @Test
@@ -108,6 +114,7 @@ class StoreServiceTest {
         // then
         then(memberRepository).should(times(1)).findById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
     }
 
     @Test
@@ -135,6 +142,7 @@ class StoreServiceTest {
 
         then(memberRepository).should(times(1)).findById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
     }
 
     @Test
@@ -193,6 +201,7 @@ class StoreServiceTest {
 
         then(memberRepository).should(times(1)).findById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
     }
 
     @Test
@@ -218,6 +227,7 @@ class StoreServiceTest {
 
         then(storeRepository).should(times(1)).findById(storeId);
         then(storeRepository).should(times(0)).save(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).updateStore(any(Store.class));
     }
 
     @Test
@@ -263,6 +273,7 @@ class StoreServiceTest {
 
         then(storeRepository).should(times(1)).findById(storeId);
         then(storeRepository).should(times(0)).save(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).updateStore(any(Store.class));
     }
 
     @Test
@@ -308,6 +319,7 @@ class StoreServiceTest {
         // then
         assertThat(existingStore.getDeletedAt()).isNotNull();
         then(storeRepository).should(times(1)).findByIdIncludingDeleted(storeId);
+        then(elasticsearchSyncService).should(times(1)).deleteStore(storeId);
     }
 
     @Test
@@ -382,38 +394,31 @@ class StoreServiceTest {
         double longitude = 126.9780; // 서울시청 경도
         double radius = 5.0; // 5km 반경
 
-        Member member1 = createMember(1L);
-        Member member2 = createMember(2L);
-        
-        Store store1 = createNearStore(member1); // 가까운 매장
-        Store store2 = createFarStore(member2); // 먼 매장
-
-        // Mock 데이터: StoreLocationProjection 인터페이스 프로젝션
-        StoreLocationProjection result1 = projection(
-                store1.getId(),
-                store1.getName(),
-                store1.getAddress(),
-                store1.getDong(),
-                store1.getStoreCategory(),
-                store1.getLatitude(),
-                store1.getLongitude(),
-                store1.getImageUrl(),
+        StoreMapResponse response1 = new StoreMapResponse(
+                3L,
+                "가까운 카페",
+                "서울시 중구 세종대로 110",
+                "중림동",
+                StoreCategory.CAFE,
+                37.5665,
+                126.9780,
+                "https://example.com/near-cafe.jpg",
                 0.5
         );
-        StoreLocationProjection result2 = projection(
-                store2.getId(),
-                store2.getName(),
-                store2.getAddress(),
-                store2.getDong(),
-                store2.getStoreCategory(),
-                store2.getLatitude(),
-                store2.getLongitude(),
-                store2.getImageUrl(),
+        StoreMapResponse response2 = new StoreMapResponse(
+                4L,
+                "먼 카페",
+                "서울시 강남구 테헤란로 123",
+                "역삼동",
+                StoreCategory.CAFE,
+                37.5000,
+                127.0000,
+                "https://example.com/far-cafe.jpg",
                 3.2
         );
-        List<StoreLocationProjection> mockResults = Arrays.asList(result1, result2);
+        List<StoreMapResponse> mockResults = Arrays.asList(response1, response2);
 
-        given(storeRepository.findByLocation(latitude, longitude, radius))
+        given(storeSearchService.searchStoresByLocation(latitude, longitude, radius))
                 .willReturn(mockResults);
 
         // when
@@ -424,19 +429,19 @@ class StoreServiceTest {
         
         // 첫 번째 매장 (가까운 매장)
         StoreMapResponse firstStore = result.get(0);
-        assertThat(firstStore.id()).isEqualTo(store1.getId());
-        assertThat(firstStore.name()).isEqualTo(store1.getName());
-        assertThat(firstStore.storeCategory()).isEqualTo(store1.getStoreCategory());
+        assertThat(firstStore.id()).isEqualTo(3L);
+        assertThat(firstStore.name()).isEqualTo("가까운 카페");
+        assertThat(firstStore.storeCategory()).isEqualTo(StoreCategory.CAFE);
         assertThat(firstStore.distance()).isEqualTo(0.5);
         
         // 두 번째 매장 (먼 매장)
         StoreMapResponse secondStore = result.get(1);
-        assertThat(secondStore.id()).isEqualTo(store2.getId());
-        assertThat(secondStore.name()).isEqualTo(store2.getName());
-        assertThat(secondStore.storeCategory()).isEqualTo(store2.getStoreCategory());
+        assertThat(secondStore.id()).isEqualTo(4L);
+        assertThat(secondStore.name()).isEqualTo("먼 카페");
+        assertThat(secondStore.storeCategory()).isEqualTo(StoreCategory.CAFE);
         assertThat(secondStore.distance()).isEqualTo(3.2);
 
-        then(storeRepository).should(times(1)).findByLocation(latitude, longitude, radius);
+        then(storeSearchService).should(times(1)).searchStoresByLocation(latitude, longitude, radius);
     }
 
     @Test
@@ -448,7 +453,7 @@ class StoreServiceTest {
         double longitude = 126.9780;
         double radius = 1.0; // 1km 반경 (매우 좁은 반경)
 
-        given(storeRepository.findByLocation(latitude, longitude, radius))
+        given(storeSearchService.searchStoresByLocation(latitude, longitude, radius))
                 .willReturn(Arrays.asList());
 
         // when
@@ -457,7 +462,7 @@ class StoreServiceTest {
         // then
         assertThat(result).isEmpty();
 
-        then(storeRepository).should(times(1)).findByLocation(latitude, longitude, radius);
+        then(storeSearchService).should(times(1)).searchStoresByLocation(latitude, longitude, radius);
     }
 
     @Test
@@ -469,37 +474,31 @@ class StoreServiceTest {
         double longitude = 126.9780;
         double radius = 5.0;
 
-        Member member1 = createMember(1L);
-        Member member2 = createMember(2L);
-        
-        Store cafeStore = createCafeStore(member1);
-        Store foodStore = createFoodStore(member2);
-
-        StoreLocationProjection result1 = projection(
-                cafeStore.getId(),
-                cafeStore.getName(),
-                cafeStore.getAddress(),
-                cafeStore.getDong(),
-                cafeStore.getStoreCategory(),
-                cafeStore.getLatitude(),
-                cafeStore.getLongitude(),
-                cafeStore.getImageUrl(),
+        StoreMapResponse cafeResponse = new StoreMapResponse(
+                5L,
+                "스타벅스 강남점",
+                "서울시 강남구 테헤란로 123",
+                "역삼동",
+                StoreCategory.CAFE,
+                37.5000,
+                127.0000,
+                "https://example.com/starbucks-gangnam.jpg",
                 1.2
         );
-        StoreLocationProjection result2 = projection(
-                foodStore.getId(),
-                foodStore.getName(),
-                foodStore.getAddress(),
-                foodStore.getDong(),
-                foodStore.getStoreCategory(),
-                foodStore.getLatitude(),
-                foodStore.getLongitude(),
-                foodStore.getImageUrl(),
+        StoreMapResponse foodResponse = new StoreMapResponse(
+                2L,
+                "맛있는 식당",
+                "서울시 강남구 테헤란로 456",
+                "역삼동",
+                StoreCategory.FOOD,
+                37.5665,
+                126.9780,
+                "https://example.com/food-store-image.jpg",
                 2.8
         );
-        List<StoreLocationProjection> mockResults = Arrays.asList(result1, result2);
+        List<StoreMapResponse> mockResults = Arrays.asList(cafeResponse, foodResponse);
 
-        given(storeRepository.findByLocation(latitude, longitude, radius))
+        given(storeSearchService.searchStoresByLocation(latitude, longitude, radius))
                 .willReturn(mockResults);
 
         // when
@@ -518,7 +517,7 @@ class StoreServiceTest {
         assertThat(food.storeCategory()).isEqualTo(StoreCategory.FOOD);
         assertThat(food.name()).isEqualTo("맛있는 식당");
 
-        then(storeRepository).should(times(1)).findByLocation(latitude, longitude, radius);
+        then(storeSearchService).should(times(1)).searchStoresByLocation(latitude, longitude, radius);
     }
 
     @Test
@@ -530,51 +529,43 @@ class StoreServiceTest {
         double longitude = 126.9780;
         double radius = 5.0;
 
-        Member member1 = createMember(1L);
-        Member member2 = createMember(2L);
-        Member member3 = createMember(3L);
-        
-        Store farStore = createStore(member1);
-        Store nearStore = createStore(member2);
-        Store middleStore = createStore(member3);
-
         // 거리순으로 정렬된 결과 (가까운 순)
-        StoreLocationProjection result1 = projection(
-                nearStore.getId(),
-                nearStore.getName(),
-                nearStore.getAddress(),
-                nearStore.getDong(),
-                nearStore.getStoreCategory(),
-                nearStore.getLatitude(),
-                nearStore.getLongitude(),
-                nearStore.getImageUrl(),
+        StoreMapResponse response1 = new StoreMapResponse(
+                1L,
+                "가까운 매장",
+                "서울시 중구",
+                "중구동",
+                StoreCategory.CAFE,
+                37.5665,
+                126.9780,
+                "https://example.com/near.jpg",
                 0.8
         );
-        StoreLocationProjection result2 = projection(
-                middleStore.getId(),
-                middleStore.getName(),
-                middleStore.getAddress(),
-                middleStore.getDong(),
-                middleStore.getStoreCategory(),
-                middleStore.getLatitude(),
-                middleStore.getLongitude(),
-                middleStore.getImageUrl(),
+        StoreMapResponse response2 = new StoreMapResponse(
+                2L,
+                "중간 매장",
+                "서울시 용산구",
+                "용산동",
+                StoreCategory.CAFE,
+                37.5665,
+                126.9780,
+                "https://example.com/middle.jpg",
                 2.1
         );
-        StoreLocationProjection result3 = projection(
-                farStore.getId(),
-                farStore.getName(),
-                farStore.getAddress(),
-                farStore.getDong(),
-                farStore.getStoreCategory(),
-                farStore.getLatitude(),
-                farStore.getLongitude(),
-                farStore.getImageUrl(),
+        StoreMapResponse response3 = new StoreMapResponse(
+                3L,
+                "먼 매장",
+                "서울시 강남구",
+                "강남동",
+                StoreCategory.CAFE,
+                37.5665,
+                126.9780,
+                "https://example.com/far.jpg",
                 4.5
         );
-        List<StoreLocationProjection> mockResults = Arrays.asList(result1, result2, result3);
+        List<StoreMapResponse> mockResults = Arrays.asList(response1, response2, response3);
 
-        given(storeRepository.findByLocation(latitude, longitude, radius))
+        given(storeSearchService.searchStoresByLocation(latitude, longitude, radius))
                 .willReturn(mockResults);
 
         // when
@@ -588,7 +579,7 @@ class StoreServiceTest {
         assertThat(result.get(1).distance()).isEqualTo(2.1);
         assertThat(result.get(2).distance()).isEqualTo(4.5);
 
-        then(storeRepository).should(times(1)).findByLocation(latitude, longitude, radius);
+        then(storeSearchService).should(times(1)).searchStoresByLocation(latitude, longitude, radius);
     }
 
     private CreateStoreRequest createStoreRequest() {
@@ -723,94 +714,6 @@ class StoreServiceTest {
         );
     }
 
-    private Store createNearStore(Member member) {
-        Map<String, Object> fieldValues = new HashMap<>();
-        fieldValues.put("id", 3L);
-        fieldValues.put("member", member);
-        fieldValues.put("name", "가까운 카페");
-        fieldValues.put("phone", "0212345678");
-        fieldValues.put("description", "가까운 위치의 카페입니다.");
-        fieldValues.put("businessNumber", "1234567890");
-        fieldValues.put("address", "서울시 중구 세종대로 110");
-        fieldValues.put("dong", "중림동");
-        fieldValues.put("latitude", 37.5665);
-        fieldValues.put("longitude", 126.9780);
-        fieldValues.put("imageUrl", "https://example.com/near-cafe.jpg");
-        fieldValues.put("storeCategory", StoreCategory.CAFE);
-        fieldValues.put("weekdayOpenTime", LocalTime.of(7, 0));
-        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
-        fieldValues.put("weekendOpenTime", LocalTime.of(8, 0));
-        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
-        
-        return TestUtils.createEntity(Store.class, fieldValues);
-    }
-
-    private Store createFarStore(Member member) {
-        Map<String, Object> fieldValues = new HashMap<>();
-        fieldValues.put("id", 4L);
-        fieldValues.put("member", member);
-        fieldValues.put("name", "먼 카페");
-        fieldValues.put("phone", "0212345679");
-        fieldValues.put("description", "먼 위치의 카페입니다.");
-        fieldValues.put("businessNumber", "1234567891");
-        fieldValues.put("address", "서울시 강남구 테헤란로 123");
-        fieldValues.put("dong", "역삼동");
-        fieldValues.put("latitude", 37.5000);
-        fieldValues.put("longitude", 127.0000);
-        fieldValues.put("imageUrl", "https://example.com/far-cafe.jpg");
-        fieldValues.put("storeCategory", StoreCategory.CAFE);
-        fieldValues.put("weekdayOpenTime", LocalTime.of(7, 0));
-        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
-        fieldValues.put("weekendOpenTime", LocalTime.of(8, 0));
-        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
-        
-        return TestUtils.createEntity(Store.class, fieldValues);
-    }
-
-    private Store createCafeStore(Member member) {
-        Map<String, Object> fieldValues = new HashMap<>();
-        fieldValues.put("id", 5L);
-        fieldValues.put("member", member);
-        fieldValues.put("name", "스타벅스 강남점");
-        fieldValues.put("phone", "0212345678");
-        fieldValues.put("description", "강남에 위치한 스타벅스입니다.");
-        fieldValues.put("businessNumber", "1234567890");
-        fieldValues.put("address", "서울시 강남구 테헤란로 123");
-        fieldValues.put("dong", "역삼동");
-        fieldValues.put("latitude", 37.5000);
-        fieldValues.put("longitude", 127.0000);
-        fieldValues.put("imageUrl", "https://example.com/starbucks-gangnam.jpg");
-        fieldValues.put("storeCategory", StoreCategory.CAFE);
-        fieldValues.put("weekdayOpenTime", LocalTime.of(7, 0));
-        fieldValues.put("weekdayCloseTime", LocalTime.of(22, 0));
-        fieldValues.put("weekendOpenTime", LocalTime.of(8, 0));
-        fieldValues.put("weekendCloseTime", LocalTime.of(23, 0));
-        
-        return TestUtils.createEntity(Store.class, fieldValues);
-    }
-
-    private StoreLocationProjection projection(Long id,
-                                               String name,
-                                               String address,
-                                               String dong,
-                                               StoreCategory category,
-                                               Double latitude,
-                                               Double longitude,
-                                               String imageUrl,
-                                               Double distance) {
-        return new StoreLocationProjection() {
-            @Override public Long getId() { return id; }
-            @Override public String getName() { return name; }
-            @Override public String getAddress() { return address; }
-            @Override public String getDong() { return dong; }
-            @Override public String getStoreCategory() { return category.name(); }
-            @Override public Double getLatitude() { return latitude; }
-            @Override public Double getLongitude() { return longitude; }
-            @Override public String getImageUrl() { return imageUrl; }
-            @Override public Double getDistance() { return distance; }
-        };
-    }
-
     @Test
     @DisplayName("손님용 매장 상세 조회 성공")
     void getStoreDetailForCustomer_Success() {
@@ -865,25 +768,37 @@ class StoreServiceTest {
 
         // given
         String keyword = "스타벅스";
-        Member member1 = createMember(1L);
-        Member member2 = createMember(2L);
         
-        Store store1 = createStore(member1);
-        Store store2 = createCafeStore(member2);
-        List<Store> stores = Arrays.asList(store1, store2);
+        StoreResponse response1 = new StoreResponse(
+                1L, 1L, "testuser", "스타벅스 홍대점", "0212345678",
+                "홍대 스타벅스", "1234567890", "서울시 마포구", "홍대동",
+                37.5665, 126.9780, "https://example.com/image.jpg",
+                StoreCategory.CAFE, LocalTime.of(9, 0), LocalTime.of(22, 0),
+                LocalTime.of(10, 0), LocalTime.of(23, 0),
+                java.time.LocalDateTime.now(), java.time.LocalDateTime.now()
+        );
+        StoreResponse response2 = new StoreResponse(
+                5L, 2L, "testuser2", "스타벅스 강남점", "0312345678",
+                "강남 스타벅스", "9876543210", "서울시 강남구", "역삼동",
+                37.5000, 127.0000, "https://example.com/image2.jpg",
+                StoreCategory.CAFE, LocalTime.of(9, 0), LocalTime.of(22, 0),
+                LocalTime.of(10, 0), LocalTime.of(23, 0),
+                java.time.LocalDateTime.now(), java.time.LocalDateTime.now()
+        );
+        List<StoreResponse> mockResults = Arrays.asList(response1, response2);
 
-        given(storeRepository.findByNameContainingIgnoreCase(keyword))
-                .willReturn(stores);
+        given(storeSearchService.searchStoresByName(keyword))
+                .willReturn(mockResults);
 
         // when
         List<StoreResponse> result = storeService.searchStoresByName(keyword);
 
         // then
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).name()).isEqualTo(store1.getName());
-        assertThat(result.get(1).name()).isEqualTo(store2.getName());
+        assertThat(result.get(0).name()).isEqualTo("스타벅스 홍대점");
+        assertThat(result.get(1).name()).isEqualTo("스타벅스 강남점");
 
-        then(storeRepository).should(times(1)).findByNameContainingIgnoreCase(keyword);
+        then(storeSearchService).should(times(1)).searchStoresByName(keyword);
     }
 
     @Test
@@ -893,7 +808,7 @@ class StoreServiceTest {
         // given
         String keyword = "존재하지않는매장";
 
-        given(storeRepository.findByNameContainingIgnoreCase(keyword))
+        given(storeSearchService.searchStoresByName(keyword))
                 .willReturn(Arrays.asList());
 
         // when
@@ -902,6 +817,136 @@ class StoreServiceTest {
         // then
         assertThat(result).isEmpty();
 
-        then(storeRepository).should(times(1)).findByNameContainingIgnoreCase(keyword);
+        then(storeSearchService).should(times(1)).searchStoresByName(keyword);
+    }
+
+    @Test
+    @DisplayName("소유자의 매장 목록 조회 성공")
+    void getStoresByOwner_Success() {
+
+        // given
+        Long memberId = 1L;
+        Member member = createMember(memberId);
+        List<Store> stores = Arrays.asList(
+                createStore(member),
+                createFoodStore(member)
+        );
+
+        given(storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId))
+                .willReturn(stores);
+
+        // when
+        List<StoreResponse> result = storeService.getStoresByOwner(memberId);
+
+        // then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).name()).isEqualTo("스타벅스 홍대점");
+        assertThat(result.get(1).name()).isEqualTo("맛있는 식당");
+
+        then(storeRepository).should(times(1)).findByMemberIdOrderByCreatedAtDesc(memberId);
+    }
+
+    @Test
+    @DisplayName("소유자의 매장 목록 조회 - 매장이 없는 경우")
+    void getStoresByOwner_NoStores_ReturnsEmptyList() {
+
+        // given
+        Long memberId = 1L;
+
+        given(storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId))
+                .willReturn(Arrays.asList());
+
+        // when
+        List<StoreResponse> result = storeService.getStoresByOwner(memberId);
+
+        // then
+        assertThat(result).isEmpty();
+
+        then(storeRepository).should(times(1)).findByMemberIdOrderByCreatedAtDesc(memberId);
+    }
+
+    @Test
+    @DisplayName("소유자의 매장 상세 조회 성공")
+    void getStoreDetail_Success() {
+
+        // given
+        Long storeId = 1L;
+        Long memberId = 1L;
+        Member member = createMember(memberId);
+        Store store = createStore(member);
+
+        given(storeRepository.findByIdWithMember(storeId))
+                .willReturn(Optional.of(store));
+
+        // when
+        var result = storeService.getStoreDetail(storeId, memberId);
+
+        // then
+        assertThat(result.name()).isEqualTo(store.getName());
+        assertThat(result.description()).isEqualTo(store.getDescription());
+        assertThat(result.storeCategory()).isEqualTo(store.getStoreCategory());
+
+        then(storeRepository).should(times(1)).findByIdWithMember(storeId);
+    }
+
+    @Test
+    @DisplayName("소유자의 매장 상세 조회 - 존재하지 않는 매장")
+    void getStoreDetail_NotFound_ThrowsException() {
+
+        // given
+        Long storeId = 999L;
+        Long memberId = 1L;
+
+        given(storeRepository.findByIdWithMember(storeId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> storeService.getStoreDetail(storeId, memberId))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장을 찾을 수 없습니다.");
+
+        then(storeRepository).should(times(1)).findByIdWithMember(storeId);
+    }
+
+    @Test
+    @DisplayName("소유자의 매장 상세 조회 - 다른 소유자의 매장 접근")
+    void getStoreDetail_DifferentOwner_ThrowsException() {
+
+        // given
+        Long storeId = 1L;
+        Long memberId = 1L;
+        Long otherMemberId = 2L;
+        Member otherMember = createMember(otherMemberId);
+        Store store = createStore(otherMember);
+
+        given(storeRepository.findByIdWithMember(storeId))
+                .willReturn(Optional.of(store));
+
+        // when & then
+        assertThatThrownBy(() -> storeService.getStoreDetail(storeId, memberId))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("매장 접근 권한이 없습니다.");
+
+        then(storeRepository).should(times(1)).findByIdWithMember(storeId);
+    }
+
+    @Test
+    @DisplayName("매장 등록 시 존재하지 않는 회원이면 예외 발생")
+    void createStore_WithNonExistentMember_ThrowsException() {
+
+        // given
+        Long memberId = 999L;
+        CreateStoreRequest request = createStoreRequest();
+
+        given(memberRepository.findById(memberId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> storeService.createStore(memberId, request))
+                .isInstanceOf(GlobalException.class)
+                .hasMessage("존재하지 않는 회원입니다.");
+
+        then(memberRepository).should(times(1)).findById(memberId);
+        then(storeRepository).should(times(0)).save(any(Store.class));
     }
 }

@@ -6,6 +6,7 @@ import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
 import com.sparta.couponpop.domain.coupon.dto.response.IssuedCouponListResponse;
 import com.sparta.couponpop.domain.coupon.entity.Coupon;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
+import com.sparta.couponpop.domain.coupon.event.CouponUsedEvent;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
 import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
 import com.sparta.couponpop.domain.coupon.repository.redis.TemporaryCouponCodeRepository;
@@ -21,6 +22,7 @@ import com.sparta.couponpop.domain.store.exception.StoreErrorCode;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +44,8 @@ public class CouponService {
     private final CouponEventRepository couponEventRepository;
     private final CouponRepository couponRepository;
     private final TemporaryCouponCodeRepository temporaryCouponCodeRepository;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void issueEventCoupon(Long memberId, Long storeId, Long eventId, LocalDateTime issuedTime) {
@@ -128,6 +132,7 @@ public class CouponService {
      * @param usedAt   쿠폰 사용 시각
      * @throws GlobalException 유효하지 않은 코드, 이벤트 기간 종료, 소유자 불일치, 이미 사용된 쿠폰 등 예외 발생
      */
+    // TODO : 도메인 로직의 핵심성과 비핵심성을 분리
     @Transactional
     public void useCoupon(Long couponId, String qrCode, Long memberId, LocalDateTime usedAt) {
 
@@ -164,6 +169,14 @@ public class CouponService {
 
         // Redis 임시 코드 삭제
         temporaryCouponCodeRepository.deleteTemporaryCoupon(couponId, qrCode);
+
+        eventPublisher.publishEvent(CouponUsedEvent.of(
+                memberId,
+                couponId,
+                coupon.getCouponEvent().getStore().getId(),
+                coupon.getCouponEvent().getStore().getDong(),
+                usedAt)
+        );
     }
 
     /**

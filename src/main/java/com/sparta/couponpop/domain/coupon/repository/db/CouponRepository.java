@@ -35,6 +35,7 @@ public interface CouponRepository extends JpaRepository<Coupon, Long>, CouponQue
             select c
             from Coupon c
                 join fetch c.couponEvent ce
+                join fetch ce.store s
             where c.id = :couponId
             """)
     Optional<Coupon> findByIdWithCouponEventForUpdate(@Param("couponId") Long couponId);

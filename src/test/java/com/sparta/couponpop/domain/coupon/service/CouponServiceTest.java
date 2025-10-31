@@ -6,6 +6,7 @@ import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
 import com.sparta.couponpop.domain.coupon.dto.response.IssuedCouponListResponse;
 import com.sparta.couponpop.domain.coupon.entity.Coupon;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
+import com.sparta.couponpop.domain.coupon.event.CouponUsedEvent;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
 import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
 import com.sparta.couponpop.domain.coupon.repository.redis.TemporaryCouponCodeRepository;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -55,6 +57,9 @@ class CouponServiceTest {
 
     @Mock
     private CouponRepository couponRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private TemporaryCouponCodeRepository temporaryCouponCodeRepository;
@@ -323,6 +328,8 @@ class CouponServiceTest {
 
             verify(temporaryCouponCodeRepository, times(1))
                     .deleteTemporaryCoupon(anyLong(), anyString());
+            verify(eventPublisher, times(1))
+                    .publishEvent(any(CouponUsedEvent.class));
         }
 
         @Test

@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.coupon.service;
 
+import com.sparta.couponpop.common.elasticsearch.repository.CouponUsageRepository;
 import com.sparta.couponpop.config.RedisTestContainersConfig;
 import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
@@ -10,6 +11,7 @@ import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreRepository;
+import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import com.sparta.couponpop.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
@@ -33,6 +36,11 @@ import java.util.Map;
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public abstract class CouponIssueConcurrencyTestSupport {
+
+    @MockitoBean
+    private CouponUsageRepository couponUsageRepository;
+    @MockitoBean
+    private StoreSearchRepository storeSearchRepository;
 
     @Autowired
     protected MemberRepository memberRepository;
