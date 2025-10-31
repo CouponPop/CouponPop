@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 @Slf4j
-@Primary
 @Service
 @RequiredArgsConstructor
 public class NamedLockCouponIssueService implements CouponIssueFacade {
