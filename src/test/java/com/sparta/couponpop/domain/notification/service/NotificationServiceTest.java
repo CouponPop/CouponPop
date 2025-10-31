@@ -186,7 +186,7 @@ class NotificationServiceTest {
         @DisplayName("활성화된 토큰이 없으면 알림 전송을 건너뛴다")
         void notifyOwnerCouponIssued_skip_whenTokensEmpty() {
             // given
-            CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(1L, "오픈 기념 쿠폰", 30, 15);
+            CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(2L, "오픈 기념 쿠폰", 30, 15);
 
             given(memberRepository.findById(payload.ownerId())).willReturn(Optional.of(member));
             given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of());
@@ -245,7 +245,7 @@ class NotificationServiceTest {
         void notifyOwnerCouponIssued_success_ignoreMessagingException() {
             // given
             MemberFcmToken token = MemberFcmToken.of(member, "token-1", "ANDROID", "device-1", true, LocalDateTime.now());
-            CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(1L, "오픈 기념 쿠폰", 30, 15);
+            CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(2L, "오픈 기념 쿠폰", 30, 15);
 
             given(memberRepository.findById(payload.ownerId())).willReturn(Optional.of(member));
             given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of(token));
