@@ -1,13 +1,15 @@
 package com.sparta.couponpop.domain.store.repository;
 
-import com.sparta.couponpop.domain.store.dto.response.StoreLocationProjection;
 import com.sparta.couponpop.domain.store.entity.Store;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface StoreRepository extends JpaRepository<Store, Long> {
 
@@ -33,49 +35,19 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
     Optional<Store> findByIdWithMember(@Param("storeId") Long storeId);
 
     /**
-     * 위치 기반으로 매장을 조회합니다.
-     * 거리순으로 정렬하여 반환합니다.
-     * Native Query와 서브쿼리를 사용하여 거리 계산을 한 번만 수행합니다.
-     * MySQL의 POINT 자료형과 ST_Distance_Sphere 함수를 사용하여 정확한 거리 계산을 수행합니다.
+     * 회원 ID로 매장 목록을 조회합니다.
+     * 최신 생성 순으로 정렬하여 반환합니다.
      */
-    @Query(value = """
-            SELECT 
-                sub.id AS id,
-                sub.name AS name,
-                sub.address AS address,
-                sub.dong AS dong,
-                sub.store_category AS storeCategory,
-                sub.latitude AS latitude,
-                sub.longitude AS longitude,
-                sub.image_url AS imageUrl,
-                sub.distance AS distance
-            FROM (
-                SELECT 
-                    s.id,
-                    s.name,
-                    s.address,
-                    s.dong,
-                    s.store_category,
-                    s.latitude,
-                    s.longitude,
-                    s.image_url,
-                    ST_Distance_Sphere(s.location, ST_SRID(POINT(:lng, :lat), 4326)) / 1000 AS distance
-                FROM stores s
-                WHERE s.deleted_at IS NULL
-            ) AS sub
-            WHERE sub.distance <= :radius
-            ORDER BY sub.distance ASC
-            """, nativeQuery = true)
-    List<StoreLocationProjection> findByLocation(@Param("lat") double latitude,
-                                                 @Param("lng") double longitude,
-                                                 @Param("radius") double radiusKm);
-
     List<Store> findByMemberIdOrderByCreatedAtDesc(Long memberId);
 
     /**
-     * 매장명으로 매장을 검색합니다.
-     * 삭제되지 않은 매장 중에서 매장명에 키워드가 포함된 매장을 조회합니다
+     * 모든 매장을 스트림으로 조회합니다.
+     * 대용량 데이터 처리를 위해 커서 기반으로 동작합니다.
      */
-    @Query("SELECT s FROM Store s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY s.name ASC")
-    List<Store> findByNameContainingIgnoreCase(@Param("keyword") String keyword);
+    @Query("SELECT s FROM Store s")
+    @QueryHints(value = {
+            @QueryHint(name = "org.hibernate.fetchSize", value = "100"),
+            @QueryHint(name = "org.hibernate.readOnly", value = "true")
+    })
+    Stream<Store> streamAll();
 }

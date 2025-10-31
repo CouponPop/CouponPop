@@ -13,6 +13,8 @@ import org.elasticsearch.client.RestClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 
 import java.net.URI;
 
@@ -40,11 +42,7 @@ public class ElasticsearchConfig {
      */
     @Bean
     public ElasticsearchClient elasticsearchClient(RestClient restClient) {
-        ObjectMapper objectMapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule()) // Java 8 날짜 및 시간 API 지원
-                .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE) // 변수명은 카멜케이스, 매핑되는 JSON은 스네이크케이스
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // 타임스탬프 비활성화
-                .disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS); // 타임스탬프 나노초 단위 비활성화
+        ObjectMapper objectMapper = createObjectMapper();
 
         ElasticsearchTransport transport = new RestClientTransport(
                 restClient,
@@ -52,6 +50,22 @@ public class ElasticsearchConfig {
         );
 
         return new ElasticsearchClient(transport);
+    }
+
+    /**
+     * Spring Data Elasticsearch Operations - Repository 및 Template에서 사용
+     */
+    @Bean(name = {"elasticsearchOperations", "elasticsearchTemplate"})
+    public ElasticsearchOperations elasticsearchOperations(ElasticsearchClient elasticsearchClient) {
+        return new ElasticsearchTemplate(elasticsearchClient);
+    }
+
+    private ObjectMapper createObjectMapper() {
+        return new ObjectMapper()
+                .registerModule(new JavaTimeModule()) // Java 8 날짜 및 시간 API 지원
+                .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE) // 변수명은 카멜케이스, 매핑되는 JSON은 스네이크케이스
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) // 타임스탬프 비활성화
+                .disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS); // 타임스탬프 나노초 단위 비활성화
     }
 }
 
