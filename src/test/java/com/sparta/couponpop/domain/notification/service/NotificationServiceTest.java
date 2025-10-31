@@ -75,8 +75,7 @@ class NotificationServiceTest {
             CouponUsedNotificationPayload payload = CouponUsedNotificationPayload.of(
                     999L,
                     "오픈 기념 쿠폰",
-                    "스타벅스 강남역점",
-                    LocalDateTime.now()
+                    "스타벅스 강남역점"
             );
             given(memberRepository.findById(payload.customerId())).willReturn(Optional.empty());
 
@@ -92,7 +91,7 @@ class NotificationServiceTest {
         @DisplayName("활성화된 토큰이 없으면 알림 전송을 건너뛴다")
         void notifyCustomerCouponUsed_skip_whenTokensEmpty() {
             // given
-            CouponUsedNotificationPayload payload = CouponUsedNotificationPayload.of(1L, "오픈 기념 쿠폰", "스타벅스 강남역점", LocalDateTime.now());
+            CouponUsedNotificationPayload payload = CouponUsedNotificationPayload.of(1L, "오픈 기념 쿠폰", "스타벅스 강남역점");
 
             given(memberRepository.findById(payload.customerId())).willReturn(Optional.of(member));
             given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of());
@@ -113,7 +112,7 @@ class NotificationServiceTest {
             MemberFcmToken token3 = MemberFcmToken.of(member, "token-3", "ANDROID", "device-3", true, LocalDateTime.now());
             MemberFcmToken duplicateToken = MemberFcmToken.of(member, "token-1", "ANDROID", "device-4", true, LocalDateTime.now()); // 중복 토큰
 
-            CouponUsedNotificationPayload payload = CouponUsedNotificationPayload.of(1L, "오픈 기념 쿠폰", "스타벅스 강남역점", LocalDateTime.now());
+            CouponUsedNotificationPayload payload = CouponUsedNotificationPayload.of(1L, "오픈 기념 쿠폰", "스타벅스 강남역점");
 
             given(memberRepository.findById(payload.customerId())).willReturn(Optional.of(member));
             given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of(token1, token2, token3, duplicateToken));

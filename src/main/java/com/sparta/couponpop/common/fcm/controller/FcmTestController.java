@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
-
 // TODO: 테스트용 컨트롤러, 추후 삭제 예정
 @Slf4j
 @RestController
@@ -61,8 +59,7 @@ public class FcmTestController {
         CouponUsedNotificationPayload payload = CouponUsedNotificationPayload.of(
                 1L,
                 "아이스아메리카노 1+1",
-                "스타벅스 강남역점",
-                LocalDateTime.now()
+                "스타벅스 강남역점"
         );
         notificationService.send(payload);
 

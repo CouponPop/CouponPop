@@ -79,7 +79,7 @@ public class NotificationService {
 
         List<MemberFcmToken> enabledTokens = memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member);
         if (enabledTokens.isEmpty()) {
-            log.info("푸시 알림이 활성화된 FCM 토큰이 없어 알림을 건너뜁니다. ownerId={}", member.getId());
+            log.info("푸시 알림이 활성화된 FCM 토큰이 없어 알림을 건너뜁니다. memberId={}", member.getId());
             return List.of();
         }
 
