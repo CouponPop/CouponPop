@@ -1,9 +1,4 @@
 spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
-      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
-
   datasource:
     url: jdbc:tc:mysql:8.0.36:///testdb
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver # Spring Boot 2.3 버전 이후부터 생략 가능
@@ -16,10 +11,7 @@ spring:
         format_sql: false
         highlight_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+
   flyway:
     enabled: true
 

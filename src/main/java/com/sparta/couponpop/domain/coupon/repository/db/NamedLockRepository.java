@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.coupon.repository;
+package com.sparta.couponpop.domain.coupon.repository.db;
 
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;

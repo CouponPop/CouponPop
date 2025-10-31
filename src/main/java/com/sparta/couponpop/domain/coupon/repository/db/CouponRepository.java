@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.coupon.repository;
+package com.sparta.couponpop.domain.coupon.repository.db;
 
 import com.sparta.couponpop.domain.coupon.entity.Coupon;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;

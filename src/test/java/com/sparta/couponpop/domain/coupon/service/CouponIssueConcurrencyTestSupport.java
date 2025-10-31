@@ -1,7 +1,8 @@
 package com.sparta.couponpop.domain.coupon.service;
 
 import com.sparta.couponpop.common.elasticsearch.repository.CouponUsageRepository;
-import com.sparta.couponpop.domain.coupon.repository.CouponRepository;
+import com.sparta.couponpop.config.RedisTestContainersConfig;
+import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
 import com.sparta.couponpop.domain.member.entity.Member;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 
+@Import(RedisTestContainersConfig.class)
 @ActiveProfiles("test-concurrency")
 @SpringBootTest
 @Testcontainers
