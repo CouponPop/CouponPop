@@ -1,6 +1,6 @@
 package com.sparta.couponpop.domain.coupon.service;
 
-import com.sparta.couponpop.config.RedisTestContainersConfig;
+import com.sparta.couponpop.common.config.RedisTestContainersConfig;
 import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
