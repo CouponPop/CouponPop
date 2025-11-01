@@ -11,9 +11,9 @@ import com.sparta.couponpop.domain.auth.dto.response.LoginResponse;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.event.TokenBlacklistEvent;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
+import com.sparta.couponpop.domain.fcmtoken.repository.FcmTokenRepository;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
-import com.sparta.couponpop.domain.member.repository.MemberFcmTokenRepository;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class AuthService {
     private final JwtProvider jwtProvider;
 
     private final MemberRepository memberRepository;
-    private final MemberFcmTokenRepository memberFcmTokenRepository;
+    private final FcmTokenRepository fcmTokenRepository;
     private final TokenBlacklistService tokenBlacklistService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -128,9 +128,9 @@ public class AuthService {
     // FCM 토큰 삭제는 실패하더라도 전체 작업이 롤백되지는 않도록 ifPresent 사용
     private void expireFcmToken(Long memberId, String fcmToken) {
 
-        memberFcmTokenRepository
+        fcmTokenRepository
                 .findByMemberIdAndFcmToken(memberId, fcmToken)
-                .ifPresent(memberFcmTokenRepository::delete);
+                .ifPresent(fcmTokenRepository::delete);
     }
 
     private String extractToken(String authorizationHeader) {

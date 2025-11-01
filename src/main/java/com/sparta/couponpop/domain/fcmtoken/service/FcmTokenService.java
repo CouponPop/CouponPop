@@ -1,11 +1,11 @@
-package com.sparta.couponpop.domain.member.service;
+package com.sparta.couponpop.domain.fcmtoken.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
-import com.sparta.couponpop.domain.member.dto.request.MemberFcmTokenRequest;
+import com.sparta.couponpop.domain.fcmtoken.dto.request.FcmTokenRequest;
+import com.sparta.couponpop.domain.fcmtoken.entity.FcmToken;
+import com.sparta.couponpop.domain.fcmtoken.repository.FcmTokenRepository;
 import com.sparta.couponpop.domain.member.entity.Member;
-import com.sparta.couponpop.domain.member.entity.MemberFcmToken;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
-import com.sparta.couponpop.domain.member.repository.MemberFcmTokenRepository;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,20 +19,20 @@ import java.util.Set;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MemberFcmTokenService {
+public class FcmTokenService {
 
-    private final MemberFcmTokenRepository memberFcmTokenRepository;
+    private final FcmTokenRepository fcmTokenRepository;
     private final MemberRepository memberRepository;
 
     @Transactional
-    public void upsertTokenForMember(MemberFcmTokenRequest request, Long memberId) {
+    public void upsertTokenForMember(FcmTokenRequest request, Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         final LocalDateTime now = LocalDateTime.now();
 
         // 중복 토큰 조회
-        Optional<MemberFcmToken> duplicatedToken = memberFcmTokenRepository.findByFcmToken(request.fcmToken());
+        Optional<FcmToken> duplicatedToken = fcmTokenRepository.findByFcmToken(request.fcmToken());
         // 중복 토큰이 있다면 memberId, deviceIdentifier 갱신 후 return
         if (duplicatedToken.isPresent()) {
             duplicatedToken.get().updateMemberAndDeviceIdentifier(
@@ -48,7 +48,7 @@ public class MemberFcmTokenService {
         }
 
         // 중복 토큰이 없다면 기존 토큰 조회 후 UPSERT
-        memberFcmTokenRepository.findByMemberAndDeviceIdentifier(member, request.deviceIdentifier())
+        fcmTokenRepository.findByMemberAndDeviceIdentifier(member, request.deviceIdentifier())
                 .ifPresentOrElse(
                         activeToken -> {
                             activeToken.updateFcmToken(request.fcmToken(), now);
@@ -56,8 +56,8 @@ public class MemberFcmTokenService {
                                     member.getId(), request.deviceIdentifier(), request.fcmToken());
                         },
                         () -> {
-                            memberFcmTokenRepository.save(
-                                    MemberFcmToken.of(
+                            fcmTokenRepository.save(
+                                    FcmToken.of(
                                             member,
                                             request.fcmToken(),
                                             request.deviceType(),
@@ -75,7 +75,7 @@ public class MemberFcmTokenService {
     // 단일 토큰 최근 사용 날짜(lastUsedAt) UPDATE
     @Transactional
     public void updateLastUsedAt(String fcmToken) {
-        MemberFcmToken memberFcmToken = memberFcmTokenRepository.findByFcmToken(fcmToken)
+        FcmToken memberFcmToken = fcmTokenRepository.findByFcmToken(fcmToken)
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND));
 
         memberFcmToken.updateLastUsedAt(LocalDateTime.now());
@@ -84,10 +84,10 @@ public class MemberFcmTokenService {
     // 단일 토큰 삭제
     @Transactional
     public void deleteToken(String fcmToken) {
-        MemberFcmToken memberFcmToken = memberFcmTokenRepository.findByFcmToken(fcmToken)
+        FcmToken memberFcmToken = fcmTokenRepository.findByFcmToken(fcmToken)
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND));
 
-        memberFcmTokenRepository.delete(memberFcmToken);
+        fcmTokenRepository.delete(memberFcmToken);
     }
 
     /**
@@ -111,7 +111,7 @@ public class MemberFcmTokenService {
             return;
         }
 
-        int updatedCount = memberFcmTokenRepository.updateLastUsedAtByFcmTokenIn(fcmTokens, now);
+        int updatedCount = fcmTokenRepository.updateLastUsedAtByFcmTokenIn(fcmTokens, now);
         log.info("FCM 성공 토큰 {}개 최근 사용 날짜 업데이트 완료", updatedCount);
     }
 
@@ -120,7 +120,7 @@ public class MemberFcmTokenService {
             return;
         }
 
-        int deletedCount = memberFcmTokenRepository.deleteByFcmTokenIn(fcmTokens);
+        int deletedCount = fcmTokenRepository.deleteByFcmTokenIn(fcmTokens);
         log.info("FCM 실패 토큰 {}개 삭제 완료", deletedCount);
     }
 }

@@ -19,7 +19,7 @@ flyway {
     locations = ['filesystem:src/main/resources/db/migration']
     baselineOnMigrate = true
     baselineVersion = 1
-    cleanDisabled = false
+    cleanDisabled = true
 }
 
 jacoco {

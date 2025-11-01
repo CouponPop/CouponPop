@@ -1,7 +1,7 @@
-package com.sparta.couponpop.domain.member.repository;
+package com.sparta.couponpop.domain.fcmtoken.repository;
 
+import com.sparta.couponpop.domain.fcmtoken.entity.FcmToken;
 import com.sparta.couponpop.domain.member.entity.Member;
-import com.sparta.couponpop.domain.member.entity.MemberFcmToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -12,15 +12,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public interface MemberFcmTokenRepository extends JpaRepository<MemberFcmToken, Long> {
+public interface FcmTokenRepository extends JpaRepository<FcmToken, Long> {
 
-    Optional<MemberFcmToken> findByMemberAndDeviceIdentifier(Member member, String deviceIdentifier);
+    Optional<FcmToken> findByMemberAndDeviceIdentifier(Member member, String deviceIdentifier);
 
-    Optional<MemberFcmToken> findByFcmToken(String fcmToken);
+    Optional<FcmToken> findByFcmToken(String fcmToken);
 
-    List<MemberFcmToken> findByMemberAndNotificationEnabledIsTrue(Member member);
+    List<FcmToken> findByMemberAndNotificationEnabledIsTrue(Member member);
 
-    Optional<MemberFcmToken> findByMemberIdAndFcmToken(Long memberId, String fcmToken);
+    Optional<FcmToken> findByMemberIdAndFcmToken(Long memberId, String fcmToken);
 
     /**
      * 다중 FCM 토큰의 lastUsedAt 일괄 업데이트
@@ -31,7 +31,7 @@ public interface MemberFcmTokenRepository extends JpaRepository<MemberFcmToken, 
      */
     @Modifying(clearAutomatically = true)
     @Query("""
-                UPDATE MemberFcmToken t
+                UPDATE FcmToken t
                 SET t.lastUsedAt = :now
                 WHERE t.fcmToken IN :fcmTokens
             """)
@@ -46,7 +46,7 @@ public interface MemberFcmTokenRepository extends JpaRepository<MemberFcmToken, 
      */
     @Modifying(clearAutomatically = true)
     @Query("""
-                DELETE FROM MemberFcmToken t
+                DELETE FROM FcmToken t
                 WHERE t.fcmToken IN :fcmTokens
             """)
     int deleteByFcmTokenIn(@Param("fcmTokens") Set<String> fcmTokens);

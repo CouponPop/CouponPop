@@ -2,10 +2,10 @@ package com.sparta.couponpop.domain.notification.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.fcm.service.FcmSendService;
+import com.sparta.couponpop.domain.fcmtoken.entity.FcmToken;
+import com.sparta.couponpop.domain.fcmtoken.repository.FcmTokenRepository;
 import com.sparta.couponpop.domain.member.entity.Member;
-import com.sparta.couponpop.domain.member.entity.MemberFcmToken;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
-import com.sparta.couponpop.domain.member.repository.MemberFcmTokenRepository;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.notification.constants.NotificationTemplates;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponIssuedNotificationPayload;
@@ -25,7 +25,7 @@ import java.util.List;
 public class NotificationService {
 
     private final MemberRepository memberRepository;
-    private final MemberFcmTokenRepository memberFcmTokenRepository;
+    private final FcmTokenRepository fcmTokenRepository;
     private final FcmSendService fcmSendService;
 
     /**
@@ -77,7 +77,7 @@ public class NotificationService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        List<MemberFcmToken> enabledTokens = memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member);
+        List<FcmToken> enabledTokens = fcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member);
         if (enabledTokens.isEmpty()) {
             log.info("푸시 알림이 활성화된 FCM 토큰이 없어 알림을 건너뜁니다. memberId={}", member.getId());
             return List.of();
@@ -85,7 +85,7 @@ public class NotificationService {
 
         // 토큰 중복 제거
         return enabledTokens.stream()
-                .map(MemberFcmToken::getFcmToken)
+                .map(FcmToken::getFcmToken)
                 .distinct()
                 .toList();
     }

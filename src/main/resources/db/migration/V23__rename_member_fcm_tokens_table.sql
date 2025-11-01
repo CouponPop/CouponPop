@@ -1,0 +1,1 @@
+ALTER TABLE member_fcm_tokens RENAME TO fcm_tokens;

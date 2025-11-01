@@ -7,9 +7,10 @@ import com.sparta.couponpop.common.security.JwtAuthFilter;
 import com.sparta.couponpop.common.security.JwtAuthenticationToken;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
-import com.sparta.couponpop.domain.member.dto.request.MemberFcmTokenRequest;
+import com.sparta.couponpop.domain.fcmtoken.controller.FcmTokenController;
+import com.sparta.couponpop.domain.fcmtoken.dto.request.FcmTokenRequest;
+import com.sparta.couponpop.domain.fcmtoken.service.FcmTokenService;
 import com.sparta.couponpop.domain.member.enums.MemberType;
-import com.sparta.couponpop.domain.member.service.MemberFcmTokenService;
 import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +37,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureRestDocs
-@WebMvcTest(MemberFcmTokenController.class)
+@WebMvcTest(FcmTokenController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class MemberFcmTokenControllerTest {
+class FcmTokenControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -53,7 +54,7 @@ class MemberFcmTokenControllerTest {
     private JwtAuthFilter jwtAuthFilter;
 
     @MockitoBean
-    private MemberFcmTokenService memberFcmTokenService;
+    private FcmTokenService fcmTokenService;
 
     @MockitoBean
     private StoreSearchRepository storeSearchRepository;
@@ -74,7 +75,7 @@ class MemberFcmTokenControllerTest {
 
     @Nested
     @DisplayName("POST /api/v1/members/fcm-token")
-    class UpsertMemberFcmToken {
+    class UpsertFcmToken {
 
         private static final String URL = "/api/v1/members/fcm-token";
 
@@ -82,13 +83,13 @@ class MemberFcmTokenControllerTest {
         @DisplayName("회원 FCM 토큰 생성 및 갱신 - 성공")
         void upsertMemberFcmToken_success() throws Exception {
             // given
-            MemberFcmTokenRequest request = MemberFcmTokenRequest.builder()
+            FcmTokenRequest request = FcmTokenRequest.builder()
                     .fcmToken("sample_fcm_token")
                     .deviceType("ANDROID")
                     .deviceIdentifier("device-123")
                     .build();
 
-            willDoNothing().given(memberFcmTokenService).upsertTokenForMember(any(MemberFcmTokenRequest.class), anyLong());
+            willDoNothing().given(fcmTokenService).upsertTokenForMember(any(FcmTokenRequest.class), anyLong());
 
             // when
             ResultActions resultActions = mockMvc.perform(

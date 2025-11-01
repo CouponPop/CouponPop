@@ -1,10 +1,10 @@
-package com.sparta.couponpop.domain.member.controller;
+package com.sparta.couponpop.domain.fcmtoken.controller;
 
 import com.sparta.couponpop.common.response.ApiResponse;
 import com.sparta.couponpop.common.security.annotation.CurrentMember;
 import com.sparta.couponpop.common.security.dto.AuthMember;
-import com.sparta.couponpop.domain.member.dto.request.MemberFcmTokenRequest;
-import com.sparta.couponpop.domain.member.service.MemberFcmTokenService;
+import com.sparta.couponpop.domain.fcmtoken.dto.request.FcmTokenRequest;
+import com.sparta.couponpop.domain.fcmtoken.service.FcmTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,13 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
-public class MemberFcmTokenController {
+public class FcmTokenController {
 
-    private final MemberFcmTokenService memberFcmTokenService;
+    private final FcmTokenService fcmTokenService;
 
     @PostMapping("/members/fcm-token")
-    public ResponseEntity<ApiResponse<Void>> upsertMemberFcmToken(@RequestBody @Valid MemberFcmTokenRequest request, @CurrentMember AuthMember authMember) {
-        memberFcmTokenService.upsertTokenForMember(request, authMember.id());
+    public ResponseEntity<ApiResponse<Void>> upsertMemberFcmToken(@RequestBody @Valid FcmTokenRequest request, @CurrentMember AuthMember authMember) {
+        fcmTokenService.upsertTokenForMember(request, authMember.id());
         return ApiResponse.noContent();
     }
 
