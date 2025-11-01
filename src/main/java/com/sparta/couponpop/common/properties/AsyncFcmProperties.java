@@ -14,21 +14,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class AsyncFcmProperties {
 
     // 기본 스레드 수
-    private int corePoolSize = 16;
+    private int corePoolSize;
 
     // 최대 스레드 수
-    private int maxPoolSize = 64;
+    private int maxPoolSize;
 
     // 대기열 용량
-    private int queueCapacity = 5000;
+    private int queueCapacity;
 
     // 스레드 이름 접두어
-    private String threadNamePrefix = "fcm-async-";
+    private String threadNamePrefix;
 
     // 애플리케이션 종료 시 작업 완료 대기 여부
-    private boolean waitForTasksToCompleteOnShutdown = true;
+    private boolean waitForTasksToCompleteOnShutdown;
 
     // 종료 대기 시간(초)
-    private int awaitTerminationSeconds = 30;
+    private int awaitTerminationSeconds;
 }
 
