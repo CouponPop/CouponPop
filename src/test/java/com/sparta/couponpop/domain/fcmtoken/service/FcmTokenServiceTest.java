@@ -3,6 +3,7 @@ package com.sparta.couponpop.domain.fcmtoken.service;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.fcmtoken.dto.request.FcmTokenRequest;
 import com.sparta.couponpop.domain.fcmtoken.entity.FcmToken;
+import com.sparta.couponpop.domain.fcmtoken.exception.FcmTokenErrorCode;
 import com.sparta.couponpop.domain.fcmtoken.repository.FcmTokenRepository;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
@@ -187,7 +188,7 @@ class FcmTokenServiceTest {
             // when & then
             assertThatThrownBy(() -> fcmTokenService.updateLastUsedAt(token))
                     .isInstanceOf(GlobalException.class)
-                    .hasMessage(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND.getMessage());
+                    .hasMessage(FcmTokenErrorCode.FCM_TOKEN_NOT_FOUND.getMessage());
 
             then(fcmTokenRepository).should(times(1)).findByFcmToken(token);
         }
@@ -223,7 +224,7 @@ class FcmTokenServiceTest {
             // when & then
             assertThatThrownBy(() -> fcmTokenService.deleteToken(token))
                     .isInstanceOf(GlobalException.class)
-                    .hasMessage(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND.getMessage());
+                    .hasMessage(FcmTokenErrorCode.FCM_TOKEN_NOT_FOUND.getMessage());
 
             then(fcmTokenRepository).should(times(1)).findByFcmToken(token);
             then(fcmTokenRepository).should(never()).delete(any(FcmToken.class));

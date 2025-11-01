@@ -3,6 +3,7 @@ package com.sparta.couponpop.domain.fcmtoken.service;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.fcmtoken.dto.request.FcmTokenRequest;
 import com.sparta.couponpop.domain.fcmtoken.entity.FcmToken;
+import com.sparta.couponpop.domain.fcmtoken.exception.FcmTokenErrorCode;
 import com.sparta.couponpop.domain.fcmtoken.repository.FcmTokenRepository;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
@@ -76,7 +77,7 @@ public class FcmTokenService {
     @Transactional
     public void updateLastUsedAt(String fcmToken) {
         FcmToken fcmtoken = fcmTokenRepository.findByFcmToken(fcmToken)
-                .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(FcmTokenErrorCode.FCM_TOKEN_NOT_FOUND));
 
         fcmtoken.updateLastUsedAt(LocalDateTime.now());
     }
@@ -85,7 +86,7 @@ public class FcmTokenService {
     @Transactional
     public void deleteToken(String token) {
         FcmToken fcmToken = fcmTokenRepository.findByFcmToken(token)
-                .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(FcmTokenErrorCode.FCM_TOKEN_NOT_FOUND));
 
         fcmTokenRepository.delete(fcmToken);
     }
