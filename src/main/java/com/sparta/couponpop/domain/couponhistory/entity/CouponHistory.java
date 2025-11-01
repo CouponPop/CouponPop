@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.couponhistory.entity;
 
+import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -22,6 +23,9 @@ public class CouponHistory {
     private Long id;
 
     @Column(nullable = false)
+    private Long couponId;
+
+    @Column(nullable = false)
     private Long memberId;
 
     @Column(nullable = false)
@@ -31,54 +35,29 @@ public class CouponHistory {
     private Long couponEventId;
 
     @Column(nullable = false)
-    private String memberName;
-
-    @Column(nullable = false)
-    private String eventName;
-
-    @Column(nullable = false)
-    private LocalDateTime eventStartAt;
-
-    @Column(nullable = false)
-    private LocalDateTime eventEndAt;
-
-    @Column(nullable = false)
-    private int totalCount;
-
-    @Column(nullable = false)
-    private LocalDateTime issuedAt;
-
-    @Column(nullable = false)
-    private LocalDateTime expireAt;
-
-    private LocalDateTime usedAt;
-
-    @Column(nullable = false)
-    private String storeName;
-
-    @Column(nullable = false)
-    private String storeAddress;
+    @Enumerated(EnumType.STRING)
+    private CouponStatus couponStatus;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private CouponHistory(Long memberId, Long storeId, Long couponEventId, String memberName, String eventName, LocalDateTime eventStartAt, LocalDateTime eventEndAt, int totalCount, LocalDateTime issuedAt, LocalDateTime expireAt, LocalDateTime usedAt, String storeName, String storeAddress, LocalDateTime createdAt) {
+    private CouponHistory(Long couponId, Long memberId, Long storeId, Long couponEventId, CouponStatus couponStatus) {
+        this.couponId = couponId;
         this.memberId = memberId;
         this.storeId = storeId;
         this.couponEventId = couponEventId;
-        this.memberName = memberName;
-        this.eventName = eventName;
-        this.eventStartAt = eventStartAt;
-        this.eventEndAt = eventEndAt;
-        this.totalCount = totalCount;
-        this.issuedAt = issuedAt;
-        this.expireAt = expireAt;
-        this.usedAt = usedAt;
-        this.storeName = storeName;
-        this.storeAddress = storeAddress;
-        this.createdAt = createdAt;
+        this.couponStatus = couponStatus;
     }
 
+    public static CouponHistory create(Long couponId, Long memberId, Long storeId, Long couponEventId, CouponStatus couponStatus) {
+        return CouponHistory.builder()
+                .couponId(couponId)
+                .memberId(memberId)
+                .storeId(storeId)
+                .couponEventId(couponEventId)
+                .couponStatus(couponStatus)
+                .build();
+    }
 }

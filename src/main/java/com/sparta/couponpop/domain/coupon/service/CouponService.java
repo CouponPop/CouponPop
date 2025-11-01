@@ -171,12 +171,11 @@ public class CouponService {
         temporaryCouponCodeRepository.deleteTemporaryCoupon(couponId, qrCode);
 
         eventPublisher.publishEvent(CouponUsedEvent.of(
-                memberId,
                 couponId,
+                memberId,
                 coupon.getCouponEvent().getStore().getId(),
-                coupon.getCouponEvent().getStore().getDong(),
-                usedAt)
-        );
+                coupon.getCouponEvent().getId()
+        ));
     }
 
     /**

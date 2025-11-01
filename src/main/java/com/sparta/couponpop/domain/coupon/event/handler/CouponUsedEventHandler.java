@@ -1,8 +1,7 @@
 package com.sparta.couponpop.domain.coupon.event.handler;
 
-import com.sparta.couponpop.common.elasticsearch.document.CouponUsageDocument;
-import com.sparta.couponpop.common.elasticsearch.repository.CouponUsageRepository;
 import com.sparta.couponpop.domain.coupon.event.CouponUsedEvent;
+import com.sparta.couponpop.domain.couponhistory.service.CouponHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -14,12 +13,14 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class CouponUsedEventHandler {
 
-    private final CouponUsageRepository couponUsageRepository;
+    private final CouponHistoryService couponHistoryService;
 
+    /**
+     * 쿠폰 사용 이벤트 발생 후, 독립 트랜잭션에서 DB 적재
+     */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleCouponUsedEvent(CouponUsedEvent event) {
-        log.info("쿠폰 사용 통계성 데이터 ES 적재");
-        CouponUsageDocument doc = CouponUsageDocument.create(event.memberId(), event.couponId(), event.storeId(), event.dong(), event.usedAt());
-        couponUsageRepository.save(doc);
+        couponHistoryService.saveCouponHistory(event.toCouponUsedDto());
+        // TODO : 쿠폰 사용 -> 손님(자기 자신)한테 알림
     }
 }
