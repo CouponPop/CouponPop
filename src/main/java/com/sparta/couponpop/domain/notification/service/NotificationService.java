@@ -9,7 +9,7 @@ import com.sparta.couponpop.domain.member.repository.MemberFcmTokenRepository;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.notification.constants.NotificationTemplates;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponIssuedNotificationPayload;
-import com.sparta.couponpop.domain.notification.enums.NotificationType;
+import com.sparta.couponpop.domain.notification.dto.payload.CouponUsedNotificationPayload;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,35 +28,65 @@ public class NotificationService {
     private final MemberFcmTokenRepository memberFcmTokenRepository;
     private final FcmSendService fcmSendService;
 
-    public void notifyCustomerCouponIssued(@Valid CouponIssuedNotificationPayload payload) {
-        Member member = memberRepository.findById(payload.memberId())
+    /**
+     * 쿠폰 사용한 손님에게 푸시 알림 전송
+     */
+    public void send(@Valid CouponUsedNotificationPayload payload) {
+
+        List<String> tokens = getTokensForMember(payload.customerId());
+
+        String title = NotificationTemplates.COUPON_USED_TITLE.formatted(payload.couponName());
+        String body = NotificationTemplates.COUPON_USED_BODY.formatted(
+                payload.couponName(),
+                payload.storeName()
+        );
+
+        for (String token : tokens) {
+            fcmSendService.sendNotification(payload.customerId(), token, title, body)
+                    .exceptionally(throwable -> {
+                        log.error("쿠폰 사용 알림 전송 중 오류가 발생했습니다. token={}, message={}", token, throwable.getMessage(), throwable);
+                        return null;
+                    });
+        }
+    }
+
+    /**
+     * 손님 쿠폰 수령 시 사장님 푸시 알림 전송
+     */
+    public void send(@Valid CouponIssuedNotificationPayload payload) {
+
+        List<String> tokens = getTokensForMember(payload.ownerId());
+
+        String title = NotificationTemplates.COUPON_ISSUED_TITLE.formatted(payload.couponName());
+        String body = NotificationTemplates.COUPON_ISSUED_BODY.formatted(
+                payload.couponName(),
+                payload.totalCount(),
+                payload.issuedCount()
+        );
+
+        for (String token : tokens) {
+            fcmSendService.sendNotification(payload.ownerId(), token, title, body)
+                    .exceptionally(throwable -> {
+                        log.error("쿠폰 수령 알림 전송 중 오류가 발생했습니다. token={}, message={}", token, throwable.getMessage(), throwable);
+                        return null;
+                    });
+        }
+    }
+
+    private List<String> getTokensForMember(Long memberId) {
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         List<MemberFcmToken> enabledTokens = memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member);
         if (enabledTokens.isEmpty()) {
             log.info("푸시 알림이 활성화된 FCM 토큰이 없어 알림을 건너뜁니다. memberId={}", member.getId());
-            return;
+            return List.of();
         }
 
         // 토큰 중복 제거
-        List<String> tokens = enabledTokens.stream()
+        return enabledTokens.stream()
                 .map(MemberFcmToken::getFcmToken)
                 .distinct()
                 .toList();
-
-        String title = NotificationTemplates.COUPON_ISSUED_TITLE;
-        String body = NotificationTemplates.COUPON_ISSUED_BODY.formatted(
-                payload.couponName(),
-                payload.couponCode(),
-                payload.expireAt()
-        );
-
-        for (String token : tokens) {
-            fcmSendService.sendNotification(member.getId(), token, title, body)
-                    .exceptionally(throwable -> {
-                        log.error("{} 전송 중 오류가 발생했습니다. token={}, message={}", NotificationType.COUPON_ISSUED, token, throwable.getMessage(), throwable);
-                        return null;
-                    });
-        }
     }
 }

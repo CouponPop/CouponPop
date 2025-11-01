@@ -4,6 +4,7 @@ import com.sparta.couponpop.common.fcm.request.FcmRequest;
 import com.sparta.couponpop.common.fcm.service.FcmSendService;
 import com.sparta.couponpop.common.response.ApiResponse;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponIssuedNotificationPayload;
+import com.sparta.couponpop.domain.notification.dto.payload.CouponUsedNotificationPayload;
 import com.sparta.couponpop.domain.notification.service.NotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.time.LocalDateTime;
 
 // TODO: 테스트용 컨트롤러, 추후 삭제 예정
 @Slf4j
@@ -26,7 +25,7 @@ public class FcmTestController {
 
     @PostMapping("/fcm/test")
     public ResponseEntity<ApiResponse<Void>> sendTestNotification(@RequestBody @Valid FcmRequest request) {
-        log.debug("[+] 푸시 메세지 전송");
+        log.info("[+] 푸시 메세지 전송");
 
         // 일반 테스트
         fcmSendService.sendNotification(request.memberId(), request.token(), request.title(), request.body())
@@ -39,17 +38,30 @@ public class FcmTestController {
     }
 
     @PostMapping("/fcm/test2")
-    public ResponseEntity<ApiResponse<Void>> sendTestNotification() {
-        log.debug("[+] 손님 쿠폰 수령 알림 푸시 메세지 전송");
+    public ResponseEntity<ApiResponse<Void>> sendTestOwnerNotification() {
+        log.info("[+] 손님 쿠폰 수령 시 사장님 알림 푸시 메세지 전송");
 
-        // 쿠폰 수령 알림 테스트
         CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(
                 1L,
-                "아이스아메리카노 1+1 쿠폰",
-                "test-coupon-code",
-                LocalDateTime.now()
+                "아이스아메리카노 1+1",
+                30,
+                15
         );
-        notificationService.notifyCustomerCouponIssued(payload);
+        notificationService.send(payload);
+
+        return ApiResponse.noContent();
+    }
+
+    @PostMapping("/fcm/test3")
+    public ResponseEntity<ApiResponse<Void>> sendTestCustomerNotification() {
+        log.info("[+] 쿠폰 사용한 손님에게 푸시 알림 메세지 전송");
+
+        CouponUsedNotificationPayload payload = CouponUsedNotificationPayload.of(
+                1L,
+                "아이스아메리카노 1+1",
+                "스타벅스 강남역점"
+        );
+        notificationService.send(payload);
 
         return ApiResponse.noContent();
     }
