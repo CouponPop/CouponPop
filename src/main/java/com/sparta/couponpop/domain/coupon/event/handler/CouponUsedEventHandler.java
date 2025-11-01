@@ -20,7 +20,7 @@ public class CouponUsedEventHandler {
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleCouponUsedEvent(CouponUsedEvent event) {
-        couponHistoryService.saveCouponHistory(event.toCouponHistory());
+        couponHistoryService.saveCouponHistory(event.toCouponUsedDto());
         // TODO : 쿠폰 사용 -> 손님(자기 자신)한테 알림
     }
 }

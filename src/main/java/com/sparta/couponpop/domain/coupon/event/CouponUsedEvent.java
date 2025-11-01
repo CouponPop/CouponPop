@@ -15,7 +15,7 @@ public record CouponUsedEvent(
         return new CouponUsedEvent(couponId, memberId, storeId, eventId, CouponStatus.USED);
     }
 
-    public CouponUsedDto toCouponHistory() {
+    public CouponUsedDto toCouponUsedDto() {
         return new CouponUsedDto(couponId, memberId, storeId, eventId, couponStatus);
     }
 }
