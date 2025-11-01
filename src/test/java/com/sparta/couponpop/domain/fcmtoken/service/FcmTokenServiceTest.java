@@ -1,10 +1,9 @@
-package com.sparta.couponpop.domain.member.service;
+package com.sparta.couponpop.domain.fcmtoken.service;
 
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.fcmtoken.dto.request.FcmTokenRequest;
 import com.sparta.couponpop.domain.fcmtoken.entity.FcmToken;
 import com.sparta.couponpop.domain.fcmtoken.repository.FcmTokenRepository;
-import com.sparta.couponpop.domain.fcmtoken.service.FcmTokenService;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
@@ -58,16 +57,16 @@ class FcmTokenServiceTest {
                     .deviceType("ANDROID")
                     .deviceIdentifier("device-123")
                     .build();
-            FcmToken duplicatedToken = mock(FcmToken.class);
+            FcmToken duplicatedFcmToken = mock(FcmToken.class);
 
             given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-            given(fcmTokenRepository.findByFcmToken(request.fcmToken())).willReturn(Optional.of(duplicatedToken));
+            given(fcmTokenRepository.findByFcmToken(request.fcmToken())).willReturn(Optional.of(duplicatedFcmToken));
 
             // when
             fcmTokenService.upsertTokenForMember(request, memberId);
 
             // then
-            then(duplicatedToken).should(times(1)).updateMemberAndDeviceIdentifier(eq(member), eq(request.deviceIdentifier()), any(LocalDateTime.class));
+            then(duplicatedFcmToken).should(times(1)).updateMemberAndDeviceIdentifier(eq(member), eq(request.deviceIdentifier()), any(LocalDateTime.class));
 
             then(fcmTokenRepository).should(times(1)).findByFcmToken(request.fcmToken());
             then(fcmTokenRepository).should(never()).findByMemberAndDeviceIdentifier(any(Member.class), anyString());
@@ -85,17 +84,17 @@ class FcmTokenServiceTest {
                     .deviceType("IOS")
                     .deviceIdentifier("device-123")
                     .build();
-            FcmToken activeToken = mock(FcmToken.class);
+            FcmToken activeFcmToken = mock(FcmToken.class);
 
             given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
             given(fcmTokenRepository.findByFcmToken(request.fcmToken())).willReturn(Optional.empty());
-            given(fcmTokenRepository.findByMemberAndDeviceIdentifier(member, request.deviceIdentifier())).willReturn(Optional.of(activeToken));
+            given(fcmTokenRepository.findByMemberAndDeviceIdentifier(member, request.deviceIdentifier())).willReturn(Optional.of(activeFcmToken));
 
             // when
             fcmTokenService.upsertTokenForMember(request, memberId);
 
             // then
-            then(activeToken).should(times(1)).updateFcmToken(eq(request.fcmToken()), any(LocalDateTime.class));
+            then(activeFcmToken).should(times(1)).updateFcmToken(eq(request.fcmToken()), any(LocalDateTime.class));
 
             then(fcmTokenRepository).should(times(1)).findByFcmToken(request.fcmToken());
             then(fcmTokenRepository).should(times(1)).findByMemberAndDeviceIdentifier(member, request.deviceIdentifier());
@@ -126,12 +125,12 @@ class FcmTokenServiceTest {
             ArgumentCaptor<FcmToken> tokenCaptor = ArgumentCaptor.forClass(FcmToken.class);
             then(fcmTokenRepository).should(times(1)).save(tokenCaptor.capture());
 
-            FcmToken savedToken = tokenCaptor.getValue();
-            assertThat(savedToken.getMember()).isEqualTo(member);
-            assertThat(savedToken.getFcmToken()).isEqualTo(request.fcmToken());
-            assertThat(savedToken.getDeviceType()).isEqualTo(request.deviceType());
-            assertThat(savedToken.getDeviceIdentifier()).isEqualTo(request.deviceIdentifier());
-            assertThat(savedToken.getLastUsedAt()).isNotNull();
+            FcmToken savedFcmToken = tokenCaptor.getValue();
+            assertThat(savedFcmToken.getMember()).isEqualTo(member);
+            assertThat(savedFcmToken.getFcmToken()).isEqualTo(request.fcmToken());
+            assertThat(savedFcmToken.getDeviceType()).isEqualTo(request.deviceType());
+            assertThat(savedFcmToken.getDeviceIdentifier()).isEqualTo(request.deviceIdentifier());
+            assertThat(savedFcmToken.getLastUsedAt()).isNotNull();
         }
 
         @Test
@@ -166,31 +165,31 @@ class FcmTokenServiceTest {
         @DisplayName("토큰이 존재하면 최근 사용 시간을 갱신한다")
         void updateLastUsedAt_success_tokenExists() {
             // given
-            String fcmToken = "existing-token";
-            FcmToken memberFcmToken = mock(FcmToken.class);
-            given(fcmTokenRepository.findByFcmToken(fcmToken)).willReturn(Optional.of(memberFcmToken));
+            String token = "existing-token";
+            FcmToken fcmToken = mock(FcmToken.class);
+            given(fcmTokenRepository.findByFcmToken(token)).willReturn(Optional.of(fcmToken));
 
             // when
-            fcmTokenService.updateLastUsedAt(fcmToken);
+            fcmTokenService.updateLastUsedAt(token);
 
             // then
-            then(fcmTokenRepository).should(times(1)).findByFcmToken(fcmToken);
-            then(memberFcmToken).should(times(1)).updateLastUsedAt(any(LocalDateTime.class));
+            then(fcmTokenRepository).should(times(1)).findByFcmToken(token);
+            then(fcmToken).should(times(1)).updateLastUsedAt(any(LocalDateTime.class));
         }
 
         @Test
         @DisplayName("토큰이 없으면 예외를 던진다")
         void updateLastUsedAt_fail_tokenNotFound() {
             // given
-            String fcmToken = "missing-token";
-            given(fcmTokenRepository.findByFcmToken(fcmToken)).willReturn(Optional.empty());
+            String token = "missing-token";
+            given(fcmTokenRepository.findByFcmToken(token)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> fcmTokenService.updateLastUsedAt(fcmToken))
+            assertThatThrownBy(() -> fcmTokenService.updateLastUsedAt(token))
                     .isInstanceOf(GlobalException.class)
                     .hasMessage(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND.getMessage());
 
-            then(fcmTokenRepository).should(times(1)).findByFcmToken(fcmToken);
+            then(fcmTokenRepository).should(times(1)).findByFcmToken(token);
         }
     }
 
@@ -202,31 +201,31 @@ class FcmTokenServiceTest {
         @DisplayName("토큰이 존재하면 삭제한다")
         void deleteToken_success_tokenExists() {
             // given
-            String fcmToken = "removable-token";
-            FcmToken memberFcmToken = mock(FcmToken.class);
-            given(fcmTokenRepository.findByFcmToken(fcmToken)).willReturn(Optional.of(memberFcmToken));
+            String token = "removable-token";
+            FcmToken fcmToken = mock(FcmToken.class);
+            given(fcmTokenRepository.findByFcmToken(token)).willReturn(Optional.of(fcmToken));
 
             // when
-            fcmTokenService.deleteToken(fcmToken);
+            fcmTokenService.deleteToken(token);
 
             // then
-            then(fcmTokenRepository).should(times(1)).findByFcmToken(fcmToken);
-            then(fcmTokenRepository).should(times(1)).delete(memberFcmToken);
+            then(fcmTokenRepository).should(times(1)).findByFcmToken(token);
+            then(fcmTokenRepository).should(times(1)).delete(fcmToken);
         }
 
         @Test
         @DisplayName("토큰이 없으면 예외를 던진다")
         void deleteToken_fail_tokenNotFound() {
             // given
-            String fcmToken = "invalid-token";
-            given(fcmTokenRepository.findByFcmToken(fcmToken)).willReturn(Optional.empty());
+            String token = "invalid-token";
+            given(fcmTokenRepository.findByFcmToken(token)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> fcmTokenService.deleteToken(fcmToken))
+            assertThatThrownBy(() -> fcmTokenService.deleteToken(token))
                     .isInstanceOf(GlobalException.class)
                     .hasMessage(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND.getMessage());
 
-            then(fcmTokenRepository).should(times(1)).findByFcmToken(fcmToken);
+            then(fcmTokenRepository).should(times(1)).findByFcmToken(token);
             then(fcmTokenRepository).should(never()).delete(any(FcmToken.class));
         }
     }

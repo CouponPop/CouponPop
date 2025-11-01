@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.member.controller;
+package com.sparta.couponpop.domain.fcmtoken.controller;
 
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.epages.restdocs.apispec.Schema;
@@ -7,7 +7,6 @@ import com.sparta.couponpop.common.security.JwtAuthFilter;
 import com.sparta.couponpop.common.security.JwtAuthenticationToken;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
-import com.sparta.couponpop.domain.fcmtoken.controller.FcmTokenController;
 import com.sparta.couponpop.domain.fcmtoken.dto.request.FcmTokenRequest;
 import com.sparta.couponpop.domain.fcmtoken.service.FcmTokenService;
 import com.sparta.couponpop.domain.member.enums.MemberType;
@@ -74,14 +73,14 @@ class FcmTokenControllerTest {
     }
 
     @Nested
-    @DisplayName("POST /api/v1/members/fcm-token")
+    @DisplayName("POST /api/v1/fcm-tokens")
     class UpsertFcmToken {
 
-        private static final String URL = "/api/v1/members/fcm-token";
+        private static final String URL = "/api/v1/fcm-token";
 
         @Test
-        @DisplayName("회원 FCM 토큰 생성 및 갱신 - 성공")
-        void upsertMemberFcmToken_success() throws Exception {
+        @DisplayName("FCM 토큰 생성 및 갱신 - 성공")
+        void upsertFcmToken_success() throws Exception {
             // given
             FcmTokenRequest request = FcmTokenRequest.builder()
                     .fcmToken("sample_fcm_token")
@@ -104,15 +103,15 @@ class FcmTokenControllerTest {
                     .andExpect(status().isNoContent());
 
             // docs
-            resultActions.andDo(document("member-fcmTokenUpsert",
+            resultActions.andDo(document("fcmtoken-fcmTokenUpsert",
                     preprocessRequest(prettyPrint()),
                     preprocessResponse(prettyPrint()),
                     resource(
                             ResourceSnippetParameters.builder()
-                                    .summary("회원 FCM 토큰 생성 및 갱신")
+                                    .summary("FCM 토큰 생성 및 갱신")
                                     .description("회원의 FCM 토큰을 생성하거나 갱신합니다.")
-                                    .tag("Member FCM Token")
-                                    .requestSchema(Schema.schema("Member.MemberFcmTokenRequest"))
+                                    .tag("FCM Token")
+                                    .requestSchema(Schema.schema("FcmToken.fcmTokenRequest"))
                                     .requestFields(
                                             fieldWithPath("fcmToken").description("FCM 토큰"),
                                             fieldWithPath("deviceType").description("디바이스 타입 (예: ANDROID, IOS)"),

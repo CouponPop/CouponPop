@@ -75,19 +75,19 @@ public class FcmTokenService {
     // 단일 토큰 최근 사용 날짜(lastUsedAt) UPDATE
     @Transactional
     public void updateLastUsedAt(String fcmToken) {
-        FcmToken memberFcmToken = fcmTokenRepository.findByFcmToken(fcmToken)
+        FcmToken fcmtoken = fcmTokenRepository.findByFcmToken(fcmToken)
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND));
 
-        memberFcmToken.updateLastUsedAt(LocalDateTime.now());
+        fcmtoken.updateLastUsedAt(LocalDateTime.now());
     }
 
     // 단일 토큰 삭제
     @Transactional
-    public void deleteToken(String fcmToken) {
-        FcmToken memberFcmToken = fcmTokenRepository.findByFcmToken(fcmToken)
+    public void deleteToken(String token) {
+        FcmToken fcmToken = fcmTokenRepository.findByFcmToken(token)
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_FCM_TOKEN_NOT_FOUND));
 
-        fcmTokenRepository.delete(memberFcmToken);
+        fcmTokenRepository.delete(fcmToken);
     }
 
     /**

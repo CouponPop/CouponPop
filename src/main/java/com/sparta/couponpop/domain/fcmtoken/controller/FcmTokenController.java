@@ -20,8 +20,8 @@ public class FcmTokenController {
 
     private final FcmTokenService fcmTokenService;
 
-    @PostMapping("/members/fcm-token")
-    public ResponseEntity<ApiResponse<Void>> upsertMemberFcmToken(@RequestBody @Valid FcmTokenRequest request, @CurrentMember AuthMember authMember) {
+    @PostMapping("/fcm-token")
+    public ResponseEntity<ApiResponse<Void>> upsertFcmToken(@RequestBody @Valid FcmTokenRequest request, @CurrentMember AuthMember authMember) {
         fcmTokenService.upsertTokenForMember(request, authMember.id());
         return ApiResponse.noContent();
     }
