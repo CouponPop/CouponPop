@@ -64,7 +64,12 @@ public class FcmSendService {
             public void onFailure(Throwable throwable) {
                 log.error("FCM 전송 중 오류 발생: {}", throwable.getMessage(), throwable);
 
-                memberFcmTokenService.deleteToken(token);
+                try {
+                    memberFcmTokenService.deleteToken(token);
+                } catch (Exception e) {
+                    log.warn("FCM 토큰 삭제 중 오류 발생: {}", e.getMessage(), e);
+                }
+
                 NotificationHistoryPayload notificationHistoryPayload = NotificationHistoryPayload.of(
                         memberId,
                         NOTIFICATION_HISTORY_TYPE,
