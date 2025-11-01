@@ -35,7 +35,16 @@ public class StoreDocument {
     @Field(type = FieldType.Keyword, name = "member_username")
     private String memberUsername;
 
-    @Field(type = FieldType.Text, analyzer = "korean_analyzer")
+    @MultiField(
+        mainField = @Field(type = FieldType.Text, analyzer = "korean_analyzer"),
+        otherFields = {
+            @InnerField(suffix = "autocomplete", type = FieldType.Text, 
+                        analyzer = "autocomplete_analyzer", searchAnalyzer = "autocomplete_search_analyzer"),
+            @InnerField(suffix = "ngram", type = FieldType.Text, 
+                        analyzer = "korean_ngram_analyzer"),
+            @InnerField(suffix = "keyword", type = FieldType.Keyword)
+        }
+    )
     private String name;
 
     @Field(type = FieldType.Keyword)

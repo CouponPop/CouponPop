@@ -10,9 +10,11 @@ import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreDetailResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
+import com.sparta.couponpop.domain.store.dto.response.StoreSearchResponse;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import com.sparta.couponpop.domain.store.service.StoreIndexInitService;
+import com.sparta.couponpop.domain.store.service.StoreSearchService;
 import com.sparta.couponpop.domain.store.service.StoreService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,6 +57,9 @@ class StoreControllerTest {
 
     @MockitoBean
     private StoreService storeService;
+
+    @MockitoBean
+    private StoreSearchService storeSearchService;
 
     @MockitoBean
     private StoreIndexInitService storeIndexInitService;
@@ -448,22 +453,16 @@ class StoreControllerTest {
     void searchStores_Success() throws Exception {
         // given
         String keyword = "스타벅스";
-        List<StoreResponse> responses = Arrays.asList(
-                new StoreResponse(1L, 1L, "testuser", "스타벅스 홍대점", "02123456789",
-                        "홍대 스타벅스", "1234567890", "서울시 마포구", "홍대동",
-                        37.5665, 126.9780, "https://example.com/image.jpg",
-                        StoreCategory.CAFE, LocalTime.of(9, 0), LocalTime.of(22, 0),
-                        LocalTime.of(10, 0), LocalTime.of(23, 0),
-                        LocalDateTime.now(), LocalDateTime.now()),
-                new StoreResponse(2L, 2L, "testuser2", "스타벅스 강남점", "02987654321",
-                        "강남 스타벅스", "0987654321", "서울시 강남구", "역삼동",
-                        37.5000, 127.0000, "https://example.com/image2.jpg",
-                        StoreCategory.CAFE, LocalTime.of(9, 0), LocalTime.of(22, 0),
-                        LocalTime.of(10, 0), LocalTime.of(23, 0),
-                        LocalDateTime.now(), LocalDateTime.now())
+        List<StoreSearchResponse> responses = Arrays.asList(
+                new StoreSearchResponse(1L, "스타벅스 홍대점", "서울시 마포구", "홍대동",
+                        StoreCategory.CAFE, "https://example.com/image.jpg",
+                        37.5665, 126.9780, 15.3f),
+                new StoreSearchResponse(2L, "스타벅스 강남점", "서울시 강남구", "역삼동",
+                        StoreCategory.CAFE, "https://example.com/image2.jpg",
+                        37.5000, 127.0000, 12.8f)
         );
 
-        given(storeService.searchStoresByName(anyString())).willReturn(responses);
+        given(storeSearchService.searchStoresWithRecommendation(anyString())).willReturn(responses);
 
         // when
         ResultActions resultActions = mockMvc.perform(
@@ -479,6 +478,8 @@ class StoreControllerTest {
                 .andExpect(jsonPath("$.data.length()").value(2))
                 .andExpect(jsonPath("$.data[0].name").value("스타벅스 홍대점"))
                 .andExpect(jsonPath("$.data[1].name").value("스타벅스 강남점"))
+                .andExpect(jsonPath("$.data[0].score").value(15.3))
+                .andExpect(jsonPath("$.data[1].score").value(12.8))
                 .andDo(print());
     }
 
