@@ -30,8 +30,7 @@ public class FcmTestController {
         log.debug("[+] 푸시 메세지 전송");
 
         // 일반 테스트
-        Long memberId = 1L; // 테스트용 회원 ID
-        fcmSendService.sendNotification(memberId, request.token(), request.title(), request.body());
+        fcmSendService.sendNotification(request.memberId(), request.token(), request.title(), request.body());
 
         return ApiResponse.noContent();
     }
@@ -41,13 +40,13 @@ public class FcmTestController {
         log.debug("[+] 손님 쿠폰 수령 알림 푸시 메세지 전송");
 
         // 쿠폰 수령 알림 테스트
-        Long memberId = 1L; // 테스트용 회원 ID
         CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(
+                1L,
                 "아이스아메리카노 1+1 쿠폰",
                 "test-coupon-code",
                 LocalDateTime.now()
         );
-        notificationService.notifyCustomerCouponIssued(memberId, payload);
+        notificationService.notifyCustomerCouponIssued(payload);
 
         return ApiResponse.noContent();
     }

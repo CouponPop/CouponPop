@@ -17,6 +17,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -26,8 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -49,7 +49,6 @@ class NotificationServiceTest {
     private NotificationService notificationService;
 
     private Member member;
-    private CouponIssuedNotificationPayload payload;
 
     @BeforeEach
     void setUp() {
@@ -61,12 +60,6 @@ class NotificationServiceTest {
                 "phoneNumber", "01012345678",
                 "memberType", MemberType.CUSTOMER
         ));
-
-        payload = CouponIssuedNotificationPayload.of(
-                "오픈 기념 쿠폰",
-                "CPN-20241025",
-                LocalDateTime.of(2024, 10, 25, 12, 0)
-        );
     }
 
     @Nested
@@ -77,11 +70,16 @@ class NotificationServiceTest {
         @DisplayName("회원이 존재하지 않으면 예외를 던진다")
         void notifyCustomerCouponIssued_fail_memberNotFound() {
             // given
-            Long memberId = 999L;
-            given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+            CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(
+                    999L,
+                    "오픈 기념 쿠폰",
+                    "CPN-20241025",
+                    LocalDateTime.of(2024, 10, 25, 12, 0)
+            );
+            given(memberRepository.findById(payload.memberId())).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> notificationService.notifyCustomerCouponIssued(memberId, payload))
+            assertThatThrownBy(() -> notificationService.notifyCustomerCouponIssued(payload))
                     .isInstanceOf(GlobalException.class)
                     .hasMessage(MemberErrorCode.MEMBER_NOT_FOUND.getMessage());
 
@@ -92,26 +90,41 @@ class NotificationServiceTest {
         @DisplayName("활성화된 토큰이 없으면 알림 전송을 건너뛴다")
         void notifyCustomerCouponIssued_skip_whenTokensEmpty() {
             // given
-            given(memberRepository.findById(member.getId())).willReturn(Optional.of(member));
+            CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(
+                    1L,
+                    "오픈 기념 쿠폰",
+                    "CPN-20241025",
+                    LocalDateTime.of(2024, 10, 25, 12, 0)
+            );
+
+            given(memberRepository.findById(payload.memberId())).willReturn(Optional.of(member));
             given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of());
 
             // when
-            notificationService.notifyCustomerCouponIssued(member.getId(), payload);
+            notificationService.notifyCustomerCouponIssued(payload);
 
             // then
             verifyNoInteractions(fcmSendService);
         }
 
         @Test
-        @DisplayName("중복 없이 활성화된 토큰에 알림을 전송한다")
+        @DisplayName("활성화된 토큰에 알림을 전송한다")
         void notifyCustomerCouponIssued_success_sendNotification() throws FirebaseMessagingException {
             // given
             MemberFcmToken token1 = MemberFcmToken.of(member, "token-1", "ANDROID", "device-1", true, LocalDateTime.now());
-            MemberFcmToken token2 = MemberFcmToken.of(member, "token-1", "IOS", "device-2", true, LocalDateTime.now());
-            MemberFcmToken token3 = MemberFcmToken.of(member, "token-2", "ANDROID", "device-3", true, LocalDateTime.now());
+            MemberFcmToken token2 = MemberFcmToken.of(member, "token-2", "IOS", "device-2", true, LocalDateTime.now());
+            MemberFcmToken token3 = MemberFcmToken.of(member, "token-3", "ANDROID", "device-3", true, LocalDateTime.now());
+            MemberFcmToken duplicateToken = MemberFcmToken.of(member, "token-1", "ANDROID", "device-4", true, LocalDateTime.now()); // 중복 토큰
 
-            given(memberRepository.findById(member.getId())).willReturn(Optional.of(member));
-            given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of(token1, token2, token3));
+            CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(
+                    1L,
+                    "오픈 기념 쿠폰",
+                    "CPN-20241025",
+                    LocalDateTime.of(2024, 10, 25, 12, 0)
+            );
+
+            given(memberRepository.findById(payload.memberId())).willReturn(Optional.of(member));
+            given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of(token1, token2, token3, duplicateToken));
 
             String expectedTitle = NotificationTemplates.COUPON_ISSUED_TITLE;
             String expectedBody = NotificationTemplates.COUPON_ISSUED_BODY.formatted(
@@ -121,14 +134,22 @@ class NotificationServiceTest {
             );
 
             // when
-            notificationService.notifyCustomerCouponIssued(member.getId(), payload);
+            notificationService.notifyCustomerCouponIssued(payload);
 
             // then
-            then(fcmSendService).should().sendNotification(
+            ArgumentCaptor<String> fcmTokenCaptor = ArgumentCaptor.forClass(String.class);
+
+            then(fcmSendService).should(times(3)).sendNotification(
                     eq(member.getId()),
-                    eq(List.of("token-1", "token-2")),
+                    fcmTokenCaptor.capture(),
                     eq(expectedTitle),
                     eq(expectedBody)
+            );
+
+            assertThat(fcmTokenCaptor.getAllValues()).containsExactly(
+                    token1.getFcmToken(),
+                    token2.getFcmToken(),
+                    token3.getFcmToken()
             );
         }
 
@@ -137,16 +158,22 @@ class NotificationServiceTest {
         void notifyCustomerCouponIssued_success_ignoreMessagingException() throws FirebaseMessagingException {
             // given
             MemberFcmToken token = MemberFcmToken.of(member, "token-1", "ANDROID", "device-1", true, LocalDateTime.now());
+            CouponIssuedNotificationPayload payload = CouponIssuedNotificationPayload.of(
+                    1L,
+                    "오픈 기념 쿠폰",
+                    "CPN-20241025",
+                    LocalDateTime.of(2024, 10, 25, 12, 0)
+            );
 
-            given(memberRepository.findById(member.getId())).willReturn(Optional.of(member));
+            given(memberRepository.findById(payload.memberId())).willReturn(Optional.of(member));
             given(memberFcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member)).willReturn(List.of(token));
 
             doThrow(mock(FirebaseMessagingException.class))
                     .when(fcmSendService)
-                    .sendNotification(anyLong(), anyList(), anyString(), anyString());
+                    .sendNotification(anyLong(), anyString(), anyString(), anyString());
 
             // when & then
-            assertThatCode(() -> notificationService.notifyCustomerCouponIssued(member.getId(), payload)).doesNotThrowAnyException();
+            assertThatCode(() -> notificationService.notifyCustomerCouponIssued(payload)).doesNotThrowAnyException();
         }
     }
 }

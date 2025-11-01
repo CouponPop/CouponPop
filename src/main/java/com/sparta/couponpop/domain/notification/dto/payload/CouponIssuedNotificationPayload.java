@@ -6,6 +6,9 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 public record CouponIssuedNotificationPayload(
+        @NotNull(message = "회원 ID는 필수입니다.")
+        Long memberId,
+
         @NotBlank(message = "쿠폰명은 필수입니다.")
         String couponName,
 
@@ -16,7 +19,7 @@ public record CouponIssuedNotificationPayload(
         LocalDateTime expireAt
 ) {
 
-    public static CouponIssuedNotificationPayload of(String couponName, String couponCode, LocalDateTime expireAt) {
-        return new CouponIssuedNotificationPayload(couponName, couponCode, expireAt);
+    public static CouponIssuedNotificationPayload of(Long memberId, String couponName, String couponCode, LocalDateTime expireAt) {
+        return new CouponIssuedNotificationPayload(memberId, couponName, couponCode, expireAt);
     }
 }
