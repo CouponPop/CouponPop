@@ -5,6 +5,7 @@ on:
     branches:
       - dev
       - main
+      - msa
     paths-ignore:
       - '**.md'
       - 'docs/**'
@@ -15,6 +16,7 @@ on:
     branches:
       - dev
       - main
+      - msa
     paths-ignore:
       - '**.md'
       - 'docs/**'
