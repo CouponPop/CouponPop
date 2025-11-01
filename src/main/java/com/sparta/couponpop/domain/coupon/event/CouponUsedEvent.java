@@ -1,16 +1,21 @@
 package com.sparta.couponpop.domain.coupon.event;
 
-import java.time.LocalDateTime;
+import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
+import com.sparta.couponpop.domain.couponhistory.service.dto.CouponUsedDto;
 
 public record CouponUsedEvent(
-        Long memberId,
         Long couponId,
+        Long memberId,
         Long storeId,
-        String dong,
-        LocalDateTime usedAt
+        Long eventId,
+        CouponStatus couponStatus
 ) {
 
-    public static CouponUsedEvent of(Long memberId, Long couponId, Long storeId, String dong, LocalDateTime usedAt) {
-        return new CouponUsedEvent(memberId, couponId, storeId, dong, usedAt);
+    public static CouponUsedEvent of(Long couponId, Long memberId, Long storeId, Long eventId) {
+        return new CouponUsedEvent(couponId, memberId, storeId, eventId, CouponStatus.USED);
+    }
+
+    public CouponUsedDto toCouponHistory() {
+        return new CouponUsedDto(couponId, memberId, storeId, eventId, couponStatus);
     }
 }
