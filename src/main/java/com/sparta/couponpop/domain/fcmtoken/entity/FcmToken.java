@@ -1,6 +1,7 @@
-package com.sparta.couponpop.domain.member.entity;
+package com.sparta.couponpop.domain.fcmtoken.entity;
 
 import com.sparta.couponpop.common.entity.BaseEntity;
+import com.sparta.couponpop.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -11,11 +12,11 @@ import org.hibernate.annotations.DynamicUpdate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "member_fcm_tokens")
+@Table(name = "fcm_tokens")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @DynamicUpdate
-public class MemberFcmToken extends BaseEntity {
+public class FcmToken extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,12 +37,12 @@ public class MemberFcmToken extends BaseEntity {
     private LocalDateTime lastUsedAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private MemberFcmToken(Member member,
-                           String fcmToken,
-                           String deviceType,
-                           String deviceIdentifier,
-                           boolean notificationEnabled,
-                           LocalDateTime lastUsedAt) {
+    private FcmToken(Member member,
+                     String fcmToken,
+                     String deviceType,
+                     String deviceIdentifier,
+                     boolean notificationEnabled,
+                     LocalDateTime lastUsedAt) {
         this.member = member;
         this.fcmToken = fcmToken;
         this.deviceType = deviceType;
@@ -50,13 +51,13 @@ public class MemberFcmToken extends BaseEntity {
         this.lastUsedAt = lastUsedAt;
     }
 
-    public static MemberFcmToken of(Member member,
-                                    String fcmToken,
-                                    String deviceType,
-                                    String deviceIdentifier,
-                                    boolean notificationEnabled,
-                                    LocalDateTime lastUsedAt) {
-        return MemberFcmToken.builder()
+    public static FcmToken of(Member member,
+                              String fcmToken,
+                              String deviceType,
+                              String deviceIdentifier,
+                              boolean notificationEnabled,
+                              LocalDateTime lastUsedAt) {
+        return FcmToken.builder()
                 .member(member)
                 .fcmToken(fcmToken)
                 .deviceType(deviceType)

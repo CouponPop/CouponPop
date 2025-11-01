@@ -5,7 +5,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.sparta.couponpop.common.fcm.factory.FcmMessageFactory;
-import com.sparta.couponpop.domain.member.service.MemberFcmTokenService;
+import com.sparta.couponpop.domain.fcmtoken.service.FcmTokenService;
 import com.sparta.couponpop.domain.notificationhistory.dto.payload.NotificationHistoryPayload;
 import com.sparta.couponpop.domain.notificationhistory.enums.NotificationHistoryStatus;
 import com.sparta.couponpop.domain.notificationhistory.enums.NotificationHistoryType;
@@ -35,7 +35,7 @@ class FcmSendServiceTest {
     private NotificationHistoryService notificationHistoryService;
 
     @Mock
-    private MemberFcmTokenService memberFcmTokenService;
+    private FcmTokenService fcmTokenService;
 
     @Mock
     private FirebaseMessaging firebaseMessaging;
@@ -85,7 +85,7 @@ class FcmSendServiceTest {
 
             // then
             verify(firebaseMessaging).sendAsync(message);
-            verify(memberFcmTokenService).updateLastUsedAt(token);
+            verify(fcmTokenService).updateLastUsedAt(token);
             verify(notificationHistoryService).createNotificationHistory(payload);
             assertThat(result.isDone()).isTrue();
             assertThat(result.join()).isNull();
@@ -120,7 +120,7 @@ class FcmSendServiceTest {
             // then
             assertThat(result.isCompletedExceptionally()).isTrue();
             verify(firebaseMessaging).sendAsync(message);
-            verify(memberFcmTokenService).deleteToken(token);
+            verify(fcmTokenService).deleteToken(token);
             verify(notificationHistoryService).createNotificationHistory(payload);
         }
 
@@ -137,7 +137,7 @@ class FcmSendServiceTest {
             // then
             assertThat(result.isDone()).isTrue();
             assertThat(result.join()).isNull();
-            verifyNoInteractions(fcmMessageFactory, memberFcmTokenService, notificationHistoryService);
+            verifyNoInteractions(fcmMessageFactory, fcmTokenService, notificationHistoryService);
         }
     }
 }

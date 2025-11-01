@@ -6,7 +6,7 @@ import com.google.api.core.ApiFutures;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.sparta.couponpop.common.fcm.factory.FcmMessageFactory;
-import com.sparta.couponpop.domain.member.service.MemberFcmTokenService;
+import com.sparta.couponpop.domain.fcmtoken.service.FcmTokenService;
 import com.sparta.couponpop.domain.notificationhistory.dto.payload.NotificationHistoryPayload;
 import com.sparta.couponpop.domain.notificationhistory.enums.NotificationHistoryStatus;
 import com.sparta.couponpop.domain.notificationhistory.enums.NotificationHistoryType;
@@ -31,7 +31,7 @@ public class FcmSendService {
 
     private final FcmMessageFactory fcmMessageFactory;
     private final NotificationHistoryService notificationHistoryService;
-    private final MemberFcmTokenService memberFcmTokenService;
+    private final FcmTokenService fcmTokenService;
     private final FirebaseMessaging firebaseMessaging;
     private final Executor fcmTaskExecutor;
 
@@ -65,7 +65,7 @@ public class FcmSendService {
                 log.error("FCM 전송 중 오류 발생: {}", throwable.getMessage(), throwable);
 
                 try {
-                    memberFcmTokenService.deleteToken(token);
+                    fcmTokenService.deleteToken(token);
                 } catch (Exception e) {
                     log.warn("FCM 토큰 삭제 중 오류 발생: {}", e.getMessage(), e);
                 }
@@ -87,7 +87,7 @@ public class FcmSendService {
             public void onSuccess(String messageId) {
                 log.info("FCM 전송 성공: messageId={}", messageId);
 
-                memberFcmTokenService.updateLastUsedAt(token);
+                fcmTokenService.updateLastUsedAt(token);
                 NotificationHistoryPayload notificationHistoryPayload = NotificationHistoryPayload.of(
                         memberId,
                         NOTIFICATION_HISTORY_TYPE,
