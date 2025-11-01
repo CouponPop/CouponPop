@@ -4,7 +4,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-//@EnableElasticsearchRepositories(basePackages = "com.sparta.couponpop.domain.store.repository")
 public class CouponPopApplication {
 
     public static void main(String[] args) {

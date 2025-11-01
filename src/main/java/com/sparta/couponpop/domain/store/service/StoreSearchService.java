@@ -1,8 +1,12 @@
 package com.sparta.couponpop.domain.store.service;
 
+import co.elastic.clients.elasticsearch._types.DistanceUnit;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import com.sparta.couponpop.domain.store.document.StoreDocument;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
+import com.sparta.couponpop.domain.store.dto.response.StoreSearchResponse;
+import com.sparta.couponpop.domain.store.dto.response.StoreSuggestResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
@@ -55,6 +59,135 @@ public class StoreSearchService {
     }
 
     /**
+     * 검색 추천 기능
+     * 매장명(name) 필드만 검색하며 자동완성과 관련도 점수 기반 정렬을 제공
+     * 
+     * 검색 전략:
+     * 1. 정확한 매칭 (exact match) - 가장 높은 점수
+     * 2. 자동완성 (autocomplete) - prefix 매칭
+     * 3. 한국어 ngram - 부분 매칭
+     * 4. 기본 한국어 분석기 - 형태소 분석
+     * 5. Fuzzy 검색 - 오타 허용
+     */
+    public List<StoreSearchResponse> searchStoresWithRecommendation(String keyword) {
+        try {
+            if (keyword == null || keyword.trim().isEmpty()) {
+                return List.of();
+            }
+
+            String trimmedKeyword = keyword.trim();
+
+            Query query = NativeQuery.builder()
+                    .withQuery(q -> q
+                            .bool(b -> b
+                                    // should 쿼리: 점수를 누적하여 관련도 계산
+                                    .should(s -> s
+                                            // 1. 정확한 매칭 (가장 높은 점수)
+                                            .term(t -> t
+                                                    .field("name.keyword")
+                                                    .value(trimmedKeyword)
+                                                    .boost(10.0f)
+                                            )
+                                    )
+                                    .should(s -> s
+                                            // 2. 자동완성 매칭 (prefix)
+                                            .match(m -> m
+                                                    .field("name.autocomplete")
+                                                    .query(trimmedKeyword)
+                                                    .boost(5.0f)
+                                            )
+                                    )
+                                    .should(s -> s
+                                            // 3. 한국어 ngram 매칭
+                                            .match(m -> m
+                                                    .field("name.ngram")
+                                                    .query(trimmedKeyword)
+                                                    .boost(3.0f)
+                                            )
+                                    )
+                                    .should(s -> s
+                                            // 4. 기본 한국어 분석기 매칭
+                                            .match(m -> m
+                                                    .field("name")
+                                                    .query(trimmedKeyword)
+                                                    .boost(2.0f)
+                                            )
+                                    )
+                                    .should(s -> s
+                                            // 5. Fuzzy 검색 (오타 허용)
+                                            .match(m -> m
+                                                    .field("name")
+                                                    .query(trimmedKeyword)
+                                                    .fuzziness("AUTO")
+                                                    .prefixLength(1)
+                                                    .boost(1.0f)
+                                            )
+                                    )
+                                    // 최소 1개 이상의 조건이 매칭되어야 함
+                                    .minimumShouldMatch("1")
+                            )
+                    )
+                    // 점수 기반 정렬
+                    .withSort(s -> s.score(sc -> sc.order(SortOrder.Desc)))
+                    // 최대 20개 결과 반환
+                    .withMaxResults(20)
+                    .build();
+
+            SearchHits<StoreDocument> searchHits = elasticsearchOperations.search(query, StoreDocument.class);
+
+            return searchHits.stream()
+                    .map(hit -> StoreSearchResponse.of(
+                            hit.getContent(),
+                            hit.getScore()
+                    ))
+                    .toList();
+        } catch (Exception e) {
+            log.error("Failed to search stores with recommendation: keyword={}", keyword, e);
+            return List.of();
+        }
+    }
+
+    /**
+     * 자동완성 제안
+     * 검색창에서 실시간으로 매장명을 제안 (간략한 정보만 반환)
+     * 
+     * 검색 전략:
+     * - Prefix 기반 자동완성 매칭 (autocomplete 필드)
+     * - 최대 10개 제안
+     */
+    public List<StoreSuggestResponse> suggestStores(String keyword) {
+        try {
+            if (keyword == null || keyword.trim().isEmpty()) {
+                return List.of();
+            }
+
+            String trimmedKeyword = keyword.trim();
+
+            // Prefix 기반 자동완성 쿼리
+            Query query = NativeQuery.builder()
+                    .withQuery(q -> q
+                            .match(m -> m
+                                    .field("name.autocomplete")
+                                    .query(trimmedKeyword)
+                            )
+                    )
+                    .withMaxResults(10)
+                    .build();
+
+            SearchHits<StoreDocument> searchHits = elasticsearchOperations.search(query, StoreDocument.class);
+
+            return searchHits.stream()
+                    .map(hit -> StoreSuggestResponse.from(hit.getContent()))
+                    .distinct()
+                    .toList();
+
+        } catch (Exception e) {
+            log.error("Failed to suggest stores: keyword={}", keyword, e);
+            return List.of();
+        }
+    }
+
+    /**
      * 위치 기반 매장 검색 (반경 내 매장)
      */
     public List<StoreMapResponse> searchStoresByLocation(double latitude, double longitude, double radiusKm) {
@@ -81,7 +214,7 @@ public class StoreSearchService {
                                                     .lon(longitude)
                                             )
                                     )
-                                    .unit(co.elastic.clients.elasticsearch._types.DistanceUnit.Kilometers)
+                                    .unit(DistanceUnit.Kilometers)
                             )
                     )
                     .build();
@@ -185,4 +318,3 @@ public class StoreSearchService {
         return EARTH_RADIUS * c;
     }
 }
-
