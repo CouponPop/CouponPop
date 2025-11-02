@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.store.service;
 
+import com.sparta.couponpop.common.dto.member.response.MemberResponse;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.member.service.MemberInternalService;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
@@ -28,7 +29,7 @@ public class StoreService {
     public StoreResponse createStore(Long memberId, CreateStoreRequest request) {
 
         // Member 존재 여부 확인 및 정보 조회
-        var member = memberInternalService.getMemberById(memberId);
+        MemberResponse member = memberInternalService.getMemberById(memberId);
 
         Store store = Store.createStore(
                 memberId,
@@ -88,7 +89,7 @@ public class StoreService {
         elasticsearchSyncService.updateStore(store);
 
         // Member 정보 조회
-        var member = memberInternalService.getMemberById(memberId);
+        MemberResponse member = memberInternalService.getMemberById(memberId);
 
         return StoreResponse.from(store, member);
     }
@@ -99,7 +100,7 @@ public class StoreService {
         List<Store> stores = storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId);
         
         // Member 정보 조회
-        var member = memberInternalService.getMemberById(memberId);
+        MemberResponse member = memberInternalService.getMemberById(memberId);
 
         return stores.stream()
                 .map(store -> StoreResponse.from(store, member))
