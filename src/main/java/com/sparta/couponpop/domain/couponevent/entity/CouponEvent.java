@@ -4,7 +4,6 @@ import com.sparta.couponpop.common.entity.BaseEntity;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
-import com.sparta.couponpop.domain.store.entity.Store;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -46,31 +45,35 @@ public class CouponEvent extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private CouponEventStatus couponEventStatus;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "store_id", nullable = false)
-    private Store store;
+    @Column(name = "store_id", nullable = false)
+    private Long storeId;
+
+    @Column(name = "member_id", nullable = false)
+    private Long memberId;
 
     @Builder
-    private CouponEvent(String name, LocalDateTime eventStartAt, LocalDateTime eventEndAt, int totalCount, Store store) {
+    private CouponEvent(String name, LocalDateTime eventStartAt, LocalDateTime eventEndAt, int totalCount, Long storeId, Long memberId) {
         this.name = name;
         this.eventStartAt = eventStartAt;
         this.eventEndAt = eventEndAt;
         this.totalCount = totalCount;
-        this.store = store;
+        this.storeId = storeId;
+        this.memberId = memberId;
     }
 
-    public static CouponEvent create(String name, LocalDateTime eventStartAt, LocalDateTime eventEndAt, int totalCount, Store store) {
+    public static CouponEvent create(String name, LocalDateTime eventStartAt, LocalDateTime eventEndAt, int totalCount, Long storeId, Long memberId) {
         return CouponEvent.builder()
                 .name(name)
                 .eventStartAt(eventStartAt)
                 .eventEndAt(eventEndAt)
                 .totalCount(totalCount)
-                .store(store)
+                .storeId(storeId)
+                .memberId(memberId)
                 .build();
     }
 
-    public void validateOwner(Long userId) {
-        if (!store.getMember().getId().equals(userId)) {
+    public void validateOwner(Long memberId) {
+        if (!this.memberId.equals(memberId)) {
             throw new GlobalException(CouponEventErrorCode.EVENT_OWNER_MISMATCH);
         }
     }
