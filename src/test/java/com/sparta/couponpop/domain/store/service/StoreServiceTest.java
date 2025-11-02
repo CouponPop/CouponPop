@@ -267,6 +267,8 @@ class StoreServiceTest {
 
         given(storeRepository.findById(storeId))
                 .willReturn(Optional.of(existingStore));
+        given(memberInternalService.getMemberById(memberId))
+                .willReturn(MemberResponse.from(member));
         // when
         StoreResponse result = storeService.updateStore(storeId, memberId, request);
 
