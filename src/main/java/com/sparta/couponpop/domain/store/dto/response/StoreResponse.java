@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.store.dto.response;
 
+import com.sparta.couponpop.common.dto.member.response.MemberDtoResponse;
 import com.sparta.couponpop.domain.store.entity.Store;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 
@@ -28,11 +29,11 @@ public record StoreResponse(
         LocalDateTime updatedAt
 ) {
 
-    public static StoreResponse from(Store store) {
+    public static StoreResponse from(Store store, MemberDtoResponse member) {
         return new StoreResponse(
                 store.getId(),
-                store.getMember().getId(),
-                store.getMember().getUsername(),
+                store.getMemberId(),
+                member.username(),
                 store.getName(),
                 store.getPhone(),
                 store.getDescription(),
