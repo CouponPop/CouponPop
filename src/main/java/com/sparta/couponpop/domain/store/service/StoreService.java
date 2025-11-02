@@ -1,9 +1,8 @@
 package com.sparta.couponpop.domain.store.service;
 
+import com.sparta.couponpop.common.dto.member.response.MemberResponse;
 import com.sparta.couponpop.common.exception.GlobalException;
-import com.sparta.couponpop.domain.member.entity.Member;
-import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
-import com.sparta.couponpop.domain.member.repository.MemberRepository;
+import com.sparta.couponpop.domain.member.service.MemberInternalService;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreDetailResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
@@ -22,18 +21,18 @@ import java.util.List;
 public class StoreService {
 
     private final StoreRepository storeRepository;
-    private final MemberRepository memberRepository;
+    private final MemberInternalService memberInternalService;
     private final StoreElasticsearchSyncService elasticsearchSyncService;
     private final StoreSearchService storeSearchService;
 
     @Transactional
     public StoreResponse createStore(Long memberId, CreateStoreRequest request) {
 
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
+        // Member 존재 여부 확인 및 정보 조회
+        MemberResponse member = memberInternalService.getMemberById(memberId);
 
         Store store = Store.createStore(
-                member,
+                memberId,
                 request.name(),
                 request.phone(),
                 request.description(),
@@ -55,7 +54,7 @@ public class StoreService {
         // Elasticsearch에 동기화
         elasticsearchSyncService.indexStore(savedStore);
 
-        return StoreResponse.from(savedStore);
+        return StoreResponse.from(savedStore, member);
     }
 
     @Transactional
@@ -65,7 +64,7 @@ public class StoreService {
                 .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
 
         // 매장 소유자 검증
-        if (!store.getMember().getId().equals(memberId)) {
+        if (!store.getMemberId().equals(memberId)) {
             throw new GlobalException(StoreErrorCode.STORE_UPDATE_PERMISSION_DENIED);
         }
 
@@ -89,16 +88,22 @@ public class StoreService {
         // Elasticsearch에 동기화
         elasticsearchSyncService.updateStore(store);
 
-        return StoreResponse.from(store);
+        // Member 정보 조회
+        MemberResponse member = memberInternalService.getMemberById(memberId);
+
+        return StoreResponse.from(store, member);
     }
 
     @Transactional(readOnly = true)
     public List<StoreResponse> getStoresByOwner(Long memberId) {
 
         List<Store> stores = storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId);
+        
+        // Member 정보 조회
+        MemberResponse member = memberInternalService.getMemberById(memberId);
 
         return stores.stream()
-                .map(StoreResponse::from)
+                .map(store -> StoreResponse.from(store, member))
                 .toList();
     }
 
@@ -114,7 +119,7 @@ public class StoreService {
         }
 
         // 매장 소유자 검증
-        if (!store.getMember().getId().equals(memberId)) {
+        if (!store.getMemberId().equals(memberId)) {
             throw new GlobalException(StoreErrorCode.STORE_DELETE_PERMISSION_DENIED);
         }
 
@@ -127,10 +132,10 @@ public class StoreService {
     @Transactional(readOnly = true)
     public StoreDetailResponse getStoreDetail(Long storeId, Long memberId) {
 
-        Store store = storeRepository.findByIdWithMember(storeId)
+        Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
 
-        if (!store.getMember().getId().equals(memberId)) {
+        if (!store.getMemberId().equals(memberId)) {
             throw new GlobalException(StoreErrorCode.STORE_ACCESS_PERMISSION_DENIED);
         }
 

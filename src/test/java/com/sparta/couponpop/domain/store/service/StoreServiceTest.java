@@ -1,9 +1,10 @@
 package com.sparta.couponpop.domain.store.service;
 
+import com.sparta.couponpop.common.dto.member.response.MemberResponse;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
-import com.sparta.couponpop.domain.member.repository.MemberRepository;
+import com.sparta.couponpop.domain.member.service.MemberInternalService;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
@@ -40,7 +41,7 @@ class StoreServiceTest {
     private StoreRepository storeRepository;
 
     @Mock
-    private MemberRepository memberRepository;
+    private MemberInternalService memberInternalService;
 
     @Mock
     private StoreElasticsearchSyncService elasticsearchSyncService;
@@ -61,8 +62,8 @@ class StoreServiceTest {
         Member member = createMember(memberId);
         Store savedStore = createStore(member);
 
-        given(memberRepository.findById(memberId))
-                .willReturn(Optional.of(member));
+        given(memberInternalService.getMemberById(memberId))
+                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
@@ -88,7 +89,7 @@ class StoreServiceTest {
         assertThat(result.weekendOpenTime()).isEqualTo(request.weekendOpenTime());
         assertThat(result.weekendCloseTime()).isEqualTo(request.weekendCloseTime());
 
-        then(memberRepository).should(times(1)).findById(memberId);
+        then(memberInternalService).should(times(1)).getMemberById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
         then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
     }
@@ -103,8 +104,8 @@ class StoreServiceTest {
         Member member = createMember(memberId);
         Store expectedStore = createStore(member);
 
-        given(memberRepository.findById(memberId))
-                .willReturn(Optional.of(member));
+        given(memberInternalService.getMemberById(memberId))
+                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(expectedStore);
 
@@ -112,7 +113,7 @@ class StoreServiceTest {
         storeService.createStore(memberId, request);
 
         // then
-        then(memberRepository).should(times(1)).findById(memberId);
+        then(memberInternalService).should(times(1)).getMemberById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
         then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
     }
@@ -127,8 +128,8 @@ class StoreServiceTest {
         Member member = createMember(memberId);
         Store savedStore = createFoodStore(member);
 
-        given(memberRepository.findById(memberId))
-                .willReturn(Optional.of(member));
+        given(memberInternalService.getMemberById(memberId))
+                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
@@ -140,7 +141,7 @@ class StoreServiceTest {
         assertThat(result.name()).isEqualTo("맛있는 식당");
         assertThat(result.memberId()).isEqualTo(memberId);
 
-        then(memberRepository).should(times(1)).findById(memberId);
+        then(memberInternalService).should(times(1)).getMemberById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
         then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
     }
@@ -170,7 +171,7 @@ class StoreServiceTest {
 
         Member member = createMember(memberId);
         Store savedStore = Store.createStore(
-                member,
+                memberId,
                 "테스트 매장",
                 "0212345678",
                 "",
@@ -187,8 +188,8 @@ class StoreServiceTest {
                 LocalTime.of(22, 0)
         );
 
-        given(memberRepository.findById(memberId))
-                .willReturn(Optional.of(member));
+        given(memberInternalService.getMemberById(memberId))
+                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
@@ -199,7 +200,7 @@ class StoreServiceTest {
         assertThat(result.description()).isEmpty();
         assertThat(result.name()).isEqualTo("테스트 매장");
 
-        then(memberRepository).should(times(1)).findById(memberId);
+        then(memberInternalService).should(times(1)).getMemberById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
         then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
     }
@@ -217,6 +218,8 @@ class StoreServiceTest {
 
         given(storeRepository.findById(storeId))
                 .willReturn(Optional.of(existingStore));
+        given(memberInternalService.getMemberById(memberId))
+                .willReturn(MemberResponse.from(member));
         // when
         StoreResponse result = storeService.updateStore(storeId, memberId, request);
 
@@ -264,6 +267,8 @@ class StoreServiceTest {
 
         given(storeRepository.findById(storeId))
                 .willReturn(Optional.of(existingStore));
+        given(memberInternalService.getMemberById(memberId))
+                .willReturn(MemberResponse.from(member));
         // when
         StoreResponse result = storeService.updateStore(storeId, memberId, request);
 
@@ -635,7 +640,7 @@ class StoreServiceTest {
     private Store createStore(Member member) {
         Map<String, Object> fieldValues = new HashMap<>();
         fieldValues.put("id", 1L);
-        fieldValues.put("member", member);
+        fieldValues.put("memberId", member.getId());
         fieldValues.put("name", "스타벅스 홍대점");
         fieldValues.put("phone", "0212345678");
         fieldValues.put("description", "홍대 중심가에 위치한 스타벅스입니다.");
@@ -657,7 +662,7 @@ class StoreServiceTest {
     private Store createFoodStore(Member member) {
         Map<String, Object> fieldValues = new HashMap<>();
         fieldValues.put("id", 2L);
-        fieldValues.put("member", member);
+        fieldValues.put("memberId", member.getId());
         fieldValues.put("name", "맛있는 식당");
         fieldValues.put("phone", "0312345678");
         fieldValues.put("description", "정말 맛있는 음식을 제공하는 식당입니다.");
@@ -834,6 +839,8 @@ class StoreServiceTest {
 
         given(storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId))
                 .willReturn(stores);
+        given(memberInternalService.getMemberById(memberId))
+                .willReturn(MemberResponse.from(member));
 
         // when
         List<StoreResponse> result = storeService.getStoresByOwner(memberId);
@@ -852,9 +859,12 @@ class StoreServiceTest {
 
         // given
         Long memberId = 1L;
+        Member member = createMember(memberId);
 
         given(storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId))
                 .willReturn(Arrays.asList());
+        given(memberInternalService.getMemberById(memberId))
+                .willReturn(MemberResponse.from(member));
 
         // when
         List<StoreResponse> result = storeService.getStoresByOwner(memberId);
@@ -875,7 +885,7 @@ class StoreServiceTest {
         Member member = createMember(memberId);
         Store store = createStore(member);
 
-        given(storeRepository.findByIdWithMember(storeId))
+        given(storeRepository.findById(storeId))
                 .willReturn(Optional.of(store));
 
         // when
@@ -886,7 +896,7 @@ class StoreServiceTest {
         assertThat(result.description()).isEqualTo(store.getDescription());
         assertThat(result.storeCategory()).isEqualTo(store.getStoreCategory());
 
-        then(storeRepository).should(times(1)).findByIdWithMember(storeId);
+        then(storeRepository).should(times(1)).findById(storeId);
     }
 
     @Test
@@ -897,7 +907,7 @@ class StoreServiceTest {
         Long storeId = 999L;
         Long memberId = 1L;
 
-        given(storeRepository.findByIdWithMember(storeId))
+        given(storeRepository.findById(storeId))
                 .willReturn(Optional.empty());
 
         // when & then
@@ -905,7 +915,7 @@ class StoreServiceTest {
                 .isInstanceOf(GlobalException.class)
                 .hasMessage("매장을 찾을 수 없습니다.");
 
-        then(storeRepository).should(times(1)).findByIdWithMember(storeId);
+        then(storeRepository).should(times(1)).findById(storeId);
     }
 
     @Test
@@ -919,7 +929,7 @@ class StoreServiceTest {
         Member otherMember = createMember(otherMemberId);
         Store store = createStore(otherMember);
 
-        given(storeRepository.findByIdWithMember(storeId))
+        given(storeRepository.findById(storeId))
                 .willReturn(Optional.of(store));
 
         // when & then
@@ -927,7 +937,7 @@ class StoreServiceTest {
                 .isInstanceOf(GlobalException.class)
                 .hasMessage("매장 접근 권한이 없습니다.");
 
-        then(storeRepository).should(times(1)).findByIdWithMember(storeId);
+        then(storeRepository).should(times(1)).findById(storeId);
     }
 
     @Test
@@ -938,15 +948,15 @@ class StoreServiceTest {
         Long memberId = 999L;
         CreateStoreRequest request = createStoreRequest();
 
-        given(memberRepository.findById(memberId))
-                .willReturn(Optional.empty());
+        given(memberInternalService.getMemberById(memberId))
+                .willThrow(new IllegalArgumentException("존재하지 않는 회원입니다."));
 
         // when & then
         assertThatThrownBy(() -> storeService.createStore(memberId, request))
-                .isInstanceOf(GlobalException.class)
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("존재하지 않는 회원입니다.");
 
-        then(memberRepository).should(times(1)).findById(memberId);
+        then(memberInternalService).should(times(1)).getMemberById(memberId);
         then(storeRepository).should(times(0)).save(any(Store.class));
     }
 }

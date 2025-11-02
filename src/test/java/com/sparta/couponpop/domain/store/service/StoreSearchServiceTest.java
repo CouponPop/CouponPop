@@ -1,5 +1,7 @@
 package com.sparta.couponpop.domain.store.service;
 
+import com.sparta.couponpop.common.dto.member.response.MemberResponse;
+import com.sparta.couponpop.domain.member.service.MemberInternalService;
 import com.sparta.couponpop.domain.store.document.StoreDocument;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
@@ -35,6 +37,9 @@ class StoreSearchServiceTest {
     @Mock
     private ElasticsearchOperations elasticsearchOperations;
 
+    @Mock
+    private MemberInternalService memberInternalService;
+
     @InjectMocks
     private StoreSearchService storeSearchService;
 
@@ -64,6 +69,10 @@ class StoreSearchServiceTest {
 
         given(elasticsearchOperations.search(any(Query.class), eq(StoreDocument.class)))
                 .willReturn(searchHits);
+        given(memberInternalService.getMemberById(1L))
+                .willReturn(new MemberResponse(1L, "testuser"));
+        given(memberInternalService.getMemberById(2L))
+                .willReturn(new MemberResponse(2L, "testuser2"));
 
         // when
         List<StoreResponse> result = storeSearchService.searchStoresByName(keyword);
@@ -344,6 +353,125 @@ class StoreSearchServiceTest {
         SearchHits<StoreDocument> searchHits = mock(SearchHits.class);
         given(searchHits.stream()).willReturn(hits.stream());
         return searchHits;
+    }
+
+    @Test
+    @DisplayName("검색 추천 기능 성공")
+    void searchStoresWithRecommendation_Success() {
+        // given
+        String keyword = "스타벅스";
+        
+        StoreDocument document = createStoreDocument(
+                1L, 1L, "testuser", "스타벅스 홍대점", "02123456789",
+                "홍대 스타벅스", "1234567890", "서울시 마포구", "홍대동",
+                37.5665, 126.9780, "https://example.com/image.jpg",
+                StoreCategory.CAFE, "09:00", "22:00", "10:00", "23:00"
+        );
+
+        @SuppressWarnings("unchecked")
+        SearchHit<StoreDocument> hit = mock(SearchHit.class);
+        given(hit.getContent()).willReturn(document);
+        given(hit.getScore()).willReturn(10.5f);
+        @SuppressWarnings("unchecked")
+        SearchHits<StoreDocument> searchHits = mock(SearchHits.class);
+        given(searchHits.stream()).willReturn(Arrays.asList(hit).stream());
+
+        given(elasticsearchOperations.search(any(Query.class), eq(StoreDocument.class)))
+                .willReturn(searchHits);
+
+        // when
+        List<com.sparta.couponpop.domain.store.dto.response.StoreSearchResponse> result = 
+                storeSearchService.searchStoresWithRecommendation(keyword);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).id()).isEqualTo(1L);
+        assertThat(result.get(0).name()).isEqualTo("스타벅스 홍대점");
+    }
+
+    @Test
+    @DisplayName("검색 추천 기능 - 빈 키워드")
+    void searchStoresWithRecommendation_EmptyKeyword() {
+        // given
+        String keyword = "";
+
+        // when
+        List<com.sparta.couponpop.domain.store.dto.response.StoreSearchResponse> result = 
+                storeSearchService.searchStoresWithRecommendation(keyword);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("검색 추천 기능 - null 키워드")
+    void searchStoresWithRecommendation_NullKeyword() {
+        // given
+        String keyword = null;
+
+        // when
+        List<com.sparta.couponpop.domain.store.dto.response.StoreSearchResponse> result = 
+                storeSearchService.searchStoresWithRecommendation(keyword);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("자동완성 제안 성공")
+    void suggestStores_Success() {
+        // given
+        String keyword = "스타";
+        
+        StoreDocument document = createStoreDocument(
+                1L, 1L, "testuser", "스타벅스 홍대점", "02123456789",
+                "홍대 스타벅스", "1234567890", "서울시 마포구", "홍대동",
+                37.5665, 126.9780, "https://example.com/image.jpg",
+                StoreCategory.CAFE, "09:00", "22:00", "10:00", "23:00"
+        );
+
+        SearchHit<StoreDocument> hit = createSearchHit(document);
+        SearchHits<StoreDocument> searchHits = createSearchHits(Arrays.asList(hit));
+
+        given(elasticsearchOperations.search(any(Query.class), eq(StoreDocument.class)))
+                .willReturn(searchHits);
+
+        // when
+        List<com.sparta.couponpop.domain.store.dto.response.StoreSuggestResponse> result = 
+                storeSearchService.suggestStores(keyword);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).id()).isEqualTo(1L);
+        assertThat(result.get(0).name()).isEqualTo("스타벅스 홍대점");
+    }
+
+    @Test
+    @DisplayName("자동완성 제안 - 빈 키워드")
+    void suggestStores_EmptyKeyword() {
+        // given
+        String keyword = "";
+
+        // when
+        List<com.sparta.couponpop.domain.store.dto.response.StoreSuggestResponse> result = 
+                storeSearchService.suggestStores(keyword);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("자동완성 제안 - null 키워드")
+    void suggestStores_NullKeyword() {
+        // given
+        String keyword = null;
+
+        // when
+        List<com.sparta.couponpop.domain.store.dto.response.StoreSuggestResponse> result = 
+                storeSearchService.suggestStores(keyword);
+
+        // then
+        assertThat(result).isEmpty();
     }
 }
 

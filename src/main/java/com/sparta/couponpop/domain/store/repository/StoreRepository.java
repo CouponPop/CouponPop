@@ -23,18 +23,6 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
     Optional<Store> findByIdIncludingDeleted(@Param("storeId") Long storeId);
 
     /**
-     * 매장과 회원 정보를 함께 조회합니다.
-     * N+1 문제를 방지하기 위해 fetch join을 사용합니다.
-     */
-    @Query("""
-            SELECT s
-            FROM Store s
-            JOIN FETCH s.member m
-            WHERE s.id = :storeId
-            """)
-    Optional<Store> findByIdWithMember(@Param("storeId") Long storeId);
-
-    /**
      * 회원 ID로 매장 목록을 조회합니다.
      * 최신 생성 순으로 정렬하여 반환합니다.
      */

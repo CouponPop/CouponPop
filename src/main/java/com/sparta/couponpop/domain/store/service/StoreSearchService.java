@@ -2,6 +2,8 @@ package com.sparta.couponpop.domain.store.service;
 
 import co.elastic.clients.elasticsearch._types.DistanceUnit;
 import co.elastic.clients.elasticsearch._types.SortOrder;
+import com.sparta.couponpop.common.dto.member.response.MemberResponse;
+import com.sparta.couponpop.domain.member.service.MemberInternalService;
 import com.sparta.couponpop.domain.store.document.StoreDocument;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
@@ -27,6 +29,7 @@ import java.util.List;
 public class StoreSearchService {
 
     private final ElasticsearchOperations elasticsearchOperations;
+    private final MemberInternalService memberInternalService;
 
     /**
      * 매장명으로 검색 (name 필드만 검색)
@@ -232,27 +235,57 @@ public class StoreSearchService {
     }
 
     private StoreResponse toStoreResponse(StoreDocument document) {
-        return new StoreResponse(
-                document.getStoreId(),
-                document.getMemberId(),
-                document.getMemberUsername(),
-                document.getName(),
-                document.getPhone(),
-                document.getDescription(),
-                document.getBusinessNumber(),
-                document.getAddress(),
-                document.getDong(),
-                document.getLocation().getLat(),
-                document.getLocation().getLon(),
-                document.getImageUrl(),
-                document.getStoreCategory(),
-                parseLocalTime(document.getWeekdayOpenTime()),
-                parseLocalTime(document.getWeekdayCloseTime()),
-                parseLocalTime(document.getWeekendOpenTime()),
-                parseLocalTime(document.getWeekendCloseTime()),
-                document.getCreatedAt(),
-                document.getUpdatedAt()
-        );
+        try {
+            // Member 정보 조회
+            MemberResponse member = memberInternalService.getMemberById(document.getMemberId());
+            
+            return new StoreResponse(
+                    document.getStoreId(),
+                    document.getMemberId(),
+                    member.username(),
+                    document.getName(),
+                    document.getPhone(),
+                    document.getDescription(),
+                    document.getBusinessNumber(),
+                    document.getAddress(),
+                    document.getDong(),
+                    document.getLocation().getLat(),
+                    document.getLocation().getLon(),
+                    document.getImageUrl(),
+                    document.getStoreCategory(),
+                    parseLocalTime(document.getWeekdayOpenTime()),
+                    parseLocalTime(document.getWeekdayCloseTime()),
+                    parseLocalTime(document.getWeekendOpenTime()),
+                    parseLocalTime(document.getWeekendCloseTime()),
+                    document.getCreatedAt(),
+                    document.getUpdatedAt()
+            );
+        } catch (Exception e) {
+            log.error("Failed to get member info for StoreDocument: storeId={}, memberId={}", 
+                    document.getStoreId(), document.getMemberId(), e);
+            // Member 조회 실패 시 memberUsername을 null로 설정
+            return new StoreResponse(
+                    document.getStoreId(),
+                    document.getMemberId(),
+                    null,
+                    document.getName(),
+                    document.getPhone(),
+                    document.getDescription(),
+                    document.getBusinessNumber(),
+                    document.getAddress(),
+                    document.getDong(),
+                    document.getLocation().getLat(),
+                    document.getLocation().getLon(),
+                    document.getImageUrl(),
+                    document.getStoreCategory(),
+                    parseLocalTime(document.getWeekdayOpenTime()),
+                    parseLocalTime(document.getWeekdayCloseTime()),
+                    parseLocalTime(document.getWeekendOpenTime()),
+                    parseLocalTime(document.getWeekendCloseTime()),
+                    document.getCreatedAt(),
+                    document.getUpdatedAt()
+            );
+        }
     }
     
     private java.time.LocalTime parseLocalTime(String timeString) {

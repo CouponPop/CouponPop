@@ -1,7 +1,6 @@
 package com.sparta.couponpop.domain.store.entity;
 
 import com.sparta.couponpop.common.entity.BaseEntity;
-import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -25,9 +24,8 @@ public class Store extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    @Column(name = "member_id", nullable = false)
+    private Long memberId;
 
     @Column(name = "store_category", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -79,7 +77,7 @@ public class Store extends BaseEntity {
     private LocalDateTime deletedAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Store(Member member, 
+    private Store(Long memberId, 
                 String name, 
                 String phone, 
                 String description, 
@@ -94,7 +92,7 @@ public class Store extends BaseEntity {
                 LocalTime weekdayCloseTime,
                 LocalTime weekendOpenTime, 
                 LocalTime weekendCloseTime) {
-        this.member = member;
+        this.memberId = memberId;
         this.name = name;
         this.phone = phone;
         this.description = description;
@@ -111,7 +109,7 @@ public class Store extends BaseEntity {
         this.weekendCloseTime = weekendCloseTime;
     }
 
-    public static Store createStore(Member member,
+    public static Store createStore(Long memberId,
                                   String name,
                                   String phone,
                                   String description,
@@ -128,7 +126,7 @@ public class Store extends BaseEntity {
                                   LocalTime weekendCloseTime) {
 
         return Store.builder()
-                .member(member)
+                .memberId(memberId)
                 .name(name)
                 .phone(phone)
                 .description(description)
