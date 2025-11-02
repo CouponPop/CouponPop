@@ -1,9 +1,9 @@
 package com.sparta.couponpop.domain.member.service;
 
-import com.sparta.couponpop.common.dto.member.response.MemberDtoResponse;
+import com.sparta.couponpop.common.dto.member.response.MemberResponse;
 
 public interface MemberInternalService {
 
-    MemberDtoResponse getMemberById(Long memberId);
+    MemberResponse getMemberById(Long memberId);
 }
 
