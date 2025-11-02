@@ -27,7 +27,7 @@ class RedissonLockCouponIssueConcurrencyTest extends CouponIssueConcurrencyTestS
         CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
 
         for (int i = 0; i < THREAD_COUNT; i++) {
-            final long currentMemberId = members.get(i).getId();
+            final long currentMemberId = i + 1;
             executorService.submit(() -> {
                 try {
                     couponIssueFacade.issueCoupon(currentMemberId, eventId, issuedTime);
