@@ -24,7 +24,6 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
     public List<CouponSummaryInfoProjection> findAllByMemberIdWithEventAndStore(Long memberId, CouponStatus status, LocalDateTime lastEventEndAt, Long lastCouponId, int limit) {
         QCoupon coupon = QCoupon.coupon;
         QCouponEvent couponEvent = QCouponEvent.couponEvent;
-        QStore store = QStore.store;
 
         // TODO 정렬 조건은 couponEvent end가 아닌 쿠폰 만료 시간으로 할것!!
         return jpaQueryFactory
@@ -39,24 +38,18 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
                                 couponEvent.name,
                                 couponEvent.eventStartAt,
                                 couponEvent.eventEndAt,
-                                store.id,
-                                store.name,
-                                store.storeCategory,
-                                store.latitude,
-                                store.longitude,
-                                store.imageUrl
+                                couponEvent.storeId
                         )
                 )
                 .from(coupon)
                 .leftJoin(coupon.couponEvent, couponEvent)
-                .leftJoin(couponEvent.store, store)
                 .where(
-                        coupon.member.id.eq(memberId),
+                        coupon.memberId.eq(memberId),
                         coupon.couponStatus.eq(status),
                         nextCouponCursorCondition(coupon, lastEventEndAt, lastCouponId)
                 )
                 .orderBy(
-                        coupon.couponEvent.eventEndAt.asc(),
+                        coupon.expireAt.asc(),
                         coupon.id.asc()
                 )
                 .limit(limit)

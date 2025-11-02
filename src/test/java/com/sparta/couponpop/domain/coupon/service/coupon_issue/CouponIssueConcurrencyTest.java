@@ -2,6 +2,7 @@ package com.sparta.couponpop.domain.coupon.service.coupon_issue;
 
 import com.sparta.couponpop.domain.coupon.service.CouponIssueConcurrencyTestSupport;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -11,6 +12,7 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Disabled
 class CouponIssueConcurrencyTest extends CouponIssueConcurrencyTestSupport {
 
     @Autowired

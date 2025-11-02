@@ -13,7 +13,7 @@ public record CouponEventDetailResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    public static CouponEventDetailResponse of(CouponEvent couponEvent, int usedCouponCount, LocalDateTime now) {
+    public static CouponEventDetailResponse of(CouponEvent couponEvent, int usedCouponCount) {
         return new CouponEventDetailResponse(
                 couponEvent.getId(),
                 couponEvent.getName(),

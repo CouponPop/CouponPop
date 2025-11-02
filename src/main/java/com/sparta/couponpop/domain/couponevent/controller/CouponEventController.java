@@ -27,7 +27,7 @@ public class CouponEventController {
 
     private final CouponEventService couponEventService;
 
-    @PostMapping("/owner/coupons/events")
+    @PostMapping("/owner/events")
     public ResponseEntity<ApiResponse<CreateCouponEventResponse>> createCouponEvent(
             @RequestBody @Valid CreateCouponEventRequest request,
             @CurrentMember AuthMember authMember // TODO : 인증 세션 구현되면 변경
@@ -37,15 +37,14 @@ public class CouponEventController {
         return ApiResponse.created(response);
     }
 
-    @GetMapping("/owner/coupons/events/{eventId}")
+    @GetMapping("/owner/events/{eventId}")
     public ResponseEntity<ApiResponse<CouponEventDetailResponse>> getCouponEvent(@PathVariable Long eventId, @CurrentMember AuthMember authMember) {
-        LocalDateTime now = LocalDateTime.now();
-        CouponEventDetailResponse response = couponEventService.getCouponEvent(eventId, authMember.id(), now);
+        CouponEventDetailResponse response = couponEventService.getCouponEvent(eventId, authMember.id());
         return ApiResponse.success(response);
     }
 
     // TODO : 나중에 Store 도메인으로 옮기는 거 고려하기
-    @GetMapping("/owner/stores/{storeId}/coupons/events")
+    @GetMapping("/owner/stores/{storeId}/events")
     public ResponseEntity<ApiResponse<StoreCouponEventListResponse>> getCouponEventsByStore(
             @PathVariable Long storeId,
             @RequestParam(defaultValue = "IN_PROGRESS", required = false) CouponEventStatus status,
