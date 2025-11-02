@@ -1,5 +1,7 @@
 package com.sparta.couponpop.domain.couponevent.service;
 
+import com.sparta.couponpop.common.dto.couponevent.response.StoreOwnershipResponse;
+import com.sparta.couponpop.common.dto.store.response.StoreResponse;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
@@ -15,9 +17,7 @@ import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
 import com.sparta.couponpop.domain.couponevent.repository.dto.StoreCouponEventStatisticsProjection;
-import com.sparta.couponpop.domain.store.entity.Store;
-import com.sparta.couponpop.domain.store.exception.StoreErrorCode;
-import com.sparta.couponpop.domain.store.repository.StoreRepository;
+import com.sparta.couponpop.domain.store.service.StoreInternalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,38 +33,35 @@ public class CouponEventService {
 
     private final CouponEventRepository couponEventRepository;
     private final CouponRepository couponRepository;
-    private final StoreRepository storeRepository;
+    private final StoreInternalService storeInternalService;
 
     private static final long MAX_EVENT_HOURS = 48L; // 이벤트 최대 기간(시간)
 
     // TODO : 정확한 시간? 에 이벤트를 어떻게 시작할 수 있을까?
     @Transactional
-    public CreateCouponEventResponse createCouponEvent(CreateCouponEventRequest request, Long userId) {
+    public CreateCouponEventResponse createCouponEvent(CreateCouponEventRequest request, Long memberId) {
         /*
         TODO: StoreErrorCode 정의되면 변경하기. 사실 이 부분은 couponEvent 입장에선 매장 도메인에 요청을 해서 검증이 끝난 매장 entity 를 받아야 할듯
          */
         // store 소유 여부 검증
-        Store store = storeRepository.findById(request.storeId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다."));
-
-        if (!store.getMember().getId().equals(userId)) {
+        StoreOwnershipResponse storeOwnership = storeInternalService.checkOwnership(request.storeId(), memberId);
+        if (!storeOwnership.isOwner()) {
             throw new IllegalArgumentException("해당 매장은 로그인한 회원 소유가 아닙니다.");
         }
 
         // 이벤트 기간 검증
         validateEventDuration(request.eventStartAt(), request.eventEndAt());
 
-        CouponEvent couponEvent = couponEventRepository.save(request.toEntity(store));
+        CouponEvent couponEvent = couponEventRepository.save(request.toEntity(request.storeId(), memberId));
         return CreateCouponEventResponse.from(couponEvent);
     }
 
-    public CouponEventDetailResponse getCouponEvent(Long eventId, Long loginUserId, LocalDateTime now) {
-        CouponEvent couponEvent = couponEventRepository.findByIdWithStoreAndMember(eventId)
+    public CouponEventDetailResponse getCouponEvent(Long eventId, Long memberId) {
+        CouponEvent couponEvent = couponEventRepository.findById(eventId)
                 .orElseThrow(() -> new GlobalException(CouponEventErrorCode.EVENT_NOT_FOUND));
-        // CouponEvent 소유 여부 검증
-        couponEvent.validateOwner(loginUserId);
+        couponEvent.validateOwner(memberId); // CouponEvent 소유 여부 검증
         int usedCouponCount = couponRepository.countByEventIdAndStatus(eventId, CouponStatus.USED);
-        return CouponEventDetailResponse.of(couponEvent, usedCouponCount, now);
+        return CouponEventDetailResponse.of(couponEvent, usedCouponCount);
     }
 
     /**
@@ -80,19 +77,17 @@ public class CouponEventService {
      */
     public StoreCouponEventListResponse getCouponEventsByStore(Long memberId, Long storeId, CouponEventStatus eventStatus, LocalDateTime now, StoreCouponEventsCursor cursor, int pageSize) {
         // 매장 조회 및 소유자 검증
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
-
-        if (!store.getMember().getId().equals(memberId)) {
-            throw new GlobalException(StoreErrorCode.STORE_ACCESS_PERMISSION_DENIED);
+        StoreOwnershipResponse storeOwnership = storeInternalService.checkOwnership(storeId, memberId);
+        if (!storeOwnership.isOwner()) {
+            throw new IllegalArgumentException("해당 매장은 로그인한 회원 소유가 아닙니다.");
         }
 
         // Store 의 eventStatus 이벤트 목록 조회
-        List<CouponEventDetailResponse> couponEventDetailResponses = couponEventRepository.fetchCouponEventsByStore(store, eventStatus, now, cursor, pageSize + 1).stream()
+        List<CouponEventDetailResponse> couponEventDetailResponses = couponEventRepository.fetchCouponEventsByStore(storeId, eventStatus, now, cursor, pageSize + 1).stream()
                 .map(CouponEventDetailResponse::of)
                 .toList();
 
-        return StoreCouponEventListResponse.of(store.getId(), store.getName(), couponEventDetailResponses, pageSize);
+        return StoreCouponEventListResponse.of(storeId, couponEventDetailResponses, pageSize);
     }
 
     /**
@@ -114,7 +109,10 @@ public class CouponEventService {
      * @return {@link StoreCouponEventStatisticsResponse} - 매장별 통계 데이터와 다음 페이지 커서 포함
      */
     public StoreCouponEventStatisticsResponse getStoreCouponEventStatistics(Long memberId, StoreCouponEventsStatisticsCursor cursor, int pageSize) {
-        List<StoreCouponEventStatisticsProjection> statistics = couponEventRepository.fetchStoreCouponEventStatistics(memberId, cursor, pageSize + 1);
+        List<StoreResponse> stores = storeInternalService.findStoresByOwner(memberId, cursor, pageSize + 1);
+        List<Long> storeIds = stores.stream().map(StoreResponse::id).toList();
+
+        List<StoreCouponEventStatisticsProjection> statistics = couponEventRepository.fetchStoreCouponEventStatistics(storeIds);
         return StoreCouponEventStatisticsResponse.of(statistics, pageSize);
     }
 

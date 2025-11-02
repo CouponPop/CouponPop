@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 
 public record StoreCouponEventStatisticsProjection(
         Long storeId,
-        String storeName,
         CouponStats couponStats,
         LocalDateTime lastEventEndAt
 ) {

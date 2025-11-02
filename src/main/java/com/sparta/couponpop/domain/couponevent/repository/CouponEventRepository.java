@@ -13,15 +13,6 @@ import java.util.Optional;
 
 public interface CouponEventRepository extends JpaRepository<CouponEvent, Long>, CouponEventQueryRepository {
 
-    @Query("""
-            SELECT e
-            FROM CouponEvent e
-            JOIN FETCH e.store s
-            JOIN FETCH s.member m
-            WHERE e.id = :eventId
-            """)
-    Optional<CouponEvent> findByIdWithStoreAndMember(@Param("eventId") Long eventId);
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select e from CouponEvent e where e.id = :eventId")
     Optional<CouponEvent> findEventForUpdate(@Param("eventId") Long eventId);
