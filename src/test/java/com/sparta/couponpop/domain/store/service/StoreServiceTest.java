@@ -1,6 +1,6 @@
 package com.sparta.couponpop.domain.store.service;
 
-import com.sparta.couponpop.common.dto.member.response.MemberDtoResponse;
+import com.sparta.couponpop.common.dto.member.response.MemberResponse;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
@@ -63,7 +63,7 @@ class StoreServiceTest {
         Store savedStore = createStore(member);
 
         given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberDtoResponse.from(member));
+                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
@@ -105,7 +105,7 @@ class StoreServiceTest {
         Store expectedStore = createStore(member);
 
         given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberDtoResponse.from(member));
+                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(expectedStore);
 
@@ -129,7 +129,7 @@ class StoreServiceTest {
         Store savedStore = createFoodStore(member);
 
         given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberDtoResponse.from(member));
+                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
@@ -189,7 +189,7 @@ class StoreServiceTest {
         );
 
         given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberDtoResponse.from(member));
+                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
@@ -219,7 +219,7 @@ class StoreServiceTest {
         given(storeRepository.findById(storeId))
                 .willReturn(Optional.of(existingStore));
         given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberDtoResponse.from(member));
+                .willReturn(MemberResponse.from(member));
         // when
         StoreResponse result = storeService.updateStore(storeId, memberId, request);
 
@@ -838,7 +838,7 @@ class StoreServiceTest {
         given(storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId))
                 .willReturn(stores);
         given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberDtoResponse.from(member));
+                .willReturn(MemberResponse.from(member));
 
         // when
         List<StoreResponse> result = storeService.getStoresByOwner(memberId);
@@ -862,7 +862,7 @@ class StoreServiceTest {
         given(storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId))
                 .willReturn(Arrays.asList());
         given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberDtoResponse.from(member));
+                .willReturn(MemberResponse.from(member));
 
         // when
         List<StoreResponse> result = storeService.getStoresByOwner(memberId);
