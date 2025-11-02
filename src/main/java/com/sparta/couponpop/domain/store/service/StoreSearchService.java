@@ -2,7 +2,7 @@ package com.sparta.couponpop.domain.store.service;
 
 import co.elastic.clients.elasticsearch._types.DistanceUnit;
 import co.elastic.clients.elasticsearch._types.SortOrder;
-import com.sparta.couponpop.common.dto.member.response.MemberDtoResponse;
+import com.sparta.couponpop.common.dto.member.response.MemberResponse;
 import com.sparta.couponpop.domain.member.service.MemberInternalService;
 import com.sparta.couponpop.domain.store.document.StoreDocument;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
@@ -237,7 +237,7 @@ public class StoreSearchService {
     private StoreResponse toStoreResponse(StoreDocument document) {
         try {
             // Member 정보 조회
-            var member = memberInternalService.getMemberById(document.getMemberId());
+            MemberResponse member = memberInternalService.getMemberById(document.getMemberId());
             
             return new StoreResponse(
                     document.getStoreId(),
