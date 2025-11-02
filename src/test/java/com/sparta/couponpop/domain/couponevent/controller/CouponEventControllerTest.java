@@ -99,7 +99,7 @@ class CouponEventControllerTest {
 
         // when & then
         mockMvc.perform(
-                        post("/api/v1/owner/coupons/events")
+                        post("/api/v1/owner/events")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request))
                 )
@@ -128,12 +128,12 @@ class CouponEventControllerTest {
                 LocalDateTime.of(2025, 10, 14, 15, 0)
         );
 
-        given(couponEventService.getCouponEvent(anyLong(), anyLong(), any(LocalDateTime.class)))
+        given(couponEventService.getCouponEvent(anyLong(), anyLong()))
                 .willReturn(response);
 
         // when & then
         mockMvc.perform(
-                        get("/api/v1/owner/coupons/events/{eventId}", eventId)
+                        get("/api/v1/owner/events/{eventId}", eventId)
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andDo(print())
@@ -168,7 +168,6 @@ class CouponEventControllerTest {
         // 페이지 1
         StoreCouponEventListResponse page1 = StoreCouponEventListResponse.of(
                 storeId,
-                "테스트 매장",
                 allEvents.subList(0, 11),
                 10
         );
@@ -176,7 +175,6 @@ class CouponEventControllerTest {
         // 페이지 2
         StoreCouponEventListResponse page2 = StoreCouponEventListResponse.of(
                 storeId,
-                "테스트 매장",
                 allEvents.subList(10, 15),
                 10
         );
@@ -188,7 +186,7 @@ class CouponEventControllerTest {
         // when & then
         // 첫 페이지 호출
         mockMvc.perform(
-                        get("/api/v1/owner/stores/{storeId}/coupons/events", storeId)
+                        get("/api/v1/owner/stores/{storeId}/events", storeId)
                                 .param("size", "10")
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -198,7 +196,7 @@ class CouponEventControllerTest {
 
         // 두 번째 페이지 호출
         mockMvc.perform(
-                        get("/api/v1/owner/stores/{storeId}/coupons/events", storeId)
+                        get("/api/v1/owner/stores/{storeId}/events", storeId)
                                 .param("size", "10")
                                 .param("lastStartAt", page1.nextCursor().lastStartAt().toString())
                                 .param("lastEndAt", page1.nextCursor().lastEndAt().toString())
@@ -219,7 +217,7 @@ class CouponEventControllerTest {
 
         var couponStats = new StoreCouponEventStatisticsProjection.CouponStats(2300, 1840, 1000);
         var storeStat = new StoreCouponEventStatisticsProjection(
-                101L, "서울 강남점",
+                101L,
                 couponStats,
                 LocalDateTime.of(2025, 10, 21, 23, 59, 59)
         );
@@ -239,7 +237,6 @@ class CouponEventControllerTest {
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.statistics[0].storeId").value(101))
-                .andExpect(jsonPath("$.data.statistics[0].storeName").value("서울 강남점"))
                 .andExpect(jsonPath("$.data.statistics[0].couponStats.total").value(2300))
                 .andExpect(jsonPath("$.data.statistics[0].couponStats.unclaimed").value(460))
                 .andExpect(jsonPath("$.data.statistics[0].couponStats.used").value(1000))

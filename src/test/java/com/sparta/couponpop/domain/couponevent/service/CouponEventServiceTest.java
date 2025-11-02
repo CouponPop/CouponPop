@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.couponevent.service;
 
+import com.sparta.couponpop.common.dto.couponevent.response.StoreOwnershipResponse;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
@@ -15,7 +16,7 @@ import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
 import com.sparta.couponpop.domain.couponevent.repository.dto.CouponEventWithUsedCountProjection;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.store.entity.Store;
-import com.sparta.couponpop.domain.store.repository.StoreRepository;
+import com.sparta.couponpop.domain.store.service.StoreInternalService;
 import com.sparta.couponpop.utils.TestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -42,7 +43,7 @@ class CouponEventServiceTest {
     private CouponEventRepository couponEventRepository;
 
     @Mock
-    private StoreRepository storeRepository;
+    private StoreInternalService storeInternalService;
 
     @Mock
     private CouponRepository couponRepository;
@@ -69,9 +70,8 @@ class CouponEventServiceTest {
                     .build();
 
             Long userId = 1L;
-            Member member = TestUtils.createEntity(Member.class, Map.of("id", userId));
-            Store store = TestUtils.createEntity(Store.class, Map.of("member", member));
-            given(storeRepository.findById(anyLong())).willReturn(Optional.of(store));
+            StoreOwnershipResponse storeOwnership = StoreOwnershipResponse.of(true);
+            given(storeInternalService.checkOwnership(anyLong(), anyLong())).willReturn(storeOwnership);
 
             CouponEvent couponEvent = TestUtils.createEntity(CouponEvent.class, Map.of(
                     "id", 1L,
@@ -109,10 +109,9 @@ class CouponEventServiceTest {
                     .build();
 
             Long userId = 1L;
-            Member member = TestUtils.createEntity(Member.class, Map.of("id", userId));
-            Store store = TestUtils.createEntity(Store.class, Map.of("member", member));
 
-            given(storeRepository.findById(anyLong())).willReturn(Optional.of(store));
+            StoreOwnershipResponse storeOwnership = StoreOwnershipResponse.of(true);
+            given(storeInternalService.checkOwnership(anyLong(), anyLong())).willReturn(storeOwnership);
 
             // when & then
             assertThatThrownBy(() -> couponEventService.createCouponEvent(request, userId))
@@ -136,10 +135,8 @@ class CouponEventServiceTest {
                     .build();
 
             Long userId = 1L;
-            Member member = TestUtils.createEntity(Member.class, Map.of("id", userId));
-            Store store = TestUtils.createEntity(Store.class, Map.of("member", member));
-
-            given(storeRepository.findById(anyLong())).willReturn(Optional.of(store));
+            StoreOwnershipResponse storeOwnership = StoreOwnershipResponse.of(true);
+            given(storeInternalService.checkOwnership(anyLong(), anyLong())).willReturn(storeOwnership);
 
             // when & then
             assertThatThrownBy(() -> couponEventService.createCouponEvent(request, userId))
@@ -157,16 +154,11 @@ class CouponEventServiceTest {
         void getCouponEvent_success() {
             // given
             Long eventId = 1L;
-            Long loginUserId = 1L;
+            Long memberId = 1L;
             LocalDateTime now = LocalDateTime.of(2025, 10, 17, 14, 0);
             LocalDateTime eventStartAt = now.minusDays(1);
             LocalDateTime eventEndAt = now.plusDays(1);
 
-            Member member = TestUtils.createEntity(Member.class, Map.of("id", loginUserId));
-            Store store = TestUtils.createEntity(Store.class, Map.of(
-                    "id", 1L,
-                    "member", member
-            ));
             CouponEvent couponEvent = TestUtils.createEntity(CouponEvent.class, Map.of(
                     "id", eventId,
                     "name", "아이스 아메리카노 1+1",
@@ -175,15 +167,16 @@ class CouponEventServiceTest {
                     "totalCount", 30,
                     "issuedCount", 10,
                     "couponEventStatus", CouponEventStatus.IN_PROGRESS,
-                    "store", store
+                    "storeId", 1L,
+                    "memberId", 1L
             ));
             int usedCouponCount = 5;
 
-            given(couponEventRepository.findByIdWithStoreAndMember(anyLong())).willReturn(Optional.of(couponEvent));
+            given(couponEventRepository.findById(anyLong())).willReturn(Optional.of(couponEvent));
             given(couponRepository.countByEventIdAndStatus(anyLong(), any(CouponStatus.class))).willReturn(usedCouponCount);
 
             // when
-            CouponEventDetailResponse response = couponEventService.getCouponEvent(eventId, loginUserId, now);
+            CouponEventDetailResponse response = couponEventService.getCouponEvent(eventId, memberId);
 
             // then
             assertThat(response.summary())
@@ -200,23 +193,18 @@ class CouponEventServiceTest {
         void getCouponEvent_thenOwnerMismatch_throwsException() {
             // given
             Long eventId = 1L;
-            Long loginUserId = 1L;
-            LocalDateTime now = LocalDateTime.of(2025, 10, 17, 14, 0);
+            Long memberId = 2L;
 
-            Member member = TestUtils.createEntity(Member.class, Map.of("id", 2L));
-            Store store = TestUtils.createEntity(Store.class, Map.of(
-                    "id", 1L,
-                    "member", member
-            ));
             CouponEvent couponEvent = TestUtils.createEntity(CouponEvent.class, Map.of(
                     "id", eventId,
-                    "store", store
+                    "storeId", 1L,
+                    "memberId", 1L
             ));
 
-            given(couponEventRepository.findByIdWithStoreAndMember(anyLong())).willReturn(Optional.of(couponEvent));
+            given(couponEventRepository.findById(anyLong())).willReturn(Optional.of(couponEvent));
 
             // when & then
-            assertThatThrownBy(() -> couponEventService.getCouponEvent(eventId, loginUserId, now))
+            assertThatThrownBy(() -> couponEventService.getCouponEvent(eventId, memberId))
                     .isInstanceOf(GlobalException.class)
                     .hasMessage(CouponEventErrorCode.EVENT_OWNER_MISMATCH.getMessage());
         }
@@ -254,24 +242,17 @@ class CouponEventServiceTest {
             );
             int pageSize = 2;
 
-            Member member = TestUtils.createEntity(Member.class, Map.of("id", 1L));
-            Store store = TestUtils.createEntity(Store.class, Map.of(
-                    "id", 1L,
-                    "name", "매장",
-                    "member", member
-            ));
-
-            given(storeRepository.findById(store.getId())).willReturn(Optional.of(store));
-            given(couponEventRepository.fetchCouponEventsByStore(any(Store.class), any(CouponEventStatus.class), any(LocalDateTime.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
+            given(storeInternalService.checkOwnership(anyLong(), anyLong()))
+                    .willReturn(StoreOwnershipResponse.of(true));
+            given(couponEventRepository.fetchCouponEventsByStore(any(Long.class), any(CouponEventStatus.class), any(LocalDateTime.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
                     .willReturn(mockedProjections);
 
             // when
-            StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, now, cursor, pageSize);
+            StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(1L, 1L, CouponEventStatus.IN_PROGRESS, now, cursor, pageSize);
 
             // then
             assertThat(response).isNotNull();
-            assertThat(response.storeId()).isEqualTo(store.getId());
-            assertThat(response.storeName()).isEqualTo(store.getName());
+            assertThat(response.storeId()).isEqualTo(1L);
             assertThat(response.events()).hasSizeLessThanOrEqualTo(2); // pageSize
             assertThat(response.nextCursor()).isNotNull();
             assertThat(response.nextCursor().lastEventId()).isEqualTo(2L);
@@ -293,19 +274,16 @@ class CouponEventServiceTest {
                     createMockCoupon(lastEventId, "이벤트3", lastStartAt, lastEndAt)
             );
 
-            Member member = TestUtils.createEntity(Member.class, Map.of("id", 1L));
-            Store store = TestUtils.createEntity(Store.class, Map.of(
-                    "id", 1L,
-                    "name", "매장",
-                    "member", member
-            ));
+            Long memberId = 1L;
+            Long storeId = 1L;
 
-            given(storeRepository.findById(store.getId())).willReturn(Optional.of(store));
-            given(couponEventRepository.fetchCouponEventsByStore(any(Store.class), any(CouponEventStatus.class), any(LocalDateTime.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
+            given(storeInternalService.checkOwnership(anyLong(), anyLong()))
+                    .willReturn(StoreOwnershipResponse.of(true));
+            given(couponEventRepository.fetchCouponEventsByStore(any(Long.class), any(CouponEventStatus.class), any(LocalDateTime.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
                     .willReturn(mockedProjections);
 
             // when
-            StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, now, cursor, pageSize);
+            StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(memberId, storeId, CouponEventStatus.IN_PROGRESS, now, cursor, pageSize);
 
             // then
             assertThat(response).isNotNull();
@@ -326,20 +304,17 @@ class CouponEventServiceTest {
                     createMockCoupon(5L, "이벤트5", now.minusDays(1), now.plusDays(1))
             );
 
-            Member member = TestUtils.createEntity(Member.class, Map.of("id", 1L));
-            Store store = TestUtils.createEntity(Store.class, Map.of(
-                    "id", 1L,
-                    "name", "매장",
-                    "member", member
-            ));
+            Long memberId = 1L;
+            Long storeId = 1L;
 
-            given(storeRepository.findById(store.getId())).willReturn(Optional.of(store));
-            given(couponEventRepository.fetchCouponEventsByStore(any(Store.class), any(CouponEventStatus.class), any(LocalDateTime.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
+            given(storeInternalService.checkOwnership(anyLong(), anyLong()))
+                    .willReturn(StoreOwnershipResponse.of(true));
+            given(couponEventRepository.fetchCouponEventsByStore(any(Long.class), any(CouponEventStatus.class), any(LocalDateTime.class), any(StoreCouponEventsCursor.class), eq(pageSize + 1)))
                     .willReturn(mockedProjections);
 
             // when
             StoreCouponEventListResponse response = couponEventService.getCouponEventsByStore(
-                    member.getId(), store.getId(), CouponEventStatus.IN_PROGRESS, now, cursor, pageSize
+                    memberId, storeId, CouponEventStatus.IN_PROGRESS, now, cursor, pageSize
             );
 
             // then
