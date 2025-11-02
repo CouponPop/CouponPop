@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.auth.service;
 
+import com.sparta.couponpop.common.dto.fcmtoken.request.FcmTokenExpireRequest;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
@@ -89,13 +90,13 @@ public class AuthService {
     // 트랜잭션은 DB 작업(FcmToken 삭제)만 보장하며,
     // Redis 블랙리스트 작업은 별도 (분산 트랜잭션 고려하지 않음)
     @Transactional
-    public void logout(String authorizationHeader, LogoutRequest logoutRequest, AuthMember authMember) {
+    public void logout(String authorizationHeader, LogoutRequest logoutRequest) {
 
         String resolvedToken = extractToken(authorizationHeader);
         long expirationMillis = jwtProvider.getExpirationMillis(resolvedToken);
 
         blacklistToken(resolvedToken, expirationMillis);
-        fcmTokenInternalService.expireFcmToken(logoutRequest.fcmToken());
+        fcmTokenInternalService.expireFcmToken(FcmTokenExpireRequest.from(logoutRequest.fcmToken()));
     }
 
     // 회원 탈퇴가 되면 토큰만료 이벤트 발행, 회원탈퇴가 되지 않으면 롤백
@@ -109,7 +110,7 @@ public class AuthService {
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         memberToWithdraw.withdraw();
-        fcmTokenInternalService.expireFcmToken(withdrawRequest.fcmToken());
+        fcmTokenInternalService.expireFcmToken(FcmTokenExpireRequest.from(withdrawRequest.fcmToken()));
         publishBlacklistTokenEvent(resolvedToken, expirationMillis);
     }
 

@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.auth.service;
 
+import com.sparta.couponpop.common.dto.fcmtoken.request.FcmTokenExpireRequest;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
@@ -233,10 +234,10 @@ class AuthServiceTest {
             given(jwtProvider.resolveToken(testAuthorizationHeader)).willReturn(testToken);
             given(jwtProvider.getExpirationMillis(testToken)).willReturn(testExpirationMillis);
 
-            willDoNothing().given(fcmTokenInternalService).expireFcmToken(testLogoutRequest.fcmToken());
+            willDoNothing().given(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testLogoutRequest.fcmToken()));
 
             // when
-            authService.logout(testAuthorizationHeader, testLogoutRequest, testAuthMember);
+            authService.logout(testAuthorizationHeader, testLogoutRequest);
 
             // then
             // 1. JWT 검증
@@ -245,7 +246,7 @@ class AuthServiceTest {
             verify(tokenBlacklistService).blacklistToken(testToken, testExpirationMillis);
 
             // 2. FCM Token 검증
-            verify(fcmTokenInternalService).expireFcmToken(testLogoutRequest.fcmToken());
+            verify(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testLogoutRequest.fcmToken()));
         }
 
         @Test
@@ -259,11 +260,11 @@ class AuthServiceTest {
 
             // when & then
             GlobalException exception = assertThrows(GlobalException.class, () -> {
-                authService.logout(testAuthorizationHeader, testLogoutRequest, testAuthMember);
+                authService.logout(testAuthorizationHeader, testLogoutRequest);
             });
 
             assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.INVALID_TOKEN);
-            verify(fcmTokenInternalService, never()).expireFcmToken(anyString());
+            verify(fcmTokenInternalService, never()).expireFcmToken(FcmTokenExpireRequest.from(anyString()));
         }
 
         @Test
@@ -277,10 +278,10 @@ class AuthServiceTest {
             given(jwtProvider.resolveToken(testAuthorizationHeader)).willReturn(testToken);
             given(jwtProvider.getExpirationMillis(testToken)).willReturn(testExpirationMillis);
 
-            willDoNothing().given(fcmTokenInternalService).expireFcmToken(testLogoutRequest.fcmToken());
+            willDoNothing().given(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testLogoutRequest.fcmToken()));
 
             // when
-            authService.logout(testAuthorizationHeader, testLogoutRequest, testAuthMember);
+            authService.logout(testAuthorizationHeader, testLogoutRequest);
 
             // then
             // 1. JWT 검증
@@ -289,7 +290,7 @@ class AuthServiceTest {
             verify(tokenBlacklistService).blacklistToken(testToken, testExpirationMillis);
 
             // 2. FCM Token 검증
-            verify(fcmTokenInternalService).expireFcmToken(testLogoutRequest.fcmToken());
+            verify(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testLogoutRequest.fcmToken()));
         }
     }
 
@@ -321,7 +322,7 @@ class AuthServiceTest {
             given(jwtProvider.getExpirationMillis(testToken)).willReturn(testExpirationMillis);
 
             // FCM 토큰
-            willDoNothing().given(fcmTokenInternalService).expireFcmToken(testWithdrawRequest.fcmToken());
+            willDoNothing().given(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testWithdrawRequest.fcmToken()));
 
             // when
             authService.withdraw(testAuthorizationHeader, testAuthMember, testWithdrawRequest);
@@ -332,7 +333,7 @@ class AuthServiceTest {
                     .isBeforeOrEqualTo(LocalDateTime.now());
 
             // FCM 토큰
-            verify(fcmTokenInternalService).expireFcmToken(testWithdrawRequest.fcmToken());
+            verify(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testWithdrawRequest.fcmToken()));
 
             // JWT
             verify(eventPublisher).publishEvent(any(TokenBlacklistEvent.class));
