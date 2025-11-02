@@ -1,12 +1,12 @@
 package com.sparta.couponpop.domain.couponevent.service;
 
 import com.sparta.couponpop.common.dto.couponevent.response.StoreOwnershipResponse;
+import com.sparta.couponpop.common.dto.store.request.cursor.StoreCouponEventsStatisticsCursor;
 import com.sparta.couponpop.common.dto.store.response.StoreResponse;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
-import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsStatisticsCursor;
 import com.sparta.couponpop.domain.couponevent.dto.request.CreateCouponEventRequest;
 import com.sparta.couponpop.domain.couponevent.dto.response.CouponEventDetailResponse;
 import com.sparta.couponpop.domain.couponevent.dto.response.CreateCouponEventResponse;

@@ -1,6 +1,6 @@
 package com.sparta.couponpop.domain.couponevent.dto.response;
 
-import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsStatisticsCursor;
+import com.sparta.couponpop.common.dto.store.request.cursor.StoreCouponEventsStatisticsCursor;
 import com.sparta.couponpop.domain.couponevent.repository.dto.StoreCouponEventStatisticsProjection;
 
 import java.util.ArrayList;
