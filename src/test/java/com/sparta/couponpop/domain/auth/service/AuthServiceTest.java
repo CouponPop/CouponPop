@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.auth.service;
 
+import com.sparta.couponpop.common.dto.fcmtoken.request.FcmTokenExpireRequest;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
@@ -12,12 +13,11 @@ import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.event.TokenBlacklistEvent;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
 import com.sparta.couponpop.domain.fcmtoken.entity.FcmToken;
-import com.sparta.couponpop.domain.fcmtoken.repository.FcmTokenRepository;
+import com.sparta.couponpop.domain.fcmtoken.service.FcmTokenInternalService;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
-import com.sparta.couponpop.domain.member.service.MemberService;
 import com.sparta.couponpop.utils.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,8 +36,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -51,16 +53,13 @@ class AuthServiceTest {
     private MemberRepository memberRepository;
 
     @Mock
-    private FcmTokenRepository fcmTokenRepository;
+    private FcmTokenInternalService fcmTokenInternalService;
 
     @Mock
     private JwtProvider jwtProvider;
 
     @Mock
     private TokenBlacklistService tokenBlacklistService;
-
-    @Mock
-    private MemberService memberService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -232,16 +231,13 @@ class AuthServiceTest {
         void logoutSuccess() {
 
             // given
-            FcmToken mockFcmToken = TestUtils.createEntity(FcmToken.class, Map.of("fcmToken", "testFcmToken"));
-
             given(jwtProvider.resolveToken(testAuthorizationHeader)).willReturn(testToken);
             given(jwtProvider.getExpirationMillis(testToken)).willReturn(testExpirationMillis);
 
-            given(fcmTokenRepository.findByMemberIdAndFcmToken(testAuthMember.id(), testLogoutRequest.fcmToken()))
-                    .willReturn(Optional.of(mockFcmToken));
+            willDoNothing().given(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testLogoutRequest.fcmToken()));
 
             // when
-            authService.logout(testAuthorizationHeader, testLogoutRequest, testAuthMember);
+            authService.logout(testAuthorizationHeader, testLogoutRequest);
 
             // then
             // 1. JWT 검증
@@ -250,8 +246,7 @@ class AuthServiceTest {
             verify(tokenBlacklistService).blacklistToken(testToken, testExpirationMillis);
 
             // 2. FCM Token 검증
-            verify(fcmTokenRepository).findByMemberIdAndFcmToken(testAuthMember.id(), testLogoutRequest.fcmToken());
-            verify(fcmTokenRepository).delete(mockFcmToken);
+            verify(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testLogoutRequest.fcmToken()));
         }
 
         @Test
@@ -265,11 +260,11 @@ class AuthServiceTest {
 
             // when & then
             GlobalException exception = assertThrows(GlobalException.class, () -> {
-                authService.logout(testAuthorizationHeader, testLogoutRequest, testAuthMember);
+                authService.logout(testAuthorizationHeader, testLogoutRequest);
             });
 
             assertThat(exception.getErrorCode()).isEqualTo(AuthErrorCode.INVALID_TOKEN);
-            verify(fcmTokenRepository, never()).findByMemberIdAndFcmToken(anyLong(), anyString());
+            verify(fcmTokenInternalService, never()).expireFcmToken(FcmTokenExpireRequest.from(anyString()));
         }
 
         @Test
@@ -283,11 +278,10 @@ class AuthServiceTest {
             given(jwtProvider.resolveToken(testAuthorizationHeader)).willReturn(testToken);
             given(jwtProvider.getExpirationMillis(testToken)).willReturn(testExpirationMillis);
 
-            given(fcmTokenRepository.findByMemberIdAndFcmToken(testAuthMember.id(), testLogoutRequest.fcmToken()))
-                    .willReturn(Optional.empty());
+            willDoNothing().given(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testLogoutRequest.fcmToken()));
 
             // when
-            authService.logout(testAuthorizationHeader, testLogoutRequest, testAuthMember);
+            authService.logout(testAuthorizationHeader, testLogoutRequest);
 
             // then
             // 1. JWT 검증
@@ -296,7 +290,7 @@ class AuthServiceTest {
             verify(tokenBlacklistService).blacklistToken(testToken, testExpirationMillis);
 
             // 2. FCM Token 검증
-            verify(fcmTokenRepository).findByMemberIdAndFcmToken(testAuthMember.id(), testLogoutRequest.fcmToken());
+            verify(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testLogoutRequest.fcmToken()));
         }
     }
 
@@ -319,7 +313,6 @@ class AuthServiceTest {
             ));
 
             WithdrawRequest testWithdrawRequest = new WithdrawRequest("testFcmToken");
-            FcmToken mockFcmToken = TestUtils.createEntity(FcmToken.class, Map.of("fcmToken", "testFcmToken"));
 
             // member 조회
             given(memberRepository.findById(testAuthMember.id())).willReturn(Optional.of(mockMember));
@@ -329,8 +322,7 @@ class AuthServiceTest {
             given(jwtProvider.getExpirationMillis(testToken)).willReturn(testExpirationMillis);
 
             // FCM 토큰
-            given(fcmTokenRepository.findByMemberIdAndFcmToken(testAuthMember.id(), testWithdrawRequest.fcmToken()))
-                    .willReturn(Optional.of(mockFcmToken));
+            willDoNothing().given(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testWithdrawRequest.fcmToken()));
 
             // when
             authService.withdraw(testAuthorizationHeader, testAuthMember, testWithdrawRequest);
@@ -341,8 +333,7 @@ class AuthServiceTest {
                     .isBeforeOrEqualTo(LocalDateTime.now());
 
             // FCM 토큰
-            verify(fcmTokenRepository).findByMemberIdAndFcmToken(testAuthMember.id(), testWithdrawRequest.fcmToken());
-            verify(fcmTokenRepository).delete(mockFcmToken);
+            verify(fcmTokenInternalService).expireFcmToken(FcmTokenExpireRequest.from(testWithdrawRequest.fcmToken()));
 
             // JWT
             verify(eventPublisher).publishEvent(any(TokenBlacklistEvent.class));
@@ -367,7 +358,7 @@ class AuthServiceTest {
 
             assertThat(exception.getErrorCode()).isEqualTo(MemberErrorCode.MEMBER_NOT_FOUND);
 
-            verify(fcmTokenRepository, never()).delete(any());
+            verify(fcmTokenInternalService, never()).expireFcmToken(any());
             verify(eventPublisher, never()).publishEvent(any());
         }
     }

@@ -1,7 +1,6 @@
 package com.sparta.couponpop.domain.fcmtoken.entity;
 
 import com.sparta.couponpop.common.entity.BaseEntity;
-import com.sparta.couponpop.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -22,9 +21,7 @@ public class FcmToken extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    private Long memberId;
 
     private String fcmToken;
 
@@ -37,13 +34,13 @@ public class FcmToken extends BaseEntity {
     private LocalDateTime lastUsedAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private FcmToken(Member member,
+    private FcmToken(Long memberId,
                      String fcmToken,
                      String deviceType,
                      String deviceIdentifier,
                      boolean notificationEnabled,
                      LocalDateTime lastUsedAt) {
-        this.member = member;
+        this.memberId = memberId;
         this.fcmToken = fcmToken;
         this.deviceType = deviceType;
         this.deviceIdentifier = deviceIdentifier;
@@ -51,14 +48,14 @@ public class FcmToken extends BaseEntity {
         this.lastUsedAt = lastUsedAt;
     }
 
-    public static FcmToken of(Member member,
+    public static FcmToken of(Long memberId,
                               String fcmToken,
                               String deviceType,
                               String deviceIdentifier,
                               boolean notificationEnabled,
                               LocalDateTime lastUsedAt) {
         return FcmToken.builder()
-                .member(member)
+                .memberId(memberId)
                 .fcmToken(fcmToken)
                 .deviceType(deviceType)
                 .deviceIdentifier(deviceIdentifier)
@@ -72,8 +69,8 @@ public class FcmToken extends BaseEntity {
         this.lastUsedAt = lastUsedAt;
     }
 
-    public void updateMemberAndDeviceIdentifier(Member member, String deviceIdentifier, LocalDateTime lastUsedAt) {
-        this.member = member;
+    public void updateMemberIdAndDeviceIdentifier(Long memberId, String deviceIdentifier, LocalDateTime lastUsedAt) {
+        this.memberId = memberId;
         this.deviceIdentifier = deviceIdentifier;
         this.lastUsedAt = lastUsedAt;
     }
