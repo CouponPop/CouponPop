@@ -134,8 +134,8 @@ public class StoreDocument {
         return StoreDocument.builder()
                 .id(String.valueOf(store.getId())) // Elasticsearch 문서 ID를 storeId로 설정하여 업데이트 시 덮어쓰기 가능
                 .storeId(store.getId())
-                .memberId(store.getMember().getId())
-                .memberUsername(store.getMember().getUsername())
+                .memberId(store.getMemberId())
+                .memberUsername(null) // StoreDocument에는 memberId만 저장, username은 응답 생성 시 조회
                 .name(store.getName())
                 .phone(store.getPhone())
                 .description(store.getDescription())
