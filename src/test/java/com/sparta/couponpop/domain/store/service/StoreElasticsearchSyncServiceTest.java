@@ -182,7 +182,7 @@ class StoreElasticsearchSyncServiceTest {
     private Store createStore(Member member) {
         Map<String, Object> fieldValues = new HashMap<>();
         fieldValues.put("id", 1L);
-        fieldValues.put("member", member);
+        fieldValues.put("memberId", member.getId());
         fieldValues.put("name", "스타벅스 홍대점");
         fieldValues.put("phone", "02123456789");
         fieldValues.put("description", "홍대 중심가에 위치한 스타벅스입니다.");
@@ -204,7 +204,7 @@ class StoreElasticsearchSyncServiceTest {
     private Store createStoreWithCategory(Member member, StoreCategory category) {
         Map<String, Object> fieldValues = new HashMap<>();
         fieldValues.put("id", 1L);
-        fieldValues.put("member", member);
+        fieldValues.put("memberId", member.getId());
         fieldValues.put("name", "테스트 매장");
         fieldValues.put("phone", "02123456789");
         fieldValues.put("description", "테스트 매장입니다.");
