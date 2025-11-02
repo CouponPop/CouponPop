@@ -1,12 +1,8 @@
 package com.sparta.couponpop.domain.notification.service;
 
-import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.fcm.service.FcmSendService;
 import com.sparta.couponpop.domain.fcmtoken.entity.FcmToken;
 import com.sparta.couponpop.domain.fcmtoken.repository.FcmTokenRepository;
-import com.sparta.couponpop.domain.member.entity.Member;
-import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
-import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import com.sparta.couponpop.domain.notification.constants.NotificationTemplates;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponIssuedNotificationPayload;
 import com.sparta.couponpop.domain.notification.dto.payload.CouponUsedNotificationPayload;
@@ -24,7 +20,6 @@ import java.util.List;
 @Validated
 public class NotificationService {
 
-    private final MemberRepository memberRepository;
     private final FcmTokenRepository fcmTokenRepository;
     private final FcmSendService fcmSendService;
 
@@ -33,7 +28,8 @@ public class NotificationService {
      */
     public void send(@Valid CouponUsedNotificationPayload payload) {
 
-        List<String> tokens = getTokensForMember(payload.customerId());
+        Long customerId = payload.customerId();
+        List<String> tokens = getTokensForMember(customerId);
 
         String title = NotificationTemplates.COUPON_USED_TITLE.formatted(payload.couponName());
         String body = NotificationTemplates.COUPON_USED_BODY.formatted(
@@ -42,7 +38,7 @@ public class NotificationService {
         );
 
         for (String token : tokens) {
-            fcmSendService.sendNotification(payload.customerId(), token, title, body)
+            fcmSendService.sendNotification(customerId, token, title, body)
                     .exceptionally(throwable -> {
                         log.error("쿠폰 사용 알림 전송 중 오류가 발생했습니다. token={}, message={}", token, throwable.getMessage(), throwable);
                         return null;
@@ -55,7 +51,8 @@ public class NotificationService {
      */
     public void send(@Valid CouponIssuedNotificationPayload payload) {
 
-        List<String> tokens = getTokensForMember(payload.ownerId());
+        Long ownerId = payload.ownerId();
+        List<String> tokens = getTokensForMember(ownerId);
 
         String title = NotificationTemplates.COUPON_ISSUED_TITLE.formatted(payload.couponName());
         String body = NotificationTemplates.COUPON_ISSUED_BODY.formatted(
@@ -65,7 +62,7 @@ public class NotificationService {
         );
 
         for (String token : tokens) {
-            fcmSendService.sendNotification(payload.ownerId(), token, title, body)
+            fcmSendService.sendNotification(ownerId, token, title, body)
                     .exceptionally(throwable -> {
                         log.error("쿠폰 수령 알림 전송 중 오류가 발생했습니다. token={}, message={}", token, throwable.getMessage(), throwable);
                         return null;
@@ -74,12 +71,10 @@ public class NotificationService {
     }
 
     private List<String> getTokensForMember(Long memberId) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        List<FcmToken> enabledTokens = fcmTokenRepository.findByMemberAndNotificationEnabledIsTrue(member);
+        List<FcmToken> enabledTokens = fcmTokenRepository.findByMemberIdAndNotificationEnabledIsTrue(memberId);
         if (enabledTokens.isEmpty()) {
-            log.info("푸시 알림이 활성화된 FCM 토큰이 없어 알림을 건너뜁니다. memberId={}", member.getId());
+            log.info("푸시 알림이 활성화된 FCM 토큰이 없어 알림을 건너뜁니다. memberId={}", memberId);
             return List.of();
         }
 
