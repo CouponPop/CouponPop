@@ -11,4 +11,8 @@ public interface StoreInternalService {
     StoreOwnershipResponse checkOwnership(Long storeId, Long memberId);
 
     List<StoreResponse> findStoresByOwner(Long memberId, StoreCouponEventsStatisticsCursor cursor, int pageSize);
+
+    StoreResponse findByIdOrElseThrow(Long storeId);
+
+    List<StoreResponse> findAllByIds(List<Long> storeIds);
 }

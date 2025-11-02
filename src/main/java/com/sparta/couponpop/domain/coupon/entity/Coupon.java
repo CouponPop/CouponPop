@@ -5,7 +5,6 @@ import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
-import com.sparta.couponpop.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -45,23 +44,26 @@ public class Coupon extends BaseEntity {
     @JoinColumn(name = "coupon_event_id", nullable = false)
     private CouponEvent couponEvent;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    @Column(name = "member_id", nullable = false)
+    private Long memberId;
+
+    @Column(name = "store_id", nullable = false)
+    private Long storeId;
 
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Coupon(String couponCode, LocalDateTime receivedAt, LocalDateTime expireAt, LocalDateTime usedAt, CouponStatus couponStatus, CouponEvent couponEvent, Member member) {
+    private Coupon(String couponCode, LocalDateTime receivedAt, LocalDateTime expireAt, LocalDateTime usedAt, CouponStatus couponStatus, CouponEvent couponEvent, Long memberId, Long storeId) {
         this.couponCode = couponCode;
         this.receivedAt = receivedAt;
         this.expireAt = expireAt;
         this.usedAt = usedAt;
         this.couponStatus = couponStatus;
         this.couponEvent = couponEvent;
-        this.member = member;
+        this.memberId = memberId;
+        this.storeId = storeId;
     }
 
-    public static Coupon createIssuedCoupon(Member member, CouponEvent couponEvent, LocalDateTime issuedTime) {
+    public static Coupon createIssuedCoupon(Long memberId, Long storeId, CouponEvent couponEvent, LocalDateTime issuedTime) {
         String couponCode = generateCouponCode();
         return Coupon.builder()
                 .couponCode(couponCode)
@@ -69,10 +71,12 @@ public class Coupon extends BaseEntity {
                 .expireAt(couponEvent.getEventEndAt())
                 .couponStatus(CouponStatus.AVAILABLE)
                 .couponEvent(couponEvent)
-                .member(member)
+                .memberId(memberId)
+                .storeId(storeId)
                 .build();
     }
 
+    // TODO : 다른 매장에서 쿠폰 사용에 대한 검증이 없으므로 Token 로 매장 ID, 이벤트 ID(매장 주인),
     private static String generateCouponCode() {
         return "CPN-" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
     }

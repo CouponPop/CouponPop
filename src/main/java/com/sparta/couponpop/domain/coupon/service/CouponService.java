@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.coupon.service;
 
+import com.sparta.couponpop.common.dto.store.response.StoreResponse;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.coupon.dto.request.MemberIssuedCouponCursor;
 import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
@@ -9,17 +10,9 @@ import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.event.CouponUsedEvent;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
 import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
-import com.sparta.couponpop.domain.coupon.repository.redis.TemporaryCouponCodeRepository;
 import com.sparta.couponpop.domain.coupon.repository.db.dto.CouponSummaryInfoProjection;
-import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
-import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
-import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
-import com.sparta.couponpop.domain.member.entity.Member;
-import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
-import com.sparta.couponpop.domain.member.repository.MemberRepository;
-import com.sparta.couponpop.domain.store.entity.Store;
-import com.sparta.couponpop.domain.store.exception.StoreErrorCode;
-import com.sparta.couponpop.domain.store.repository.StoreRepository;
+import com.sparta.couponpop.domain.coupon.repository.redis.TemporaryCouponCodeRepository;
+import com.sparta.couponpop.domain.store.service.StoreInternalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,8 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -39,40 +35,15 @@ public class CouponService {
 
     private static final long TEMP_CODE_TTL_SECONDS = 600L;
 
-    private final MemberRepository memberRepository;
-    private final StoreRepository storeRepository;
-    private final CouponEventRepository couponEventRepository;
+    // ****** Coupon Domain ****** //
     private final CouponRepository couponRepository;
     private final TemporaryCouponCodeRepository temporaryCouponCodeRepository;
 
+    // ****** External Domain API ****** //
+    private final StoreInternalService storeInternalService;
+
+    // ****** Event Publish ****** //
     private final ApplicationEventPublisher eventPublisher;
-
-    @Transactional
-    public void issueEventCoupon(Long memberId, Long storeId, Long eventId, LocalDateTime issuedTime) {
-        // 매장 존재 여부 검증
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
-        CouponEvent event = validateEventBelongsToStore(eventId, store);
-
-        // 이벤트 유효성 검증
-        event.validateIssuable(issuedTime);
-
-        // 쿠폰 중복 수령 방지
-        if (couponRepository.existsByMemberIdAndCouponEventId(memberId, eventId)) {
-            throw new GlobalException(CouponErrorCode.COUPON_ALREADY_ISSUED);
-        }
-
-        // 발급 처리
-        event.issueCoupon();
-
-        // TODO : 쿠폰 생성 시 만료 시간 누락
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
-
-        // 쿠폰 생성 및 저장
-        Coupon issuedCoupon = Coupon.createIssuedCoupon(member, event, issuedTime);
-        couponRepository.save(issuedCoupon);
-    }
 
     /**
      * 쿠폰 상세 조회 및 임시 사용 코드 발급
@@ -88,12 +59,14 @@ public class CouponService {
      * @throws GlobalException 쿠폰이 존재하지 않거나 접근 권한이 없는 경우 발생
      */
     public CouponDetailResponse getCouponDetail(Long couponId, Long memberId) {
-        Coupon coupon = couponRepository.findByIdWithCouponEventAndStore(couponId)
+        Coupon coupon = couponRepository.findByIdWithCouponEvent(couponId)
                 .orElseThrow(() -> new GlobalException(CouponErrorCode.COUPON_NOT_FOUND));
 
-        if (!coupon.getMember().getId().equals(memberId)) {
+        if (!coupon.getMemberId().equals(memberId)) {
             throw new GlobalException(CouponErrorCode.COUPON_ACCESS_DENIED);
         }
+
+        StoreResponse store = storeInternalService.findByIdOrElseThrow(coupon.getStoreId());
 
         // TODO : 쿠폰 만료 여부 표시를 날짜로 할지 일관 처리 할지
         // 임시 코드 발급 + Redis 저장 (TTL 10분)
@@ -104,7 +77,7 @@ public class CouponService {
             tempCode = Optional.of(code);
             log.info("임시 쿠폰 Redis 저장");
         }
-        return CouponDetailResponse.from(coupon, tempCode);
+        return CouponDetailResponse.from(coupon, tempCode, store);
     }
 
     /**
@@ -153,16 +126,16 @@ public class CouponService {
          * ex) Redisson, @Version 등 활용 가능
          */
         // 쿠폰 + 이벤트 조회
-        Coupon coupon = couponRepository.findByIdWithCouponEventForUpdate(couponId)
+        Coupon coupon = couponRepository.findByIdWithCouponEvent(couponId)
                 .orElseThrow(() -> new GlobalException(CouponErrorCode.COUPON_NOT_FOUND));
+
+        // 쿠폰 소유자 검증
+        if (!coupon.getMemberId().equals(memberId)) {
+            throw new GlobalException(CouponErrorCode.COUPON_ACCESS_DENIED);
+        }
 
         // 이벤트 상태 검증
         coupon.getCouponEvent().validateInProgress(usedAt);
-
-        // 쿠폰 소유자 검증
-        if (!coupon.getMember().getId().equals(memberId)) {
-            throw new GlobalException(CouponErrorCode.COUPON_ACCESS_DENIED);
-        }
 
         // 쿠폰 사용
         coupon.use(usedAt);
@@ -173,7 +146,7 @@ public class CouponService {
         eventPublisher.publishEvent(CouponUsedEvent.of(
                 couponId,
                 memberId,
-                coupon.getCouponEvent().getStore().getId(),
+                coupon.getStoreId(),
                 coupon.getCouponEvent().getId()
         ));
     }
@@ -195,21 +168,18 @@ public class CouponService {
         List<CouponSummaryInfoProjection> coupons = couponRepository.findAllByMemberIdWithEventAndStore(
                 memberId, status, cursor.lastEventEndAt(), cursor.lastCouponId(), pageSize + 1
         );
+        List<Long> storeIds = coupons.stream().map(CouponSummaryInfoProjection::storeId).toList();
+        List<StoreResponse> stores = storeInternalService.findAllByIds(storeIds);
+        Map<Long, StoreResponse> storeMap = stores.stream().collect(Collectors.toMap(StoreResponse::id, Function.identity()));
 
-        return IssuedCouponListResponse.of(coupons, pageSize);
+        List<CouponDetailResponse> apiResponses = coupons.stream()
+                .map(coupon -> {
+                    StoreResponse store = storeMap.get(coupon.storeId());
+                    return CouponDetailResponse.from(coupon, store);
+                })
+                .toList();
+
+        return IssuedCouponListResponse.of(apiResponses, pageSize);
     }
 
-    private CouponEvent validateEventBelongsToStore(Long eventId, Store store) {
-        // 이벤트 존재 여부 검증
-        // TODO : Pessimistic Lock 으로 임시 동시성 처리. 추후 성능 비교 후 동시성 제어하기
-        CouponEvent event = couponEventRepository.findEventForUpdate(eventId)
-                .orElseThrow(() -> new GlobalException(CouponEventErrorCode.EVENT_NOT_FOUND));
-
-        // 이벤트가 해당 매장에서 진행 중인지 검증
-        if (!event.getStore().getId().equals(store.getId())) {
-            throw new GlobalException(CouponEventErrorCode.EVENT_NOT_BELONG_TO_STORE);
-        }
-
-        return event;
-    }
 }

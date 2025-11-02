@@ -3,6 +3,7 @@ package com.sparta.couponpop.domain.store.service;
 import com.sparta.couponpop.common.dto.couponevent.response.StoreOwnershipResponse;
 import com.sparta.couponpop.common.dto.store.response.StoreResponse;
 import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsStatisticsCursor;
+import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -64,8 +65,26 @@ public class StoreInternalServiceImpl implements StoreInternalService {
     }
          */
         return List.of(
-                StoreResponse.of(1L, "매장1"),
-                StoreResponse.of(2L, "매장1")
+                StoreResponse.of(1L, "매장1", StoreCategory.CAFE, 3.14, 3.14, "imageUrl"),
+                StoreResponse.of(2L, "매장2", StoreCategory.CAFE, 3.14, 3.14, "imageUrl")
+        );
+    }
+
+    // TODO : 매장 ID 에 해당하는 DTO 반환, 일단 필요한 값이 ID와 name 정도. 매장에 대한 추가 정보가 필요하면 ID 를 통해서 UI 쪽에서 API 조회를 하지 않을까?
+    @Override
+    public StoreResponse findByIdOrElseThrow(Long storeId) {
+        /*
+          Store store = storeRepository.findById(request.storeId())
+                          .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다."));
+         */
+        return StoreResponse.of(1L, "매장1", StoreCategory.CAFE, 3.14, 3.14, "imageUrl");
+    }
+
+    @Override
+    public List<StoreResponse> findAllByIds(List<Long> storeIds) {
+        return List.of(
+                StoreResponse.of(1L, "매장1", StoreCategory.CAFE, 3.14, 3.14, "imageUrl"),
+                StoreResponse.of(2L, "매장2", StoreCategory.CAFE, 3.14, 3.14, "imageUrl")
         );
     }
 }
