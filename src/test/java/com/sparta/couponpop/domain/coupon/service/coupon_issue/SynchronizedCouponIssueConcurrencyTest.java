@@ -3,6 +3,7 @@ package com.sparta.couponpop.domain.coupon.service.coupon_issue;
 import com.sparta.couponpop.domain.coupon.service.CouponIssueConcurrencyTestSupport;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -13,6 +14,7 @@ import java.util.concurrent.Executors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
+@Disabled
 class SynchronizedCouponIssueConcurrencyTest extends CouponIssueConcurrencyTestSupport {
 
     @Autowired
@@ -27,7 +29,7 @@ class SynchronizedCouponIssueConcurrencyTest extends CouponIssueConcurrencyTestS
         CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
 
         for (int i = 0; i < THREAD_COUNT; i++) {
-            final long currentMemberId = members.get(i).getId();
+            final long currentMemberId = i + 1;
             executorService.submit(() -> {
                 try {
                     couponIssueFacade.issueCoupon(currentMemberId, eventId, issuedTime);

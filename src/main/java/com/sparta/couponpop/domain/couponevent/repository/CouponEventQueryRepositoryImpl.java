@@ -8,7 +8,6 @@ import com.sparta.couponpop.domain.coupon.entity.QCoupon;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsStatisticsCursor;
-import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsCursor;
 import com.sparta.couponpop.domain.couponevent.entity.QCouponEvent;
 import com.sparta.couponpop.domain.couponevent.enums.CouponEventStatus;
 import com.sparta.couponpop.domain.couponevent.repository.dto.*;
@@ -31,7 +30,7 @@ public class CouponEventQueryRepositoryImpl implements CouponEventQueryRepositor
 
     @Override
     public List<CouponEventWithUsedCountProjection> fetchCouponEventsByStore(
-            Store store,
+            Long storeId,
             CouponEventStatus eventStatus,
             LocalDateTime now,
             StoreCouponEventsCursor cursor,
@@ -61,7 +60,7 @@ public class CouponEventQueryRepositoryImpl implements CouponEventQueryRepositor
                                 .and(coupon.couponStatus.eq(CouponStatus.USED))
                 )
                 .where(
-                        storeEq(couponEvent, store),
+                        storeIdEq(couponEvent, storeId),
                         eventPeriodCondition(couponEvent, now, eventStatus),
                         nextEventCondition(couponEvent, cursor.lastStartAt(), cursor.lastEndAt(), cursor.lastEventId())
                 )
@@ -76,18 +75,17 @@ public class CouponEventQueryRepositoryImpl implements CouponEventQueryRepositor
     }
 
     @Override
-    public List<StoreCouponEventStatisticsProjection> fetchStoreCouponEventStatistics(Long memberId, StoreCouponEventsStatisticsCursor cursor, int limit) {
-        QStore store = QStore.store;
+    public List<StoreCouponEventStatisticsProjection> fetchStoreCouponEventStatistics(List<Long> storeIds) {
         QCouponEvent couponEvent = QCouponEvent.couponEvent;
         QCoupon coupon = QCoupon.coupon;
 
         NumberExpression<Integer> usedCount = Expressions.numberTemplate(Integer.class,
                 "sum(case when {0}.usedAt is not null then 1 else 0 end)", coupon);
+
         return jpaQueryFactory
                 .select(
                         new QStoreCouponEventStatisticsProjection(
-                                store.id,
-                                store.name,
+                                couponEvent.storeId,
                                 new QStoreCouponEventStatisticsProjection_CouponStats(
                                         couponEvent.totalCount.sum().coalesce(0),
                                         couponEvent.issuedCount.sum().coalesce(0),
@@ -96,24 +94,19 @@ public class CouponEventQueryRepositoryImpl implements CouponEventQueryRepositor
                                 couponEvent.eventEndAt.max()
                         )
                 )
-                .from(store)
-                .leftJoin(couponEvent).on(couponEvent.store.eq(store))
+                .from(couponEvent)
                 .leftJoin(coupon).on(coupon.couponEvent.eq(couponEvent))
-                .where(
-                        store.member.id.eq(memberId),
-                        nextStatisticCondition(store, cursor.lastStoreId())
-                )
-                .groupBy(store.id)
-                .orderBy(store.id.desc())
-                .limit(limit)
+                .where(couponEvent.storeId.in(storeIds))
+                .groupBy(couponEvent.storeId)
+                .orderBy(couponEvent.storeId.desc())
                 .fetch();
     }
 
-    private BooleanExpression storeEq(QCouponEvent couponEvent, Store store) {
-        if (ObjectUtils.isEmpty(store)) {
+    private BooleanExpression storeIdEq(QCouponEvent couponEvent, Long storeId) {
+        if (ObjectUtils.isEmpty(storeId)) {
             return null;
         }
-        return couponEvent.store.eq(store);
+        return couponEvent.storeId.eq(storeId);
     }
 
     private BooleanExpression eventPeriodCondition(QCouponEvent event, LocalDateTime now, CouponEventStatus eventStatus) {

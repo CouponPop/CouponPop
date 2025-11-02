@@ -2,7 +2,6 @@ package com.sparta.couponpop.domain.coupon.repository.db.dto;
 
 import com.querydsl.core.annotations.QueryProjection;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
-import com.sparta.couponpop.domain.store.enums.StoreCategory;
 
 import java.time.LocalDateTime;
 
@@ -13,7 +12,7 @@ public record CouponSummaryInfoProjection(
         LocalDateTime expireAt,
         LocalDateTime usedAt,
         EventInfo event,
-        StoreInfo store
+        Long storeId
 ) {
 
     public record EventInfo(
@@ -23,16 +22,6 @@ public record CouponSummaryInfoProjection(
     ) {
         public record EventPeriod(LocalDateTime start, LocalDateTime end) {
         }
-    }
-
-    public record StoreInfo(
-            Long id,
-            String name,
-            StoreCategory storeCategory,
-            double latitude,
-            double longitude,
-            String imageUrl
-    ) {
     }
 
     @QueryProjection
@@ -46,16 +35,12 @@ public record CouponSummaryInfoProjection(
             String eventName,
             LocalDateTime eventStartAt,
             LocalDateTime eventEndAt,
-            Long storeId,
-            String storeName,
-            StoreCategory storeCategory,
-            double latitude,
-            double longitude,
-            String imageUrl
+            Long storeId
     ) {
-        this(id, status, issuedAt, expireAt, usedAt,
+        this(
+                id, status, issuedAt, expireAt, usedAt,
                 new EventInfo(eventId, eventName, new EventInfo.EventPeriod(eventStartAt, eventEndAt)),
-                new StoreInfo(storeId, storeName, storeCategory, latitude, longitude, imageUrl)
+                storeId
         );
     }
 }

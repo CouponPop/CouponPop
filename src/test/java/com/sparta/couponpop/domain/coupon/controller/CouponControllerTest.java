@@ -9,15 +9,14 @@ import com.sparta.couponpop.common.security.dto.AuthMember;
 import com.sparta.couponpop.domain.coupon.dto.request.CouponIssueRequest;
 import com.sparta.couponpop.domain.coupon.dto.request.MemberIssuedCouponCursor;
 import com.sparta.couponpop.domain.coupon.dto.request.UseCouponRequest;
-import com.sparta.couponpop.domain.coupon.dto.response.CouponDetailResponse;
-import com.sparta.couponpop.domain.coupon.dto.response.IssuedCouponListResponse;
+import com.sparta.couponpop.domain.coupon.dto.response.*;
 import com.sparta.couponpop.domain.coupon.enums.CouponStatus;
 import com.sparta.couponpop.domain.coupon.exception.CouponErrorCode;
-import com.sparta.couponpop.domain.coupon.repository.db.dto.CouponSummaryInfoProjection;
 import com.sparta.couponpop.domain.coupon.service.CouponService;
 import com.sparta.couponpop.domain.coupon.service.coupon_issue.CouponIssueFacade;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.member.enums.MemberType;
+import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import com.sparta.couponpop.domain.store.repository.StoreSearchRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -220,24 +219,26 @@ class CouponControllerTest {
             );
 
             // 이벤트 기간
-            CouponDetailResponse.EventInfo.EventPeriod period = new CouponDetailResponse.EventInfo.EventPeriod(
+            EventPeriodResponse period = new EventPeriodResponse(
                     LocalDateTime.of(2025, 10, 21, 0, 0),
                     LocalDateTime.of(2025, 10, 31, 23, 59)
             );
 
             //  이벤트 정보
-            CouponDetailResponse.EventInfo eventInfo = new CouponDetailResponse.EventInfo(
+            EventInfoResponse eventInfo = new EventInfoResponse(
                     eventId,
                     "아메리카노 1+1 이벤트",
                     period
             );
 
             // 매장 정보
-            CouponDetailResponse.StoreInfo storeInfo = new CouponDetailResponse.StoreInfo(
+            StoreInfoResponse storeInfo = new StoreInfoResponse(
                     storeId,
                     "스타벅스 강남점",
-                    "서울 강남구 역삼동 123-45",
-                    "02-1234-5678"
+                    StoreCategory.CAFE,
+                    3.14,
+                    4.1534,
+                    "imageUrl"
             );
 
             // CouponDetailResponse 생성
@@ -404,18 +405,14 @@ class CouponControllerTest {
         @DisplayName("첫 페이지 조회 - hasNext true")
         void getIssuedCoupons_firstPage_hasNextTrue() throws Exception {
             // given
-            CouponSummaryInfoProjection.EventInfo event = new CouponSummaryInfoProjection.EventInfo(1L, "이벤트",
-                    new CouponSummaryInfoProjection.EventInfo.EventPeriod(
-                            now.minusDays(2),
-                            now.plusDays(1)
-                    ));
-            List<CouponSummaryInfoProjection> mockCoupons = List.of(
-                    new CouponSummaryInfoProjection(1L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, event, null),
-                    new CouponSummaryInfoProjection(2L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, event, null),
-                    new CouponSummaryInfoProjection(3L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, event, null)
+            EventInfoResponse eventInfoResponse = new EventInfoResponse(1L, "이벤트1", new EventPeriodResponse(now.minusDays(2), now.plusDays(1)));
+            StoreInfoResponse storeInfoResponse = new StoreInfoResponse(1L, "매장", StoreCategory.CAFE, 3.14, 3.14, "imageUrl");
+            List<CouponDetailResponse> responses = List.of(
+                    new CouponDetailResponse(1L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, null, eventInfoResponse, storeInfoResponse),
+                    new CouponDetailResponse(2L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, null, eventInfoResponse, storeInfoResponse),
+                    new CouponDetailResponse(3L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, null, eventInfoResponse, storeInfoResponse)
             );
-//
-            IssuedCouponListResponse mockResponse = IssuedCouponListResponse.of(mockCoupons, 2);
+            IssuedCouponListResponse mockResponse = IssuedCouponListResponse.of(responses, 2);
 
             given(couponService.getIssuedCoupons(anyLong(), eq(CouponStatus.AVAILABLE), any(MemberIssuedCouponCursor.class), eq(2)))
                     .willReturn(mockResponse);
@@ -436,11 +433,12 @@ class CouponControllerTest {
         @DisplayName("다음 페이지 조회 - 마지막 페이지 (hasNext false)")
         void getIssuedCoupons_nextPage_lastPage() throws Exception {
             // given
-            List<CouponSummaryInfoProjection> mockCoupons = List.of(
-                    new CouponSummaryInfoProjection(3L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, null, null)
+            EventInfoResponse eventInfoResponse = new EventInfoResponse(1L, "이벤트1", new EventPeriodResponse(now.minusDays(2), now.plusDays(1)));
+            StoreInfoResponse storeInfoResponse = new StoreInfoResponse(1L, "매장", StoreCategory.CAFE, 3.14, 3.14, "imageUrl");
+            List<CouponDetailResponse> responses = List.of(
+                    new CouponDetailResponse(3L, CouponStatus.AVAILABLE, now.minusDays(1), now.plusDays(1), null, null, eventInfoResponse, storeInfoResponse)
             );
-
-            IssuedCouponListResponse mockResponse = IssuedCouponListResponse.of(mockCoupons, 2);
+            IssuedCouponListResponse mockResponse = IssuedCouponListResponse.of(responses, 2);
 
             given(couponService.getIssuedCoupons(anyLong(), eq(CouponStatus.AVAILABLE), any(MemberIssuedCouponCursor.class), eq(2)))
                     .willReturn(mockResponse);

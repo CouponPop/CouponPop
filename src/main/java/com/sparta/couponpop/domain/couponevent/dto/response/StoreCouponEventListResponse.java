@@ -7,7 +7,6 @@ import java.util.List;
 
 public record StoreCouponEventListResponse(
         Long storeId,
-        String storeName,
         List<CouponEventDetailResponse> events,
         StoreCouponEventsCursor nextCursor,
         int size,
@@ -15,7 +14,6 @@ public record StoreCouponEventListResponse(
 ) {
     public static StoreCouponEventListResponse of(
             Long storeId,
-            String storeName,
             List<CouponEventDetailResponse> originalEvents,
             int pageSize
     ) {
@@ -23,7 +21,7 @@ public record StoreCouponEventListResponse(
         List<CouponEventDetailResponse> events = trimToPageSize(originalEvents, pageSize);
         StoreCouponEventsCursor cursor = hasNext ? buildNextCursor(events) : null;
 
-        return new StoreCouponEventListResponse(storeId, storeName, events, cursor, events.size(), hasNext);
+        return new StoreCouponEventListResponse(storeId, events, cursor, events.size(), hasNext);
     }
 
     private static List<CouponEventDetailResponse> trimToPageSize(List<CouponEventDetailResponse> events, int pageSize) {

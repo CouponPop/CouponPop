@@ -7,9 +7,6 @@ import com.sparta.couponpop.domain.coupon.repository.db.CouponRepository;
 import com.sparta.couponpop.domain.couponevent.entity.CouponEvent;
 import com.sparta.couponpop.domain.couponevent.exception.CouponEventErrorCode;
 import com.sparta.couponpop.domain.couponevent.repository.CouponEventRepository;
-import com.sparta.couponpop.domain.member.entity.Member;
-import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
-import com.sparta.couponpop.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,19 +17,31 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class DefaultCouponIssueService implements CouponIssueFacade {
 
-    private final MemberRepository memberRepository;
+    // ****** Coupon Domain ****** //
     private final CouponEventRepository couponEventRepository;
     private final CouponRepository couponRepository;
 
+    // TODO : 이벤트가 해당 매장에서 진행 중인지 검증해야 할까?
+    /*
+        if (!event.getStoreId().equals(store.getId())) {
+            throw new GlobalException(CouponEventErrorCode.EVENT_NOT_BELONG_TO_STORE);
+        }
+     */
     @Transactional
     @Override
     public void issueCoupon(Long memberId, Long eventId, LocalDateTime currentDateTime) {
-        // 이벤트 기간 검증
-        CouponEvent event = validateEventPeriodAndTime(eventId, currentDateTime);
         // 쿠폰 중복 수령 검증
         validateCouponDuplication(memberId, eventId);
+        // 이벤트 기간 검증
+        CouponEvent event = validateEventPeriodAndTime(eventId, currentDateTime);
         // 쿠폰 발급 및 쿠폰 저장
         saveCouponIssue(memberId, currentDateTime, event);
+    }
+
+    public void validateCouponDuplication(Long memberId, Long eventId) {
+        if (couponRepository.existsByMemberIdAndCouponEventId(memberId, eventId)) {
+            throw new GlobalException(CouponErrorCode.COUPON_ALREADY_ISSUED);
+        }
     }
 
     public CouponEvent validateEventPeriodAndTime(Long eventId, LocalDateTime currentDateTime) {
@@ -43,19 +52,9 @@ public class DefaultCouponIssueService implements CouponIssueFacade {
         return event;
     }
 
-    public void validateCouponDuplication(Long memberId, Long eventId) {
-        if (couponRepository.existsByMemberIdAndCouponEventId(memberId, eventId)) {
-            throw new GlobalException(CouponErrorCode.COUPON_ALREADY_ISSUED);
-        }
-    }
-
     public void saveCouponIssue(Long memberId, LocalDateTime currentDateTime, CouponEvent event) {
         event.issueCoupon();
-
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
-
-        Coupon issuedCoupon = Coupon.createIssuedCoupon(member, event, currentDateTime);
+        Coupon issuedCoupon = Coupon.createIssuedCoupon(memberId, event.getStoreId(), event, currentDateTime);
         couponRepository.save(issuedCoupon);
     }
 }
