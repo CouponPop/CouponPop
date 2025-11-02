@@ -1,5 +1,6 @@
 package com.sparta.couponpop.domain.auth.service;
 
+import com.sparta.couponpop.common.dto.fcmtoken.request.FcmTokenExpireRequest;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.common.security.JwtProvider;
 import com.sparta.couponpop.common.security.dto.AuthMember;
@@ -11,7 +12,7 @@ import com.sparta.couponpop.domain.auth.dto.response.LoginResponse;
 import com.sparta.couponpop.domain.auth.dto.response.SignUpResponse;
 import com.sparta.couponpop.domain.auth.event.TokenBlacklistEvent;
 import com.sparta.couponpop.domain.auth.exception.AuthErrorCode;
-import com.sparta.couponpop.domain.fcmtoken.repository.FcmTokenRepository;
+import com.sparta.couponpop.domain.fcmtoken.service.FcmTokenInternalService;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.exception.MemberErrorCode;
 import com.sparta.couponpop.domain.member.repository.MemberRepository;
@@ -34,8 +35,9 @@ public class AuthService {
     private final JwtProvider jwtProvider;
 
     private final MemberRepository memberRepository;
-    private final FcmTokenRepository fcmTokenRepository;
+
     private final TokenBlacklistService tokenBlacklistService;
+    private final FcmTokenInternalService fcmTokenInternalService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -88,13 +90,13 @@ public class AuthService {
     // 트랜잭션은 DB 작업(FcmToken 삭제)만 보장하며,
     // Redis 블랙리스트 작업은 별도 (분산 트랜잭션 고려하지 않음)
     @Transactional
-    public void logout(String authorizationHeader, LogoutRequest logoutRequest, AuthMember authMember) {
+    public void logout(String authorizationHeader, LogoutRequest logoutRequest) {
 
         String resolvedToken = extractToken(authorizationHeader);
         long expirationMillis = jwtProvider.getExpirationMillis(resolvedToken);
 
         blacklistToken(resolvedToken, expirationMillis);
-        expireFcmToken(authMember.id(), logoutRequest.fcmToken());
+        fcmTokenInternalService.expireFcmToken(FcmTokenExpireRequest.from(logoutRequest.fcmToken()));
     }
 
     // 회원 탈퇴가 되면 토큰만료 이벤트 발행, 회원탈퇴가 되지 않으면 롤백
@@ -108,7 +110,7 @@ public class AuthService {
                 .orElseThrow(() -> new GlobalException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         memberToWithdraw.withdraw();
-        expireFcmToken(memberToWithdraw.getId(), withdrawRequest.fcmToken());
+        fcmTokenInternalService.expireFcmToken(FcmTokenExpireRequest.from(withdrawRequest.fcmToken()));
         publishBlacklistTokenEvent(resolvedToken, expirationMillis);
     }
 
@@ -123,14 +125,6 @@ public class AuthService {
         TokenBlacklistEvent event = TokenBlacklistEvent.of(token, expirationMillis);
         eventPublisher.publishEvent(event);
         log.debug("[publishBlacklistTokenEvent] 토큰 블랙리스트 이벤트 발행 - token={}", token);
-    }
-
-    // FCM 토큰 삭제는 실패하더라도 전체 작업이 롤백되지는 않도록 ifPresent 사용
-    private void expireFcmToken(Long memberId, String fcmToken) {
-
-        fcmTokenRepository
-                .findByMemberIdAndFcmToken(memberId, fcmToken)
-                .ifPresent(fcmTokenRepository::delete);
     }
 
     private String extractToken(String authorizationHeader) {
