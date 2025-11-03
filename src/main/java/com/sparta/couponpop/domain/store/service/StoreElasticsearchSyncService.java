@@ -20,9 +20,9 @@ public class StoreElasticsearchSyncService {
     /**
      * 매장 생성 시 Elasticsearch에 문서 저장
      */
-    public void indexStore(Store store) {
+    public void indexStore(Store store, String memberUsername) {
         try {
-            StoreDocument document = StoreDocument.from(store);
+            StoreDocument document = StoreDocument.from(store, memberUsername);
             storeSearchRepository.save(document);
             log.info("Successfully indexed store to Elasticsearch: storeId={}", store.getId());
         } catch (Exception e) {
@@ -34,9 +34,9 @@ public class StoreElasticsearchSyncService {
     /**
      * 매장 수정 시 Elasticsearch 문서 업데이트
      */
-    public void updateStore(Store store) {
+    public void updateStore(Store store, String memberUsername) {
         try {
-            StoreDocument document = StoreDocument.from(store);
+            StoreDocument document = StoreDocument.from(store, memberUsername);
             storeSearchRepository.save(document);
             log.info("Successfully updated store in Elasticsearch: storeId={}", store.getId());
         } catch (Exception e) {
