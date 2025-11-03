@@ -1,4 +1,4 @@
-package com.sparta.couponpop.domain.couponevent.dto.cursor;
+package com.sparta.couponpop.common.dto.store.request.cursor;
 
 public record StoreCouponEventsStatisticsCursor(
         Long lastStoreId

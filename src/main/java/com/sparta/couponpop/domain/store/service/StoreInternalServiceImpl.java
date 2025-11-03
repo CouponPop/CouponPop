@@ -1,8 +1,8 @@
 package com.sparta.couponpop.domain.store.service;
 
 import com.sparta.couponpop.common.dto.couponevent.response.StoreOwnershipResponse;
+import com.sparta.couponpop.common.dto.store.request.cursor.StoreCouponEventsStatisticsCursor;
 import com.sparta.couponpop.common.dto.store.response.StoreResponse;
-import com.sparta.couponpop.domain.couponevent.dto.cursor.StoreCouponEventsStatisticsCursor;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import org.springframework.stereotype.Service;
 
