@@ -1,8 +1,6 @@
 package com.sparta.couponpop.domain.store.service;
 
-import com.sparta.couponpop.common.dto.member.response.MemberResponse;
 import com.sparta.couponpop.common.exception.GlobalException;
-import com.sparta.couponpop.domain.member.service.MemberInternalService;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreDetailResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
@@ -21,15 +19,11 @@ import java.util.List;
 public class StoreService {
 
     private final StoreRepository storeRepository;
-    private final MemberInternalService memberInternalService;
     private final StoreElasticsearchSyncService elasticsearchSyncService;
     private final StoreSearchService storeSearchService;
 
     @Transactional
-    public StoreResponse createStore(Long memberId, CreateStoreRequest request) {
-
-        // Member 존재 여부 확인 및 정보 조회
-        MemberResponse member = memberInternalService.getMemberById(memberId);
+    public StoreResponse createStore(Long memberId, String memberUsername, CreateStoreRequest request) {
 
         Store store = Store.createStore(
                 memberId,
@@ -52,13 +46,13 @@ public class StoreService {
         Store savedStore = storeRepository.save(store);
         
         // Elasticsearch에 동기화
-        elasticsearchSyncService.indexStore(savedStore);
+        elasticsearchSyncService.indexStore(savedStore, memberUsername);
 
-        return StoreResponse.from(savedStore, member);
+        return StoreResponse.from(savedStore, memberUsername);
     }
 
     @Transactional
-    public StoreResponse updateStore(Long storeId, Long memberId, CreateStoreRequest request) {
+    public StoreResponse updateStore(Long storeId, Long memberId, String memberUsername, CreateStoreRequest request) {
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
@@ -86,24 +80,18 @@ public class StoreService {
         );
         
         // Elasticsearch에 동기화
-        elasticsearchSyncService.updateStore(store);
+        elasticsearchSyncService.updateStore(store, memberUsername);
 
-        // Member 정보 조회
-        MemberResponse member = memberInternalService.getMemberById(memberId);
-
-        return StoreResponse.from(store, member);
+        return StoreResponse.from(store, memberUsername);
     }
 
     @Transactional(readOnly = true)
-    public List<StoreResponse> getStoresByOwner(Long memberId) {
+    public List<StoreResponse> getStoresByOwner(Long memberId, String memberUsername) {
 
         List<Store> stores = storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId);
-        
-        // Member 정보 조회
-        MemberResponse member = memberInternalService.getMemberById(memberId);
 
         return stores.stream()
-                .map(store -> StoreResponse.from(store, member))
+                .map(store -> StoreResponse.from(store, memberUsername))
                 .toList();
     }
 
