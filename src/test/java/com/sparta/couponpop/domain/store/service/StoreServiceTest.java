@@ -1,10 +1,8 @@
 package com.sparta.couponpop.domain.store.service;
 
-import com.sparta.couponpop.common.dto.member.response.MemberResponse;
 import com.sparta.couponpop.common.exception.GlobalException;
 import com.sparta.couponpop.domain.member.entity.Member;
 import com.sparta.couponpop.domain.member.enums.MemberType;
-import com.sparta.couponpop.domain.member.service.MemberInternalService;
 import com.sparta.couponpop.domain.store.dto.request.CreateStoreRequest;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
@@ -29,6 +27,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
@@ -39,9 +38,6 @@ class StoreServiceTest {
 
     @Mock
     private StoreRepository storeRepository;
-
-    @Mock
-    private MemberInternalService memberInternalService;
 
     @Mock
     private StoreElasticsearchSyncService elasticsearchSyncService;
@@ -62,13 +58,11 @@ class StoreServiceTest {
         Member member = createMember(memberId);
         Store savedStore = createStore(member);
 
-        given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
         // when
-        StoreResponse result = storeService.createStore(memberId, request);
+        StoreResponse result = storeService.createStore(memberId, member.getUsername(), request);
 
         // then
         assertThat(result.id()).isEqualTo(savedStore.getId());
@@ -89,9 +83,8 @@ class StoreServiceTest {
         assertThat(result.weekendOpenTime()).isEqualTo(request.weekendOpenTime());
         assertThat(result.weekendCloseTime()).isEqualTo(request.weekendCloseTime());
 
-        then(memberInternalService).should(times(1)).getMemberById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
-        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class), eq(member.getUsername()));
     }
 
     @Test
@@ -103,19 +96,15 @@ class StoreServiceTest {
         CreateStoreRequest request = createStoreRequest();
         Member member = createMember(memberId);
         Store expectedStore = createStore(member);
-
-        given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(expectedStore);
 
         // when
-        storeService.createStore(memberId, request);
+        storeService.createStore(memberId, member.getUsername(), request);
 
         // then
-        then(memberInternalService).should(times(1)).getMemberById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
-        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class), eq(member.getUsername()));
     }
 
     @Test
@@ -127,23 +116,19 @@ class StoreServiceTest {
         CreateStoreRequest request = createFoodStoreRequest();
         Member member = createMember(memberId);
         Store savedStore = createFoodStore(member);
-
-        given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
         // when
-        StoreResponse result = storeService.createStore(memberId, request);
+        StoreResponse result = storeService.createStore(memberId, member.getUsername(), request);
 
         // then
         assertThat(result.storeCategory()).isEqualTo(StoreCategory.FOOD);
         assertThat(result.name()).isEqualTo("맛있는 식당");
         assertThat(result.memberId()).isEqualTo(memberId);
 
-        then(memberInternalService).should(times(1)).getMemberById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
-        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class), eq(member.getUsername()));
     }
 
     @Test
@@ -188,21 +173,18 @@ class StoreServiceTest {
                 LocalTime.of(22, 0)
         );
 
-        given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberResponse.from(member));
         given(storeRepository.save(any(Store.class)))
                 .willReturn(savedStore);
 
         // when
-        StoreResponse result = storeService.createStore(memberId, request);
+        StoreResponse result = storeService.createStore(memberId, member.getUsername(), request);
 
         // then
         assertThat(result.description()).isEmpty();
         assertThat(result.name()).isEqualTo("테스트 매장");
 
-        then(memberInternalService).should(times(1)).getMemberById(memberId);
         then(storeRepository).should(times(1)).save(any(Store.class));
-        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).indexStore(any(Store.class), eq(member.getUsername()));
     }
 
     @Test
@@ -218,10 +200,8 @@ class StoreServiceTest {
 
         given(storeRepository.findById(storeId))
                 .willReturn(Optional.of(existingStore));
-        given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberResponse.from(member));
         // when
-        StoreResponse result = storeService.updateStore(storeId, memberId, request);
+        StoreResponse result = storeService.updateStore(storeId, memberId, member.getUsername(), request);
 
         // then
         assertThat(result.name()).isEqualTo(request.name());
@@ -230,7 +210,7 @@ class StoreServiceTest {
 
         then(storeRepository).should(times(1)).findById(storeId);
         then(storeRepository).should(times(0)).save(any(Store.class));
-        then(elasticsearchSyncService).should(times(1)).updateStore(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).updateStore(any(Store.class), eq(member.getUsername()));
     }
 
     @Test
@@ -246,7 +226,7 @@ class StoreServiceTest {
                 .willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> storeService.updateStore(storeId, memberId, request))
+        assertThatThrownBy(() -> storeService.updateStore(storeId, memberId, "testuser", request))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage("매장을 찾을 수 없습니다.");
 
@@ -267,10 +247,8 @@ class StoreServiceTest {
 
         given(storeRepository.findById(storeId))
                 .willReturn(Optional.of(existingStore));
-        given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberResponse.from(member));
         // when
-        StoreResponse result = storeService.updateStore(storeId, memberId, request);
+        StoreResponse result = storeService.updateStore(storeId, memberId, member.getUsername(), request);
 
         // then
         assertThat(result.storeCategory()).isEqualTo(StoreCategory.FOOD);
@@ -278,7 +256,7 @@ class StoreServiceTest {
 
         then(storeRepository).should(times(1)).findById(storeId);
         then(storeRepository).should(times(0)).save(any(Store.class));
-        then(elasticsearchSyncService).should(times(1)).updateStore(any(Store.class));
+        then(elasticsearchSyncService).should(times(1)).updateStore(any(Store.class), eq(member.getUsername()));
     }
 
     @Test
@@ -297,7 +275,7 @@ class StoreServiceTest {
                 .willReturn(Optional.of(store));
 
         // when & then
-        assertThatThrownBy(() -> storeService.updateStore(storeId, memberId, request))
+        assertThatThrownBy(() -> storeService.updateStore(storeId, memberId, "testuser", request))
                 .isInstanceOf(GlobalException.class)
                 .hasMessage("매장 수정 권한이 없습니다.");
 
@@ -839,11 +817,8 @@ class StoreServiceTest {
 
         given(storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId))
                 .willReturn(stores);
-        given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberResponse.from(member));
-
         // when
-        List<StoreResponse> result = storeService.getStoresByOwner(memberId);
+        List<StoreResponse> result = storeService.getStoresByOwner(memberId, member.getUsername());
 
         // then
         assertThat(result).hasSize(2);
@@ -863,11 +838,8 @@ class StoreServiceTest {
 
         given(storeRepository.findByMemberIdOrderByCreatedAtDesc(memberId))
                 .willReturn(Arrays.asList());
-        given(memberInternalService.getMemberById(memberId))
-                .willReturn(MemberResponse.from(member));
-
         // when
-        List<StoreResponse> result = storeService.getStoresByOwner(memberId);
+        List<StoreResponse> result = storeService.getStoresByOwner(memberId, member.getUsername());
 
         // then
         assertThat(result).isEmpty();
@@ -940,23 +912,5 @@ class StoreServiceTest {
         then(storeRepository).should(times(1)).findById(storeId);
     }
 
-    @Test
-    @DisplayName("매장 등록 시 존재하지 않는 회원이면 예외 발생")
-    void createStore_WithNonExistentMember_ThrowsException() {
-
-        // given
-        Long memberId = 999L;
-        CreateStoreRequest request = createStoreRequest();
-
-        given(memberInternalService.getMemberById(memberId))
-                .willThrow(new IllegalArgumentException("존재하지 않는 회원입니다."));
-
-        // when & then
-        assertThatThrownBy(() -> storeService.createStore(memberId, request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("존재하지 않는 회원입니다.");
-
-        then(memberInternalService).should(times(1)).getMemberById(memberId);
-        then(storeRepository).should(times(0)).save(any(Store.class));
-    }
+    
 }
