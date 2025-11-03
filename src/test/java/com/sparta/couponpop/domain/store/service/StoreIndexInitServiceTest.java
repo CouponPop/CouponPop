@@ -210,7 +210,7 @@ class StoreIndexInitServiceTest {
     private Store createStore(Member member, Long storeId, String name) {
         Map<String, Object> fieldValues = new HashMap<>();
         fieldValues.put("id", storeId);
-        fieldValues.put("member", member);
+        fieldValues.put("memberId", member.getId());
         fieldValues.put("name", name);
         fieldValues.put("phone", "02123456789");
         fieldValues.put("description", name + " 설명");
@@ -232,7 +232,7 @@ class StoreIndexInitServiceTest {
     private Store createStoreWithCategory(Member member, Long storeId, String name, StoreCategory category) {
         Map<String, Object> fieldValues = new HashMap<>();
         fieldValues.put("id", storeId);
-        fieldValues.put("member", member);
+        fieldValues.put("memberId", member.getId());
         fieldValues.put("name", name);
         fieldValues.put("phone", "02123456789");
         fieldValues.put("description", name + " 설명");
