@@ -44,7 +44,7 @@ class StoreElasticsearchSyncServiceTest {
         given(storeSearchRepository.save(any(StoreDocument.class))).willReturn(document);
 
         // when
-        elasticsearchSyncService.indexStore(store);
+        elasticsearchSyncService.indexStore(store, member.getUsername());
 
         // then
         then(storeSearchRepository).should(times(1)).save(any(StoreDocument.class));
@@ -62,7 +62,7 @@ class StoreElasticsearchSyncServiceTest {
 
         // when & then
         // 예외가 발생하지 않아야 함
-        elasticsearchSyncService.indexStore(store);
+        elasticsearchSyncService.indexStore(store, member.getUsername());
 
         then(storeSearchRepository).should(times(1)).save(any(StoreDocument.class));
     }
@@ -94,7 +94,7 @@ class StoreElasticsearchSyncServiceTest {
         given(storeSearchRepository.save(any(StoreDocument.class))).willReturn(document);
 
         // when
-        elasticsearchSyncService.updateStore(store);
+        elasticsearchSyncService.updateStore(store, member.getUsername());
 
         // then
         then(storeSearchRepository).should(times(1)).save(any(StoreDocument.class));
@@ -112,7 +112,7 @@ class StoreElasticsearchSyncServiceTest {
 
         // when & then
         // 예외가 발생하지 않아야 함
-        elasticsearchSyncService.updateStore(store);
+        elasticsearchSyncService.updateStore(store, member.getUsername());
 
         then(storeSearchRepository).should(times(1)).save(any(StoreDocument.class));
     }
@@ -159,9 +159,9 @@ class StoreElasticsearchSyncServiceTest {
                 .willAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        elasticsearchSyncService.indexStore(cafeStore);
-        elasticsearchSyncService.indexStore(foodStore);
-        elasticsearchSyncService.indexStore(convenienceStore);
+        elasticsearchSyncService.indexStore(cafeStore, member.getUsername());
+        elasticsearchSyncService.indexStore(foodStore, member.getUsername());
+        elasticsearchSyncService.indexStore(convenienceStore, member.getUsername());
 
         // then
         then(storeSearchRepository).should(times(3)).save(any(StoreDocument.class));

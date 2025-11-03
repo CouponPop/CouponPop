@@ -1,10 +1,10 @@
 package com.sparta.couponpop.domain.store.service;
 
-import com.sparta.couponpop.common.dto.member.response.MemberResponse;
-import com.sparta.couponpop.domain.member.service.MemberInternalService;
 import com.sparta.couponpop.domain.store.document.StoreDocument;
 import com.sparta.couponpop.domain.store.dto.response.StoreMapResponse;
 import com.sparta.couponpop.domain.store.dto.response.StoreResponse;
+import com.sparta.couponpop.domain.store.dto.response.StoreSearchResponse;
+import com.sparta.couponpop.domain.store.dto.response.StoreSuggestResponse;
 import com.sparta.couponpop.domain.store.enums.StoreCategory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,8 +37,6 @@ class StoreSearchServiceTest {
     @Mock
     private ElasticsearchOperations elasticsearchOperations;
 
-    @Mock
-    private MemberInternalService memberInternalService;
 
     @InjectMocks
     private StoreSearchService storeSearchService;
@@ -69,10 +67,6 @@ class StoreSearchServiceTest {
 
         given(elasticsearchOperations.search(any(Query.class), eq(StoreDocument.class)))
                 .willReturn(searchHits);
-        given(memberInternalService.getMemberById(1L))
-                .willReturn(new MemberResponse(1L, "testuser"));
-        given(memberInternalService.getMemberById(2L))
-                .willReturn(new MemberResponse(2L, "testuser2"));
 
         // when
         List<StoreResponse> result = storeSearchService.searchStoresByName(keyword);
@@ -380,8 +374,7 @@ class StoreSearchServiceTest {
                 .willReturn(searchHits);
 
         // when
-        List<com.sparta.couponpop.domain.store.dto.response.StoreSearchResponse> result = 
-                storeSearchService.searchStoresWithRecommendation(keyword);
+        List<StoreSearchResponse> result = storeSearchService.searchStoresWithRecommendation(keyword);
 
         // then
         assertThat(result).hasSize(1);
@@ -396,8 +389,7 @@ class StoreSearchServiceTest {
         String keyword = "";
 
         // when
-        List<com.sparta.couponpop.domain.store.dto.response.StoreSearchResponse> result = 
-                storeSearchService.searchStoresWithRecommendation(keyword);
+        List<StoreSearchResponse> result = storeSearchService.searchStoresWithRecommendation(keyword);
 
         // then
         assertThat(result).isEmpty();
@@ -410,8 +402,7 @@ class StoreSearchServiceTest {
         String keyword = null;
 
         // when
-        List<com.sparta.couponpop.domain.store.dto.response.StoreSearchResponse> result = 
-                storeSearchService.searchStoresWithRecommendation(keyword);
+        List<StoreSearchResponse> result = storeSearchService.searchStoresWithRecommendation(keyword);
 
         // then
         assertThat(result).isEmpty();
@@ -437,8 +428,7 @@ class StoreSearchServiceTest {
                 .willReturn(searchHits);
 
         // when
-        List<com.sparta.couponpop.domain.store.dto.response.StoreSuggestResponse> result = 
-                storeSearchService.suggestStores(keyword);
+        List<StoreSuggestResponse> result = storeSearchService.suggestStores(keyword);
 
         // then
         assertThat(result).hasSize(1);
@@ -453,8 +443,7 @@ class StoreSearchServiceTest {
         String keyword = "";
 
         // when
-        List<com.sparta.couponpop.domain.store.dto.response.StoreSuggestResponse> result = 
-                storeSearchService.suggestStores(keyword);
+        List<StoreSuggestResponse> result = storeSearchService.suggestStores(keyword);
 
         // then
         assertThat(result).isEmpty();
@@ -467,8 +456,7 @@ class StoreSearchServiceTest {
         String keyword = null;
 
         // when
-        List<com.sparta.couponpop.domain.store.dto.response.StoreSuggestResponse> result = 
-                storeSearchService.suggestStores(keyword);
+        List<StoreSuggestResponse> result = storeSearchService.suggestStores(keyword);
 
         // then
         assertThat(result).isEmpty();

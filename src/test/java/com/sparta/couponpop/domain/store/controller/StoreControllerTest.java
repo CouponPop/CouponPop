@@ -102,7 +102,7 @@ class StoreControllerTest {
                         LocalDateTime.now(), LocalDateTime.now())
         );
 
-        given(storeService.getStoresByOwner(anyLong())).willReturn(storeResponses);
+        given(storeService.getStoresByOwner(anyLong(), anyString())).willReturn(storeResponses);
 
         // when
         ResultActions resultActions = mockMvc.perform(
@@ -151,7 +151,7 @@ class StoreControllerTest {
                 LocalDateTime.now(), LocalDateTime.now()
         );
 
-        given(storeService.createStore(anyLong(), any(CreateStoreRequest.class))).willReturn(response);
+        given(storeService.createStore(anyLong(), anyString(), any(CreateStoreRequest.class))).willReturn(response);
 
         // when
         ResultActions resultActions = mockMvc.perform(
@@ -271,7 +271,7 @@ class StoreControllerTest {
                 LocalDateTime.now(), LocalDateTime.now()
         );
 
-        given(storeService.updateStore(anyLong(), anyLong(), any(CreateStoreRequest.class)))
+        given(storeService.updateStore(anyLong(), anyLong(), anyString(), any(CreateStoreRequest.class)))
                 .willReturn(response);
 
         // when

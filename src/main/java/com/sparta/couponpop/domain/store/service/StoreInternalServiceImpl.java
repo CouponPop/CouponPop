@@ -3,88 +3,88 @@ package com.sparta.couponpop.domain.store.service;
 import com.sparta.couponpop.common.dto.couponevent.response.StoreOwnershipResponse;
 import com.sparta.couponpop.common.dto.store.request.cursor.StoreCouponEventsStatisticsCursor;
 import com.sparta.couponpop.common.dto.store.response.StoreResponse;
-import com.sparta.couponpop.domain.store.enums.StoreCategory;
+import com.sparta.couponpop.common.exception.GlobalException;
+import com.sparta.couponpop.domain.store.entity.Store;
+import com.sparta.couponpop.domain.store.exception.StoreErrorCode;
+import com.sparta.couponpop.domain.store.repository.StoreRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * 내부 서비스 간 통신을 위한 Store 도메인 서비스 구현체
+ * 다른 도메인 서비스(CouponEvent 등)가 Store 도메인 데이터를 필요로 할 때 사용
+ */
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class StoreInternalServiceImpl implements StoreInternalService {
 
-    // TODO : 설명
+    private final StoreRepository storeRepository;
+
+    /**
+     * 매장 소유권 검증
+     * 요청 도메인: CouponEvent
+     */
     @Override
     public StoreOwnershipResponse checkOwnership(Long storeId, Long memberId) {
-        /*
-        Store store = storeRepository.findById(request.storeId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다."));
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
 
-        if (!store.getMember().getId().equals(userId)) {
-            throw new IllegalArgumentException("해당 매장은 로그인한 회원 소유가 아닙니다.");
-        }
-         */
-        //Mock 데이터 Return
-        return StoreOwnershipResponse.of(true);
+        boolean isOwner = store.getMemberId().equals(memberId);
+        return StoreOwnershipResponse.of(isOwner);
     }
 
-    // TODO : memberId에 해당하는 cursor 기반 매장 목록 조회(매장 ID 내림차순)
+    /**
+     * 회원 ID에 해당하는 cursor 기반 매장 목록 조회(매장 ID 내림차순)
+     * 요청 도메인: CouponEvent
+     */
     @Override
     public List<StoreResponse> findStoresByOwner(Long memberId, StoreCouponEventsStatisticsCursor cursor, int pageSize) {
-        /*
-           @Override
-    public List<StoreCouponEventStatisticsProjection> fetchStoreCouponEventStatistics(Long memberId, StoreCouponEventsStatisticsCursor cursor, int limit) {
-        QStore store = QStore.store;
-        QCouponEvent couponEvent = QCouponEvent.couponEvent;
-        QCoupon coupon = QCoupon.coupon;
+        Pageable pageable = PageRequest.of(0, pageSize, Sort.by(Sort.Direction.DESC, "id"));
 
-        NumberExpression<Integer> usedCount = Expressions.numberTemplate(Integer.class,
-                "sum(case when {0}.usedAt is not null then 1 else 0 end)", coupon);
-        return jpaQueryFactory
-                .select(
-                        new QStoreCouponEventStatisticsProjection(
-                                store.id,
-                                store.name,
-                                new QStoreCouponEventStatisticsProjection_CouponStats(
-                                        couponEvent.totalCount.sum().coalesce(0),
-                                        couponEvent.issuedCount.sum().coalesce(0),
-                                        usedCount.coalesce(0)
-                                ),
-                                couponEvent.eventEndAt.max()
-                        )
-                )
-                .from(store)
-                .leftJoin(couponEvent).on(couponEvent.storeId.eq(store))
-                .leftJoin(coupon).on(coupon.couponEvent.eq(couponEvent))
-                .where(
-                        store.member.id.eq(memberId),
-                        nextStatisticCondition(store, cursor.lastStoreId())
-                )
-                .groupBy(store.id)
-                .orderBy(store.id.desc())
-                .limit(limit)
-                .fetch();
-    }
-         */
-        return List.of(
-                StoreResponse.of(1L, "매장1", StoreCategory.CAFE, 3.14, 3.14, "imageUrl"),
-                StoreResponse.of(2L, "매장2", StoreCategory.CAFE, 3.14, 3.14, "imageUrl")
-        );
+        List<Store> stores;
+        if (cursor.lastStoreId() == null) {
+            // 첫 페이지
+            stores = storeRepository.findByMemberIdOrderByIdDesc(memberId, pageable);
+        } else {
+            // 다음 페이지 (cursor 다음부터)
+            stores = storeRepository.findByMemberIdAndIdLessThanOrderByIdDesc(memberId, cursor.lastStoreId(), pageable);
+        }
+
+        return stores.stream()
+                .map(store -> StoreResponse.from(store))
+                .toList();
     }
 
-    // TODO : 매장 ID 에 해당하는 DTO 반환, 일단 필요한 값이 ID와 name 정도. 매장에 대한 추가 정보가 필요하면 ID 를 통해서 UI 쪽에서 API 조회를 하지 않을까?
+    /**
+     * 매장 ID에 해당하는 DTO 반환
+     * 필요한 값: id, name, storeCategory, latitude, longitude, imageUrl
+     * 요청 도메인: CouponEvent
+     */
     @Override
     public StoreResponse findByIdOrElseThrow(Long storeId) {
-        /*
-          Store store = storeRepository.findById(request.storeId())
-                          .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다."));
-         */
-        return StoreResponse.of(1L, "매장1", StoreCategory.CAFE, 3.14, 3.14, "imageUrl");
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new GlobalException(StoreErrorCode.STORE_NOT_FOUND));
+
+        return StoreResponse.from(store);
     }
 
+    /**
+     * 여러 매장 ID에 해당하는 DTO 목록 반환
+     * 요청 도메인: CouponEvent 등
+     */
     @Override
     public List<StoreResponse> findAllByIds(List<Long> storeIds) {
-        return List.of(
-                StoreResponse.of(1L, "매장1", StoreCategory.CAFE, 3.14, 3.14, "imageUrl"),
-                StoreResponse.of(2L, "매장2", StoreCategory.CAFE, 3.14, 3.14, "imageUrl")
-        );
+        List<Store> stores = storeRepository.findAllById(storeIds);
+
+        return stores.stream()
+                .map(store -> StoreResponse.from(store))
+                .toList();
     }
 }
