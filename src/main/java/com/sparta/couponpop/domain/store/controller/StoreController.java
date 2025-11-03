@@ -31,7 +31,7 @@ public class StoreController {
     @GetMapping("/owner/stores")
     public ResponseEntity<ApiResponse<List<StoreResponse>>> getStores(@CurrentMember AuthMember authMember) {
 
-        List<StoreResponse> storeResponses = storeService.getStoresByOwner(authMember.id());
+        List<StoreResponse> storeResponses = storeService.getStoresByOwner(authMember.id(), authMember.username());
 
         return ApiResponse.success(storeResponses);
     }
@@ -39,7 +39,7 @@ public class StoreController {
     @PostMapping("/owner/stores")
     public ResponseEntity<ApiResponse<StoreResponse>> createStore(@CurrentMember AuthMember authMember, @RequestBody @Valid CreateStoreRequest request) {
 
-        StoreResponse storeResponse = storeService.createStore(authMember.id(), request);
+        StoreResponse storeResponse = storeService.createStore(authMember.id(), authMember.username(), request);
 
         return ApiResponse.created(storeResponse);
     }
@@ -47,7 +47,7 @@ public class StoreController {
     @PutMapping("/owner/stores/{storeId}")
     public ResponseEntity<ApiResponse<StoreResponse>> updateStore(@CurrentMember AuthMember authMember, @PathVariable Long storeId, @RequestBody @Valid CreateStoreRequest request) {
 
-        StoreResponse storeResponse = storeService.updateStore(storeId, authMember.id(), request);
+        StoreResponse storeResponse = storeService.updateStore(storeId, authMember.id(), authMember.username(), request);
 
         return ApiResponse.success(storeResponse);
     }
