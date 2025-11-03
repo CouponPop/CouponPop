@@ -21,14 +21,19 @@ public class FcmToken extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private Long memberId;
 
+    @Column(nullable = false)
     private String fcmToken;
 
+    @Column(nullable = false, length = 32)
     private String deviceType;
 
+    @Column(nullable = false, length = 128)
     private String deviceIdentifier;
 
+    @Column(nullable = false)
     private boolean notificationEnabled;
 
     private LocalDateTime lastUsedAt;
